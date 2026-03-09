@@ -12,13 +12,15 @@ import {
   type ColumnFiltersState,
 } from "@tanstack/react-table";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 
 interface DataTableProps<TData> {
   columns: ColumnDef<TData, unknown>[];
   data: TData[];
   searchKey?: string | boolean;
   searchPlaceholder?: string;
+  initialSorting?: SortingState;
+  pageSize?: number;
 }
 
 export function DataTable<TData>({
@@ -26,8 +28,10 @@ export function DataTable<TData>({
   data,
   searchKey,
   searchPlaceholder = "Search...",
+  initialSorting = [],
+  pageSize = 20,
 }: DataTableProps<TData>) {
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sorting, setSorting] = useState<SortingState>(initialSorting);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
 
@@ -47,9 +51,16 @@ export function DataTable<TData>({
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     initialState: {
-      pagination: { pageSize: 20 },
+      pagination: { pageSize },
     },
   });
+
+  const filteredRows = table.getFilteredRowModel().rows;
+  const totalRows = filteredRows.length;
+  const pageIndex = table.getState().pagination.pageIndex;
+  const pageSizeState = table.getState().pagination.pageSize;
+  const startRow = pageIndex * pageSizeState + 1;
+  const endRow = Math.min((pageIndex + 1) * pageSizeState, totalRows);
 
   return (
     <div>
@@ -65,24 +76,45 @@ export function DataTable<TData>({
         </div>
       )}
       <div className="border border-[#dadce0] rounded-lg overflow-hidden bg-white">
-        <table className="w-full text-sm">
-          <thead className="bg-[#f8f9fa]">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className="px-4 py-3 text-left font-medium text-gray-700"
-                  >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-[#f8f9fa] sticky top-0">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => {
+                    const canSort = header.column.getCanSort();
+                    const isSorted = header.column.getIsSorted();
+                    return (
+                      <th
+                        key={header.id}
+                        className={`px-4 py-3 text-left font-medium text-gray-700 ${
+                          canSort ? "cursor-pointer select-none hover:bg-gray-100" : ""
+                        }`}
+                        onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
+                      >
+                        <div className="flex items-center gap-1">
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                          {canSort && (
+                            <span className="text-gray-400 shrink-0">
+                              {isSorted === "asc" ? (
+                                <ChevronUp className="w-4 h-4" />
+                              ) : isSorted === "desc" ? (
+                                <ChevronDown className="w-4 h-4" />
+                              ) : (
+                                <ChevronsUpDown className="w-4 h-4 opacity-50" />
+                              )}
+                            </span>
+                          )}
+                        </div>
+                      </th>
+                    );
+                  })}
+                </tr>
+              ))}
+            </thead>
           <tbody>
             {table.getRowModel().rows.length === 0 ? (
               <tr>
@@ -112,29 +144,42 @@ export function DataTable<TData>({
             )}
           </tbody>
         </table>
+        </div>
       </div>
-      {table.getPageCount() > 1 && (
-        <div className="flex items-center justify-between mt-4">
+      {(table.getPageCount() > 1 || totalRows > 0) && (
+        <div className="flex items-center justify-between mt-4 px-1">
           <p className="text-sm text-gray-600">
-            Page {table.getState().pagination.pageIndex + 1} of{" "}
-            {table.getPageCount()}
+            {totalRows > 0 ? (
+              <>Showing {startRow}–{endRow} of {totalRows}</>
+            ) : (
+              <>No results</>
+            )}
           </p>
-          <div className="flex gap-2">
-            <button
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-              className="p-2 border border-[#dadce0] rounded-md hover:bg-[#f8f9fa] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-              className="p-2 border border-[#dadce0] rounded-md hover:bg-[#f8f9fa] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
+          {table.getPageCount() > 1 && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500">
+                Page {pageIndex + 1} of {table.getPageCount()}
+              </span>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => table.previousPage()}
+                  disabled={!table.getCanPreviousPage()}
+                  className="p-2 border border-[#dadce0] rounded-md hover:bg-[#f8f9fa] disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label="Previous page"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => table.nextPage()}
+                  disabled={!table.getCanNextPage()}
+                  className="p-2 border border-[#dadce0] rounded-md hover:bg-[#f8f9fa] disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label="Next page"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

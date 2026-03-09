@@ -40,15 +40,20 @@ export default function CallHistoryPage() {
       header: "Date",
       cell: ({ row }) =>
         new Date(row.original.callDate).toLocaleString(),
+      sortingFn: (rowA, rowB) =>
+        new Date(rowA.original.callDate).getTime() -
+        new Date(rowB.original.callDate).getTime(),
     },
     {
-      accessorKey: "from",
+      id: "from",
+      accessorFn: (row) => row.from?.callerId ?? row.from?.number ?? "",
       header: "From",
       cell: ({ row }) =>
         row.original.from?.callerId ?? row.original.from?.number ?? "—",
     },
     {
-      accessorKey: "to",
+      id: "to",
+      accessorFn: (row) => row.to?.userDisplayName ?? row.to?.number ?? "",
       header: "To",
       cell: ({ row }) =>
         row.original.to?.userDisplayName ?? row.original.to?.number ?? "—",
@@ -72,6 +77,7 @@ export default function CallHistoryPage() {
           columns={columns}
           data={cdrs}
           searchPlaceholder="Search calls..."
+          initialSorting={[{ id: "callDate", desc: true }]}
         />
       )}
     </div>

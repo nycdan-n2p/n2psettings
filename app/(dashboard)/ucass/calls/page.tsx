@@ -7,8 +7,11 @@ import { Play } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import { Loader } from "@/components/ui/Loader";
 import { VoicemailDetailModal } from "@/components/voicemail/VoicemailDetailModal";
+import { DataTable } from "@/components/tables/DataTable";
 import { fetchCallHistory } from "@/lib/api/call-history";
 import { fetchVoicemails, type VoicemailItem } from "@/lib/api/voicemails";
+import type { CDR } from "@/lib/api/call-history";
+import type { ColumnDef } from "@tanstack/react-table";
 
 type Tab = "all" | "voicemails" | "recordings";
 
@@ -33,10 +36,42 @@ export default function CallsPage() {
         startDate.toISOString(),
         endDate,
         0,
-        50
+        100
       ),
     enabled: !!accountId && !!userId && tab === "all",
   });
+
+  const callColumns: ColumnDef<CDR>[] = [
+    {
+      accessorKey: "callDate",
+      header: "Date",
+      cell: ({ row }) =>
+        new Date(row.original.callDate).toLocaleString(),
+      sortingFn: (rowA, rowB) =>
+        new Date(rowA.original.callDate).getTime() -
+        new Date(rowB.original.callDate).getTime(),
+    },
+    {
+      id: "from",
+      accessorFn: (row) => row.from?.callerId ?? row.from?.number ?? "",
+      header: "From",
+      cell: ({ row }) =>
+        row.original.from?.callerId ?? row.original.from?.number ?? "—",
+    },
+    {
+      id: "to",
+      accessorFn: (row) => row.to?.userDisplayName ?? row.to?.number ?? "",
+      header: "To",
+      cell: ({ row }) =>
+        row.original.to?.userDisplayName ?? row.original.to?.number ?? "—",
+    },
+    { accessorKey: "callResult", header: "Result" },
+    {
+      accessorKey: "duration",
+      header: "Duration",
+      cell: ({ row }) => `${row.original.duration}s`,
+    },
+  ];
 
   const { data: voicemailData, isLoading: voicemailsLoading } = useQuery({
     queryKey: ["voicemails", accountId, userId],
@@ -114,35 +149,14 @@ export default function CallsPage() {
             ) : cdrs.length === 0 ? (
               <div className="px-6 py-8 text-gray-500">No recent calls.</div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead>
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">From</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">To</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Result</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {cdrs.map((c) => (
-                      <tr key={c.callId}>
-                        <td className="px-6 py-3 text-sm text-gray-900">
-                          {new Date(c.callDate).toLocaleString()}
-                        </td>
-                        <td className="px-6 py-3 text-sm text-gray-900">
-                          {c.from?.callerId ?? c.from?.number ?? "—"}
-                        </td>
-                        <td className="px-6 py-3 text-sm text-gray-900">
-                          {c.to?.userDisplayName ?? c.to?.number ?? "—"}
-                        </td>
-                        <td className="px-6 py-3 text-sm text-gray-900">{c.callResult}</td>
-                        <td className="px-6 py-3 text-sm text-gray-900">{c.duration}s</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="p-4">
+                <DataTable
+                  columns={callColumns}
+                  data={cdrs}
+                  searchPlaceholder="Search by caller, number, or result..."
+                  initialSorting={[{ id: "callDate", desc: true }]}
+                  pageSize={20}
+                />
               </div>
             )}
           </>
