@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #f8f9fa;
+  --foreground: #202124;
+  --top-bar-bg: #1a73e8;
+  --top-bar-text: #fff;
+  --sidebar-bg: #fff;
+  --sidebar-hover: #e8eaed;
+  --card-border: #dadce0;
+  --table-header: #f8f9fa;
+  --accent: #1a73e8;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: "Google Sans", Roboto, Arial, sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
