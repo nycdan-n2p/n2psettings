@@ -43,7 +43,10 @@ function ucassNav(base: string): NavGroup[] {
   return [
     {
       label: "Overview",
-      items: [{ href: `${base}/dashboard`, label: "Dashboard", icon: LayoutDashboard }],
+      items: [
+        { href: `${base}/dashboard`, label: "Dashboard", icon: LayoutDashboard },
+        { href: `${base}/onboarding`, label: "N2P Assistant", icon: Bot },
+      ],
     },
     {
       label: "Communications",

@@ -17,3 +17,18 @@ export async function fetchDepartments(
   const data = res.data.data;
   return Array.isArray(data) ? data : [];
 }
+
+/**
+ * Assign a user to a department by patching the user record.
+ */
+export async function assignUserToDepartment(
+  accountId: number,
+  userId: number,
+  deptId: number
+): Promise<void> {
+  const api = await getApiClient();
+  await api.patch<V1Response<unknown>>(
+    `/accounts/${accountId}/users/${userId}`,
+    { deptId }
+  );
+}
