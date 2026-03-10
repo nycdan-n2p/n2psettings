@@ -1,14 +1,35 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DataTable } from "@/components/tables/DataTable";
 import { useApp } from "@/contexts/AppContext";
-import { fetchDepartments } from "@/lib/api/departments";
+import { Loader } from "@/components/ui/Loader";
+import {
+  fetchDepartments,
+  createDepartment,
+  updateDepartment,
+  deleteDepartment,
+  type Department,
+  type CreateDepartmentPayload,
+} from "@/lib/api/departments";
 import type { ColumnDef } from "@tanstack/react-table";
+import { Modal } from "@/components/settings/Modal";
+import { TextInput } from "@/components/settings/TextInput";
+import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
+import { Pencil, Trash2 } from "lucide-react";
+
+const EMPTY_FORM: CreateDepartmentPayload = { name: "", extension: "" };
 
 export default function DepartmentsPage() {
   const { bootstrap } = useApp();
   const accountId = bootstrap?.account?.accountId ?? 0;
+  const queryClient = useQueryClient();
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<Department | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Department | null>(null);
+  const [form, setForm] = useState<CreateDepartmentPayload>({ ...EMPTY_FORM });
 
   const { data: departments = [], isLoading } = useQuery({
     queryKey: ["departments", accountId],
@@ -16,26 +37,75 @@ export default function DepartmentsPage() {
     enabled: !!accountId,
   });
 
-  const columns: ColumnDef<{ deptId: number; name: string; extension: string }>[] = [
+  const addMutation = useMutation({
+    mutationFn: (payload: CreateDepartmentPayload) => createDepartment(accountId, payload),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["departments", accountId] }); closeModal(); },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ deptId, payload }: { deptId: number; payload: Partial<CreateDepartmentPayload> }) =>
+      updateDepartment(accountId, deptId, payload),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["departments", accountId] }); closeModal(); },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (deptId: number) => deleteDepartment(accountId, deptId),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["departments", accountId] }); setDeleteTarget(null); },
+  });
+
+  const openAddModal = () => { setEditing(null); setForm({ ...EMPTY_FORM }); setModalOpen(true); };
+  const openEditModal = (d: Department) => { setEditing(d); setForm({ name: d.name, extension: d.extension ?? "" }); setModalOpen(true); };
+  const closeModal = () => { setModalOpen(false); setEditing(null); setForm({ ...EMPTY_FORM }); };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editing) { updateMutation.mutate({ deptId: editing.deptId, payload: form }); }
+    else { addMutation.mutate(form); }
+  };
+
+  const isMutating = addMutation.isPending || updateMutation.isPending;
+
+  const columns: ColumnDef<Department>[] = [
     { accessorKey: "name", header: "Name" },
-    { accessorKey: "extension", header: "Extension" },
+    { accessorKey: "extension", header: "Extension", cell: ({ row }) => row.original.extension ?? "—" },
+    { id: "members", header: "Members", cell: ({ row }) => (row.original.memberCount as number | undefined) ?? "—" },
+    {
+      id: "actions", header: "",
+      cell: ({ row }) => (
+        <div className="flex gap-2">
+          <button onClick={() => openEditModal(row.original)} className="p-1.5 rounded hover:bg-gray-100 text-gray-600" title="Edit"><Pencil className="w-4 h-4" /></button>
+          <button onClick={() => setDeleteTarget(row.original)} className="p-1.5 rounded hover:bg-red-50 text-red-600" title="Delete"><Trash2 className="w-4 h-4" /></button>
+        </div>
+      ),
+    },
   ];
 
   return (
     <div>
-      <h1 className="text-2xl font-medium text-gray-900 mb-6">Departments</h1>
-      <p className="text-gray-600 mb-6">
-        Manage department groups and extensions.
-      </p>
-      {isLoading ? (
-        <div className="py-8 text-gray-500">Loading...</div>
-      ) : (
-        <DataTable
-          columns={columns}
-          data={departments}
-          searchPlaceholder="Search departments..."
-        />
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-medium text-gray-900">Departments</h1>
+          <p className="text-sm text-gray-500 mt-1">{departments.length} departments</p>
+        </div>
+        <button onClick={openAddModal} className="px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium">Add Department</button>
+      </div>
+      {isLoading ? <div className="py-12 flex justify-center"><Loader variant="inline" label="Loading departments..." /></div> : (
+        <DataTable columns={columns} data={departments} searchPlaceholder="Search departments..." />
       )}
+      <Modal isOpen={modalOpen} onClose={closeModal} title={editing ? "Edit Department" : "Add Department"}>
+        <form onSubmit={handleSubmit}>
+          <TextInput label="Name" value={form.name} onChange={(v) => setForm((f) => ({ ...f, name: v }))} placeholder="e.g. Sales" required />
+          <TextInput label="Extension" value={form.extension ?? ""} onChange={(v) => setForm((f) => ({ ...f, extension: v }))} placeholder="e.g. 3000" />
+          {(addMutation.isError || updateMutation.isError) && (
+            <p className="text-sm text-red-600 mb-2">{((addMutation.error || updateMutation.error) as Error)?.message ?? "Failed to save"}</p>
+          )}
+          <div className="flex justify-end gap-2 mt-4">
+            <button type="button" onClick={closeModal} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancel</button>
+            <button type="submit" disabled={isMutating} className="px-4 py-2 text-sm font-medium text-white bg-[#1a73e8] rounded-md hover:bg-[#1557b0] disabled:opacity-50">{isMutating ? "Saving..." : editing ? "Save" : "Add"}</button>
+          </div>
+        </form>
+      </Modal>
+      <ConfirmDialog isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.deptId)} title="Delete Department" message={`Delete department "${deleteTarget?.name}"? Members will be unassigned.`} />
     </div>
   );
 }

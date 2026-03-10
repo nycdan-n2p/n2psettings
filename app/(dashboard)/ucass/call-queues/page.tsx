@@ -1,41 +1,119 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DataTable } from "@/components/tables/DataTable";
 import { useApp } from "@/contexts/AppContext";
-import { fetchCallQueues } from "@/lib/api/call-queues";
+import { Loader } from "@/components/ui/Loader";
+import {
+  fetchCallQueues,
+  createCallQueue,
+  updateCallQueue,
+  deleteCallQueue,
+  type CallQueue,
+  type CreateCallQueuePayload,
+} from "@/lib/api/call-queues";
 import type { ColumnDef } from "@tanstack/react-table";
+import { Modal } from "@/components/settings/Modal";
+import { TextInput } from "@/components/settings/TextInput";
+import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
+import { Pencil, Trash2 } from "lucide-react";
+
+const EMPTY_FORM: CreateCallQueuePayload = { name: "", extension: "", strategy: "round-robin" };
 
 export default function CallQueuesPage() {
   const { bootstrap } = useApp();
+  const accountId = bootstrap?.account?.accountId ?? 0;
+  const queryClient = useQueryClient();
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<CallQueue | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<CallQueue | null>(null);
+  const [form, setForm] = useState<CreateCallQueuePayload>({ ...EMPTY_FORM });
 
   const { data: queues = [], isLoading } = useQuery({
     queryKey: ["call-queues"],
-    queryFn: fetchCallQueues,
-    enabled: !!bootstrap,
+    queryFn: () => fetchCallQueues(),
   });
 
-  const columns: ColumnDef<{ id: string; name: string; extension?: string; agents_count?: number }>[] = [
+  const addMutation = useMutation({
+    mutationFn: (payload: CreateCallQueuePayload) => createCallQueue(accountId, payload),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["call-queues"] }); closeModal(); },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: Partial<CreateCallQueuePayload> }) =>
+      updateCallQueue(accountId, id, payload),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["call-queues"] }); closeModal(); },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteCallQueue(accountId, id),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["call-queues"] }); setDeleteTarget(null); },
+  });
+
+  const openAddModal = () => { setEditing(null); setForm({ ...EMPTY_FORM }); setModalOpen(true); };
+  const openEditModal = (q: CallQueue) => { setEditing(q); setForm({ name: q.name, extension: q.extension ?? "", strategy: q.strategy ?? "round-robin" }); setModalOpen(true); };
+  const closeModal = () => { setModalOpen(false); setEditing(null); setForm({ ...EMPTY_FORM }); };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editing) { updateMutation.mutate({ id: editing.id, payload: form }); }
+    else { addMutation.mutate(form); }
+  };
+
+  const isMutating = addMutation.isPending || updateMutation.isPending;
+
+  const columns: ColumnDef<CallQueue>[] = [
     { accessorKey: "name", header: "Name" },
-    { accessorKey: "extension", header: "Extension" },
-    { accessorKey: "agents_count", header: "Agents" },
+    { accessorKey: "extension", header: "Extension", cell: ({ row }) => row.original.extension ?? "—" },
+    { id: "agents", header: "Agents", cell: ({ row }) => row.original.agents_count ?? "—" },
+    {
+      id: "actions", header: "",
+      cell: ({ row }) => (
+        <div className="flex gap-2">
+          <button onClick={() => openEditModal(row.original)} className="p-1.5 rounded hover:bg-gray-100 text-gray-600" title="Edit"><Pencil className="w-4 h-4" /></button>
+          <button onClick={() => setDeleteTarget(row.original)} className="p-1.5 rounded hover:bg-red-50 text-red-600" title="Delete"><Trash2 className="w-4 h-4" /></button>
+        </div>
+      ),
+    },
   ];
 
   return (
     <div>
-      <h1 className="text-2xl font-medium text-gray-900 mb-6">Call Queues</h1>
-      <p className="text-gray-600 mb-6">
-        Manage call queues and agent assignments.
-      </p>
-      {isLoading ? (
-        <div className="py-8 text-gray-500">Loading...</div>
-      ) : (
-        <DataTable
-          columns={columns}
-          data={queues}
-          searchPlaceholder="Search queues..."
-        />
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-medium text-gray-900">Call Queues</h1>
+          <p className="text-sm text-gray-500 mt-1">{queues.length} queues</p>
+        </div>
+        <button onClick={openAddModal} className="px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium">Add Call Queue</button>
+      </div>
+      {isLoading ? <div className="py-12 flex justify-center"><Loader variant="inline" label="Loading call queues..." /></div> : (
+        <DataTable columns={columns} data={queues} searchPlaceholder="Search call queues..." />
       )}
+      <Modal isOpen={modalOpen} onClose={closeModal} title={editing ? "Edit Call Queue" : "Add Call Queue"}>
+        <form onSubmit={handleSubmit}>
+          <TextInput label="Name" value={form.name} onChange={(v) => setForm((f) => ({ ...f, name: v }))} placeholder="e.g. Support Queue" required />
+          <TextInput label="Extension" value={form.extension ?? ""} onChange={(v) => setForm((f) => ({ ...f, extension: v }))} placeholder="e.g. 6000" />
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Strategy</label>
+            <select value={form.strategy ?? "round-robin"} onChange={(e) => setForm((f) => ({ ...f, strategy: e.target.value }))} className="w-full px-3 py-2 border border-[#dadce0] rounded-md text-sm">
+              <option value="round-robin">Round Robin</option>
+              <option value="longest-idle">Longest Idle</option>
+              <option value="least-calls">Least Calls</option>
+              <option value="linear">Linear</option>
+            </select>
+          </div>
+          {(addMutation.isError || updateMutation.isError) && (
+            <p className="text-sm text-red-600 mb-2">{((addMutation.error || updateMutation.error) as Error)?.message ?? "Failed to save"}</p>
+          )}
+          <div className="flex justify-end gap-2 mt-4">
+            <button type="button" onClick={closeModal} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancel</button>
+            <button type="submit" disabled={isMutating} className="px-4 py-2 text-sm font-medium text-white bg-[#1a73e8] rounded-md hover:bg-[#1557b0] disabled:opacity-50">{isMutating ? "Saving..." : editing ? "Save" : "Add"}</button>
+          </div>
+        </form>
+      </Modal>
+      <ConfirmDialog isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)} title="Delete Call Queue" message={`Delete call queue "${deleteTarget?.name}"?`} />
     </div>
   );
 }

@@ -9,6 +9,22 @@ export interface TeamMember {
   status: string;
   role: string;
   totalVMs?: number;
+  deptId?: number;
+  departmentName?: string;
+  ringGroupStatus?: string;
+  directoryEnabled?: boolean;
+  musicOnHold?: string;
+}
+
+export interface CreateUserPayload {
+  firstName: string;
+  lastName: string;
+  email: string;
+  extension: string;
+  roleId?: number;
+  deptId?: number;
+  phoneNumber?: string;
+  password?: string;
 }
 
 export async function fetchTeamMembers(accountId: number): Promise<TeamMember[]> {
@@ -20,9 +36,48 @@ export async function fetchTeamMembers(accountId: number): Promise<TeamMember[]>
   return Array.isArray(data) ? data : [];
 }
 
-/**
- * Search users by a partial name or email (client-side filter over the full list).
- */
+export async function createUser(
+  accountId: number,
+  payload: CreateUserPayload
+): Promise<TeamMember> {
+  const api = await getApiClient();
+  const res = await api.post<V1Response<TeamMember>>(
+    `/accounts/${accountId}/users`,
+    payload
+  );
+  return res.data.data;
+}
+
+export async function updateUser(
+  accountId: number,
+  userId: number,
+  payload: Partial<CreateUserPayload>
+): Promise<TeamMember> {
+  const api = await getApiClient();
+  const res = await api.put<V1Response<TeamMember>>(
+    `/accounts/${accountId}/users/${userId}`,
+    payload
+  );
+  return res.data.data;
+}
+
+export async function deleteUser(
+  accountId: number,
+  userId: number
+): Promise<void> {
+  const api = await getApiClient();
+  await api.delete(`/accounts/${accountId}/users/${userId}`);
+}
+
+export async function exportUsersCsv(accountId: number): Promise<Blob> {
+  const api = await getApiClient();
+  const res = await api.get(`/accounts/${accountId}/users`, {
+    params: { format: "csv" },
+    responseType: "blob",
+  });
+  return res.data as Blob;
+}
+
 export async function searchUsers(
   accountId: number,
   query: string
