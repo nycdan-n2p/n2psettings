@@ -11,6 +11,8 @@ export interface TeamMember {
   totalVMs?: number;
   deptId?: number;
   departmentName?: string;
+  /** Comma-separated department names from members[] */
+  departments?: string;
   ringGroupStatus?: string;
   directoryEnabled?: boolean;
   musicOnHold?: string;
@@ -27,13 +29,50 @@ export interface CreateUserPayload {
   password?: string;
 }
 
+type RawUser = {
+  userId?: number;
+  firstName?: string;
+  lastName?: string;
+  extension?: string;
+  email?: string;
+  status?: string;
+  role?: string;
+  members?: Array<{ id?: number; name?: string }>;
+  compDir?: { enabled?: boolean };
+  isRingGroupCallsEnabled?: boolean;
+  hasCustomMusicOnHold?: boolean;
+  [key: string]: unknown;
+};
+
+function mapUser(raw: RawUser): TeamMember {
+  const depts =
+    Array.isArray(raw.members) && raw.members.length > 0
+      ? raw.members.map((m) => m.name ?? "").filter(Boolean).join(", ")
+      : undefined;
+  return {
+    userId: raw.userId ?? 0,
+    firstName: raw.firstName ?? "",
+    lastName: raw.lastName ?? "",
+    extension: String(raw.extension ?? ""),
+    email: raw.email ?? "",
+    status: raw.status ?? "",
+    role: raw.role ?? "",
+    departments: depts,
+    departmentName: depts,
+    ringGroupStatus: raw.isRingGroupCallsEnabled ? "Signed in to all ring groups" : undefined,
+    directoryEnabled: raw.compDir?.enabled ?? undefined,
+    musicOnHold: raw.hasCustomMusicOnHold ? "Custom" : "Default",
+  };
+}
+
 export async function fetchTeamMembers(accountId: number): Promise<TeamMember[]> {
   const api = await getApiClient();
-  const res = await api.get<V1Response<TeamMember[]>>(
-    `/accounts/${accountId}/users`
+  const res = await api.get<V1Response<RawUser[]>>(
+    `/accounts/${accountId}/users`,
+    { params: { includeLineNumbersFlag: "Y", includeDepartmentUser: true } }
   );
   const data = res.data.data;
-  return Array.isArray(data) ? data : [];
+  return Array.isArray(data) ? data.map(mapUser) : [];
 }
 
 export async function createUser(

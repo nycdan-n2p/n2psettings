@@ -20,7 +20,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Modal } from "@/components/settings/Modal";
 import { TextInput } from "@/components/settings/TextInput";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
-import { Pencil, Trash2, Download } from "lucide-react";
+import { Pencil, Trash2, Download, Music2 } from "lucide-react";
 
 const EMPTY_FORM: CreateUserPayload = {
   firstName: "",
@@ -153,12 +153,51 @@ export default function TeamMembersPage() {
     },
     { accessorKey: "extension", header: "Ext" },
     { accessorKey: "email", header: "Email" },
-    { accessorKey: "role", header: "Role" },
-    { accessorKey: "status", header: "Status" },
     {
-      accessorKey: "totalVMs",
-      header: "VMs",
-      cell: ({ row }) => row.original.totalVMs ?? "—",
+      id: "department",
+      header: "Department",
+      accessorFn: (row) => row.departments ?? "",
+      cell: ({ row }) => (
+        <span className={row.original.departments ? "text-gray-900" : "text-gray-400"}>
+          {row.original.departments ?? "None"}
+        </span>
+      ),
+    },
+    {
+      id: "ringGroup",
+      header: "Ring Group Status",
+      cell: ({ row }) =>
+        row.original.ringGroupStatus ? (
+          <span className="inline-flex items-center gap-1.5 text-green-700 text-sm">
+            <span className="w-2 h-2 rounded-full bg-green-500" />
+            {row.original.ringGroupStatus}
+          </span>
+        ) : (
+          <span className="text-gray-400">—</span>
+        ),
+    },
+    {
+      id: "directory",
+      header: "Directory",
+      cell: ({ row }) =>
+        row.original.directoryEnabled ? (
+          <span className="inline-flex items-center gap-1.5 text-green-700 text-sm">
+            <span className="w-2 h-2 rounded-full bg-green-500" />
+            Included
+          </span>
+        ) : (
+          <span className="text-gray-400">—</span>
+        ),
+    },
+    {
+      id: "musicOnHold",
+      header: "Music on Hold",
+      cell: ({ row }) => (
+        <span className="inline-flex items-center gap-1.5 text-sm">
+          <Music2 className="w-3.5 h-3.5 text-gray-400" />
+          {row.original.musicOnHold ?? "Default"}
+        </span>
+      ),
     },
     {
       id: "actions",
