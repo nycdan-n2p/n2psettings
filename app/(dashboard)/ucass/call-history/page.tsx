@@ -1,40 +1,32 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DataTable } from "@/components/tables/DataTable";
 import { useApp } from "@/contexts/AppContext";
-import { fetchCallHistory } from "@/lib/api/call-history";
+import { fetchCallHistory, formatDuration, type CDR } from "@/lib/api/call-history";
+import { qk } from "@/lib/query-keys";
+import { Loader } from "@/components/ui/Loader";
 import type { ColumnDef } from "@tanstack/react-table";
 
 export default function CallHistoryPage() {
   const { bootstrap } = useApp();
   const accountId = bootstrap?.account?.accountId ?? 0;
   const userId = bootstrap?.user?.userId ?? 0;
+  const [cursor, setCursor] = useState<string | null>(null);
 
-  const now = new Date();
-  const startDate = new Date(now);
-  startDate.setDate(startDate.getDate() - 7);
-  const endDate = now.toISOString();
-
-  const { data: cdrs = [], isLoading } = useQuery({
-    queryKey: ["call-history", accountId, userId],
-    queryFn: () =>
-      fetchCallHistory(
-        accountId,
-        userId,
-        startDate.toISOString(),
-        endDate
-      ),
+  const { data: callData, isLoading } = useQuery({
+    queryKey: [...qk.callHistory.list(accountId, userId, ""), cursor],
+    queryFn: () => fetchCallHistory(accountId, userId, { userId }, 50, cursor),
     enabled: !!accountId && !!userId,
   });
 
-  const columns: ColumnDef<{
-    callDate: string;
-    callResult: string;
-    duration: number;
-    from?: { callerId?: string; number?: string };
-    to?: { userDisplayName?: string; number?: string };
-  }>[] = [
+  const cdrs: CDR[] = callData?.cdrs ?? [];
+  const nextCursor = callData?.nextCursor ?? null;
+  const prevCursor = callData?.prevCursor ?? null;
+
+  const columns: ColumnDef<CDR>[] = [
     {
       accessorKey: "callDate",
       header: "Date",
@@ -58,8 +50,18 @@ export default function CallHistoryPage() {
       cell: ({ row }) =>
         row.original.to?.userDisplayName ?? row.original.to?.number ?? "—",
     },
+    {
+      accessorKey: "direction",
+      header: "Direction",
+      cell: ({ row }) =>
+        row.original.direction === 0 ? "Inbound" : row.original.direction === 1 ? "Outbound" : "—",
+    },
     { accessorKey: "callResult", header: "Result" },
-    { accessorKey: "duration", header: "Duration (s)" },
+    {
+      accessorKey: "duration",
+      header: "Duration",
+      cell: ({ row }) => formatDuration(row.original.duration),
+    },
   ];
 
   return (
@@ -71,14 +73,36 @@ export default function CallHistoryPage() {
         View call detail records and recordings.
       </p>
       {isLoading ? (
-        <div className="py-8 text-gray-500">Loading...</div>
+        <div className="py-8 flex justify-center">
+          <Loader variant="inline" label="Loading calls..." />
+        </div>
       ) : (
-        <DataTable
-          columns={columns}
-          data={cdrs}
-          searchPlaceholder="Search calls..."
-          initialSorting={[{ id: "callDate", desc: true }]}
-        />
+        <>
+          <DataTable
+            columns={columns}
+            data={cdrs}
+            searchPlaceholder="Search calls..."
+            initialSorting={[{ id: "callDate", desc: true }]}
+          />
+          {(prevCursor || nextCursor) && (
+            <div className="flex justify-between items-center pt-4">
+              <button
+                onClick={() => setCursor(prevCursor)}
+                disabled={!prevCursor}
+                className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 border border-[#dadce0] rounded-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="w-4 h-4" /> Previous
+              </button>
+              <button
+                onClick={() => setCursor(nextCursor)}
+                disabled={!nextCursor}
+                className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 border border-[#dadce0] rounded-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Next <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApp } from "@/contexts/AppContext";
+import { qk } from "@/lib/query-keys";
 import { getApiClient } from "@/lib/api-client";
 import { DataTable } from "@/components/tables/DataTable";
 import { Modal } from "@/components/settings/Modal";
@@ -51,22 +52,22 @@ export default function E911ContactsPage() {
   const [form, setForm] = useState(EMPTY);
 
   const { data: contacts = [], isLoading } = useQuery({
-    queryKey: ["e911-contacts", accountId],
+    queryKey: qk.e911.all(accountId),
     queryFn: () => fetchE911Contacts(accountId),
     enabled: !!accountId,
   });
 
   const addMutation = useMutation({
     mutationFn: (p: typeof EMPTY) => createE911Contact(accountId, p),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["e911-contacts", accountId] }); closeModal(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: qk.e911.all(accountId) }); closeModal(); },
   });
   const updateMutation = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: typeof EMPTY }) => updateE911Contact(accountId, id, payload),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["e911-contacts", accountId] }); closeModal(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: qk.e911.all(accountId) }); closeModal(); },
   });
   const deleteMutation = useMutation({
     mutationFn: (id: number) => deleteE911Contact(accountId, id),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["e911-contacts", accountId] }); setDeleteTarget(null); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: qk.e911.all(accountId) }); setDeleteTarget(null); },
   });
 
   const openAdd = () => { setEditing(null); setForm(EMPTY); setModalOpen(true); };

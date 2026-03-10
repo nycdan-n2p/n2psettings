@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useApp } from "@/contexts/AppContext";
+import { qk } from "@/lib/query-keys";
 import { Loader } from "@/components/ui/Loader";
 import {
   fetchAccountAnalytics,
@@ -44,21 +45,21 @@ export default function AnalyticsPage() {
   const range = getRange(preset);
 
   const { data: accountStats, isLoading: accountLoading } = useQuery({
-    queryKey: ["analytics-account", accountId, preset],
+    queryKey: qk.analytics.account(accountId, preset),
     queryFn: () => fetchAccountAnalytics(accountId, range),
     enabled: !!accountId,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: userRows = [], isLoading: usersLoading } = useQuery({
-    queryKey: ["analytics-users", accountId, preset],
+    queryKey: qk.analytics.users(accountId, preset),
     queryFn: () => fetchUserAnalytics(accountId, range, 0, 100),
     enabled: !!accountId,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: deptRows = [], isLoading: deptsLoading } = useQuery({
-    queryKey: ["analytics-depts", accountId, preset],
+    queryKey: qk.analytics.depts(accountId, preset),
     queryFn: () => fetchDepartmentAnalytics(accountId, range, 0, 50),
     enabled: !!accountId,
     staleTime: 5 * 60 * 1000,

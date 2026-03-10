@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DataTable } from "@/components/tables/DataTable";
+import { qk } from "@/lib/query-keys";
 import {
   fetchInboundBlockList,
   fetchOutboundBlockList,
@@ -24,12 +25,12 @@ export default function CallBlockingPage() {
   const queryClient = useQueryClient();
 
   const { data: inbound = [], isLoading: inboundLoading } = useQuery({
-    queryKey: ["call-blocking", "inbound"],
+    queryKey: qk.callBlocking.list("inbound"),
     queryFn: fetchInboundBlockList,
   });
 
   const { data: outbound = [], isLoading: outboundLoading } = useQuery({
-    queryKey: ["call-blocking", "outbound"],
+    queryKey: qk.callBlocking.list("outbound"),
     queryFn: fetchOutboundBlockList,
   });
 
@@ -41,7 +42,7 @@ export default function CallBlockingPage() {
       addBlockedNumber(tab, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["call-blocking", tab],
+        queryKey: qk.callBlocking.list(tab),
       });
       closeModal();
     },
@@ -51,7 +52,7 @@ export default function CallBlockingPage() {
     mutationFn: (number: string) => deleteBlockedNumber(tab, number),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["call-blocking", tab],
+        queryKey: qk.callBlocking.list(tab),
       });
       setDeleteTarget(null);
     },

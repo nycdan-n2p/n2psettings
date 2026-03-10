@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApp } from "@/contexts/AppContext";
+import { qk, lightKeys } from "@/lib/query-keys";
 import { Loader } from "@/components/ui/Loader";
 import { TextInput } from "@/components/settings/TextInput";
 import {
@@ -59,37 +60,37 @@ export default function WelcomeMenuEditPage() {
 
   // ─── Queries ───────────────────────────────────────────────────────────
   const { data: menu, isLoading } = useQuery({
-    queryKey: ["welcome-menu-detail", accountId, id],
+    queryKey: qk.welcomeMenus.detail(accountId, id),
     queryFn: () => fetchWelcomeMenuDetail(accountId, id),
     enabled: !!accountId && !!id,
   });
 
   const { data: menusLight = [] } = useQuery({
-    queryKey: ["menus-light", accountId],
+    queryKey: lightKeys.menus(accountId),
     queryFn: () => fetchMenusLight(accountId),
     enabled: !!accountId,
   });
 
   const { data: usersLight = [] } = useQuery({
-    queryKey: ["users-light-menu", accountId],
+    queryKey: lightKeys.users(accountId),
     queryFn: () => fetchUsersLightForMenu(accountId),
     enabled: !!accountId,
   });
 
   const { data: deptsLight = [] } = useQuery({
-    queryKey: ["depts-light-menu", accountId],
+    queryKey: lightKeys.departments(accountId),
     queryFn: () => fetchDeptsLightForMenu(accountId),
     enabled: !!accountId,
   });
 
   const { data: ringGroupsLight = [] } = useQuery({
-    queryKey: ["ring-groups-light-menu", accountId],
+    queryKey: lightKeys.ringGroups(accountId),
     queryFn: () => fetchRingGroupsForMenu(accountId),
     enabled: !!accountId,
   });
 
   const { data: specialExtsLight = [] } = useQuery({
-    queryKey: ["special-exts-light", accountId],
+    queryKey: lightKeys.specialExts(accountId),
     queryFn: () => fetchSpecialExtensionsLight(accountId),
     enabled: !!accountId,
   });
@@ -115,8 +116,8 @@ export default function WelcomeMenuEditPage() {
     mutationFn: (payload: Partial<WelcomeMenuDetail>) =>
       updateWelcomeMenuDetail(accountId, id, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["welcome-menu-detail", accountId, id] });
-      queryClient.invalidateQueries({ queryKey: ["virtual-assistant", accountId] });
+      queryClient.invalidateQueries({ queryKey: qk.welcomeMenus.detail(accountId, id) });
+      queryClient.invalidateQueries({ queryKey: qk.welcomeMenus.all(accountId) });
       setSaveError(null);
     },
     onError: (e: Error) => setSaveError(e.message ?? "Failed to save"),

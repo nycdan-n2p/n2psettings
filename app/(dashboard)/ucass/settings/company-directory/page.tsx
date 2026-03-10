@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApp } from "@/contexts/AppContext";
+import { qk } from "@/lib/query-keys";
 import { getApiClient, type V1Response } from "@/lib/api-client";
 import { CollapsibleSection } from "@/components/settings/CollapsibleSection";
 import { SettingsRow } from "@/components/settings/SettingsGroup";
@@ -18,7 +19,7 @@ export default function CompanyDirectoryPage() {
   const queryClient = useQueryClient();
 
   const { data: settings, isLoading } = useQuery({
-    queryKey: ["company-directory", accountId],
+    queryKey: qk.companyDir.all(accountId),
     queryFn: async () => {
       const api = await getApiClient();
       const res = await api.get<V1Response<CompanyDirectory>>(
@@ -39,7 +40,7 @@ export default function CompanyDirectoryPage() {
       return res.data.data;
     },
     onMutate: async (payload) => {
-      await queryClient.cancelQueries({ queryKey: ["company-directory", accountId] });
+      await queryClient.cancelQueries({ queryKey: qk.companyDir.all(accountId) });
       const prev = queryClient.getQueryData<CompanyDirectory>(["company-directory", accountId]);
       queryClient.setQueryData(["company-directory", accountId], { ...prev, ...payload });
       return { prev };
@@ -50,7 +51,7 @@ export default function CompanyDirectoryPage() {
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["company-directory", accountId] });
+      queryClient.invalidateQueries({ queryKey: qk.companyDir.all(accountId) });
     },
   });
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DataTable } from "@/components/tables/DataTable";
 import { useApp } from "@/contexts/AppContext";
+import { qk } from "@/lib/query-keys";
 import { Loader } from "@/components/ui/Loader";
 import {
   fetchDepartments,
@@ -32,25 +33,25 @@ export default function DepartmentsPage() {
   const [form, setForm] = useState<CreateDepartmentPayload>({ ...EMPTY_FORM });
 
   const { data: departments = [], isLoading } = useQuery({
-    queryKey: ["departments", accountId],
+    queryKey: qk.departments.list(accountId),
     queryFn: () => fetchDepartments(accountId),
     enabled: !!accountId,
   });
 
   const addMutation = useMutation({
     mutationFn: (payload: CreateDepartmentPayload) => createDepartment(accountId, payload),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["departments", accountId] }); closeModal(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: qk.departments.all(accountId) }); closeModal(); },
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ deptId, payload }: { deptId: number; payload: Partial<CreateDepartmentPayload> }) =>
       updateDepartment(accountId, deptId, payload),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["departments", accountId] }); closeModal(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: qk.departments.all(accountId) }); closeModal(); },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (deptId: number) => deleteDepartment(accountId, deptId),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["departments", accountId] }); setDeleteTarget(null); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: qk.departments.all(accountId) }); setDeleteTarget(null); },
   });
 
   const openAddModal = () => { setEditing(null); setForm({ ...EMPTY_FORM }); setModalOpen(true); };

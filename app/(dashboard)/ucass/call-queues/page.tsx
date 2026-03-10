@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DataTable } from "@/components/tables/DataTable";
 import { useApp } from "@/contexts/AppContext";
+import { qk } from "@/lib/query-keys";
 import { Loader } from "@/components/ui/Loader";
 import {
   fetchCallQueues,
@@ -32,24 +33,24 @@ export default function CallQueuesPage() {
   const [form, setForm] = useState<CreateCallQueuePayload>({ ...EMPTY_FORM });
 
   const { data: queues = [], isLoading } = useQuery({
-    queryKey: ["call-queues"],
+    queryKey: qk.callQueues.list(accountId),
     queryFn: () => fetchCallQueues(),
   });
 
   const addMutation = useMutation({
     mutationFn: (payload: CreateCallQueuePayload) => createCallQueue(accountId, payload),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["call-queues"] }); closeModal(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: qk.callQueues.all(accountId) }); closeModal(); },
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: Partial<CreateCallQueuePayload> }) =>
       updateCallQueue(accountId, id, payload),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["call-queues"] }); closeModal(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: qk.callQueues.all(accountId) }); closeModal(); },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteCallQueue(accountId, id),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["call-queues"] }); setDeleteTarget(null); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: qk.callQueues.all(accountId) }); setDeleteTarget(null); },
   });
 
   const openAddModal = () => { setEditing(null); setForm({ ...EMPTY_FORM }); setModalOpen(true); };

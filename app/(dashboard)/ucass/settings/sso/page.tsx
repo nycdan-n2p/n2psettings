@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useApp } from "@/contexts/AppContext";
+import { qk } from "@/lib/query-keys";
 import { getApiClient } from "@/lib/api-client";
 import { Loader } from "@/components/ui/Loader";
 import { TextInput } from "@/components/settings/TextInput";
@@ -33,7 +34,7 @@ export default function SsoPage() {
   const [saved, setSaved] = useState(false);
 
   const { data: config, isLoading } = useQuery({
-    queryKey: ["sso-config", accountId],
+    queryKey: qk.sso.all(accountId),
     queryFn: () => fetchSsoConfig(accountId),
     enabled: !!accountId,
   });

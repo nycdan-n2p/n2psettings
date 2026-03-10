@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApp } from "@/contexts/AppContext";
+import { qk } from "@/lib/query-keys";
 import { getApiClient, type V1Response } from "@/lib/api-client";
 import { CollapsibleSection } from "@/components/settings/CollapsibleSection";
 import { SettingsRow } from "@/components/settings/SettingsGroup";
@@ -22,7 +23,7 @@ export default function VoicemailSettingsPage() {
   const queryClient = useQueryClient();
 
   const { data: settings, isLoading } = useQuery({
-    queryKey: ["voicemail-settings", accountId],
+    queryKey: qk.voicemailSettings.all(accountId),
     queryFn: async () => {
       const api = await getApiClient();
       const res = await api.get<V1Response<VoicemailSettings>>(
@@ -43,7 +44,7 @@ export default function VoicemailSettingsPage() {
       return res.data.data;
     },
     onMutate: async (payload) => {
-      await queryClient.cancelQueries({ queryKey: ["voicemail-settings", accountId] });
+      await queryClient.cancelQueries({ queryKey: qk.voicemailSettings.all(accountId) });
       const prev = queryClient.getQueryData<VoicemailSettings>(["voicemail-settings", accountId]);
       queryClient.setQueryData(["voicemail-settings", accountId], { ...prev, ...payload });
       return { prev };
@@ -54,7 +55,7 @@ export default function VoicemailSettingsPage() {
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["voicemail-settings", accountId] });
+      queryClient.invalidateQueries({ queryKey: qk.voicemailSettings.all(accountId) });
     },
   });
 

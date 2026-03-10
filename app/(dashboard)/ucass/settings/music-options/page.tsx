@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApp } from "@/contexts/AppContext";
+import { qk } from "@/lib/query-keys";
 import { getApiClient } from "@/lib/api-client";
 import { Loader } from "@/components/ui/Loader";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
@@ -45,7 +46,7 @@ export default function MusicOptionsPage() {
   const [deleteTarget, setDeleteTarget] = useState<MusicOption | null>(null);
 
   const { data: options = [], isLoading } = useQuery({
-    queryKey: ["music-options", accountId],
+    queryKey: qk.musicOptions.all(accountId),
     queryFn: () => fetchMusicOptions(accountId),
     enabled: !!accountId,
   });
@@ -53,7 +54,7 @@ export default function MusicOptionsPage() {
   const uploadMutation = useMutation({
     mutationFn: ({ file, name }: { file: File; name: string }) => uploadMusicOption(accountId, file, name),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["music-options", accountId] });
+      queryClient.invalidateQueries({ queryKey: qk.musicOptions.all(accountId) });
       setSelectedFile(null);
       setUploadName("");
       if (fileRef.current) fileRef.current.value = "";
@@ -62,7 +63,7 @@ export default function MusicOptionsPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => deleteMusicOption(accountId, id),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["music-options", accountId] }); setDeleteTarget(null); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: qk.musicOptions.all(accountId) }); setDeleteTarget(null); },
   });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { DataTable } from "@/components/tables/DataTable";
 import { useApp } from "@/contexts/AppContext";
+import { qk } from "@/lib/query-keys";
 import {
   fetchWebhooks,
   fetchWebhookEventTypes,
@@ -26,13 +27,13 @@ export default function WebhooksPage() {
   const [formUrl, setFormUrl] = useState("");
 
   const { data: webhooks = [], isLoading } = useQuery({
-    queryKey: ["webhooks", accountId, userId],
+    queryKey: qk.webhooks.all(accountId, userId),
     queryFn: () => fetchWebhooks(accountId, userId),
     enabled: !!accountId && !!userId,
   });
 
   const { data: eventTypes = [] } = useQuery({
-    queryKey: ["webhook-event-types", accountId, userId],
+    queryKey: qk.webhooks.eventTypes(accountId, userId),
     queryFn: () => fetchWebhookEventTypes(accountId, userId),
     enabled: !!accountId && !!userId,
   });

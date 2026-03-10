@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApp } from "@/contexts/AppContext";
+import { qk } from "@/lib/query-keys";
 import { getApiClient } from "@/lib/api-client";
 import { Loader } from "@/components/ui/Loader";
 import { Copy, Eye, EyeOff, RefreshCw, Trash2 } from "lucide-react";
@@ -38,7 +39,7 @@ export default function ApiSetupPage() {
   const [newKeyName, setNewKeyName] = useState("");
 
   const { data: keys = [], isLoading } = useQuery({
-    queryKey: ["api-keys", accountId],
+    queryKey: qk.apiKeys.all(accountId),
     queryFn: () => fetchApiKeys(accountId),
     enabled: !!accountId,
   });
@@ -46,7 +47,7 @@ export default function ApiSetupPage() {
   const generateMutation = useMutation({
     mutationFn: () => generateApiKey(accountId, newKeyName || undefined),
     onSuccess: (newKey) => {
-      queryClient.invalidateQueries({ queryKey: ["api-keys", accountId] });
+      queryClient.invalidateQueries({ queryKey: qk.apiKeys.all(accountId) });
       setNewKeyName("");
       setRevealed((prev) => { const next = new Set(prev); next.add(newKey.id); return next; });
     },
@@ -54,7 +55,7 @@ export default function ApiSetupPage() {
 
   const revokeMutation = useMutation({
     mutationFn: (id: string) => revokeApiKey(accountId, id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["api-keys", accountId] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: qk.apiKeys.all(accountId) }),
   });
 
   const toggleReveal = (id: string) => {

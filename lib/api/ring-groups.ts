@@ -149,7 +149,7 @@ export async function fetchUsersLight(accountId: number): Promise<UserLight[]> {
   const api = await getApiClient();
   const res = await api.get<V1Response<{ total: number; items: UserLight[] }>>(
     `/accounts/${accountId}/users/light`,
-    { params: { skip: 0, take: 0 } }
+    { params: { skip: 0, take: 500 } }
   );
   return res.data.data?.items ?? [];
 }
@@ -159,7 +159,7 @@ export async function fetchDepartmentsLight(accountId: number): Promise<LightIte
   const api = await getApiClient();
   const res = await api.get<V1Response<{ total: number; items: Array<{ deptId: number; name: string; extension?: string }> }>>(
     `/accounts/${accountId}/departments/light`,
-    { params: { skip: 0, take: 0 } }
+    { params: { skip: 0, take: 500 } }
   );
   const items = res.data.data?.items ?? [];
   return items.map((d) => ({ id: d.deptId, name: d.name, extension: d.extension }));

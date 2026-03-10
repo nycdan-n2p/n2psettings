@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useApp } from "@/contexts/AppContext";
+import { qk } from "@/lib/query-keys";
 import { fetchBulkLoad } from "@/lib/api/bulk-load";
 import { SettingsGroup } from "@/components/settings/SettingsGroup";
 
@@ -13,7 +14,7 @@ export default function BulkOperationsPage() {
   const [uploading, setUploading] = useState(false);
 
   const { data: bulkData, isLoading } = useQuery({
-    queryKey: ["bulk-load", accountId],
+    queryKey: qk.bulkOps.all(accountId),
     queryFn: () => fetchBulkLoad(accountId),
     enabled: !!accountId,
   });

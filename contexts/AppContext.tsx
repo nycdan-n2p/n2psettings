@@ -8,7 +8,7 @@ import React, {
   useCallback,
 } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { hasAuth, getTokenClaims } from "@/lib/auth";
+import { hasAuth, getTokenClaims, clearTokens } from "@/lib/auth";
 import { fetchBootstrap, type BootstrapData } from "@/lib/bootstrap";
 
 interface AppContextValue {
@@ -19,9 +19,6 @@ interface AppContextValue {
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
-
-const DEFAULT_ACCOUNT_ID = 1017456;
-const DEFAULT_USER_ID = 80623;
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [bootstrap, setBootstrap] = useState<BootstrapData | null>(null);
@@ -50,13 +47,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setError(null);
 
     try {
-      // Prefer IDs decoded from the JWT. Fall back to account data returned
-      // by the bootstrap call itself once the first response comes back.
       const claims = getTokenClaims();
-      const accountId =
-        claims.accountId ?? DEFAULT_ACCOUNT_ID;
-      const userId =
-        claims.userId ?? DEFAULT_USER_ID;
+      const accountId = claims.accountId;
+      const userId = claims.userId;
+
+      // If the JWT doesn't contain the required IDs the token is unusable —
+      // clear all stored tokens so hasAuth() returns false, then redirect to
+      // login. Without clearTokens() the stale token stays in localStorage and
+      // causes an infinite redirect loop.
+      if (!accountId || !userId) {
+        clearTokens();
+        setError("Your session has expired. Please log in again.");
+        setLoading(false);
+        router.push("/login");
+        return;
+      }
 
       const data = await fetchBootstrap(accountId, userId);
       setBootstrap(data);

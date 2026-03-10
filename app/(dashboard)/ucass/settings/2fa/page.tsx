@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useApp } from "@/contexts/AppContext";
+import { qk } from "@/lib/query-keys";
 import { getApiClient } from "@/lib/api-client";
 import { Loader } from "@/components/ui/Loader";
 
@@ -29,7 +30,7 @@ export default function TwoFactorPage() {
   const [saved, setSaved] = useState(false);
 
   const { data: settings, isLoading } = useQuery({
-    queryKey: ["2fa-settings", accountId],
+    queryKey: qk.twoFa.all(accountId),
     queryFn: () => fetchTfaSettings(accountId),
     enabled: !!accountId,
   });

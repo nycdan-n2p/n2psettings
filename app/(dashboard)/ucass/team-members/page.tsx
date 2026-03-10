@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DataTable } from "@/components/tables/DataTable";
 import { useApp } from "@/contexts/AppContext";
+import { qk } from "@/lib/query-keys";
 import { Loader } from "@/components/ui/Loader";
 import {
   fetchTeamMembers,
@@ -42,13 +43,13 @@ export default function TeamMembersPage() {
   const [form, setForm] = useState<CreateUserPayload>({ ...EMPTY_FORM });
 
   const { data: users = [], isLoading } = useQuery({
-    queryKey: ["team-members", accountId],
+    queryKey: qk.teamMembers.list(accountId),
     queryFn: () => fetchTeamMembers(accountId),
     enabled: !!accountId,
   });
 
   const { data: departments = [] } = useQuery({
-    queryKey: ["departments", accountId],
+    queryKey: qk.departments.list(accountId),
     queryFn: () => fetchDepartments(accountId),
     enabled: !!accountId,
   });
@@ -56,7 +57,7 @@ export default function TeamMembersPage() {
   const addMutation = useMutation({
     mutationFn: (payload: CreateUserPayload) => createUser(accountId, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["team-members", accountId] });
+      queryClient.invalidateQueries({ queryKey: qk.teamMembers.all(accountId) });
       closeModal();
     },
   });
@@ -65,7 +66,7 @@ export default function TeamMembersPage() {
     mutationFn: ({ userId, payload }: { userId: number; payload: Partial<CreateUserPayload> }) =>
       updateUser(accountId, userId, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["team-members", accountId] });
+      queryClient.invalidateQueries({ queryKey: qk.teamMembers.all(accountId) });
       closeModal();
     },
   });
@@ -73,7 +74,7 @@ export default function TeamMembersPage() {
   const deleteMutation = useMutation({
     mutationFn: (userId: number) => deleteUser(accountId, userId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["team-members", accountId] });
+      queryClient.invalidateQueries({ queryKey: qk.teamMembers.all(accountId) });
       setDeleteTarget(null);
     },
   });

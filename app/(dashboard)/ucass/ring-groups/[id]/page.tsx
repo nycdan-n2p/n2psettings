@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApp } from "@/contexts/AppContext";
+import { qk, lightKeys } from "@/lib/query-keys";
 import { Loader } from "@/components/ui/Loader";
 import { TextInput } from "@/components/settings/TextInput";
 import {
@@ -49,25 +50,25 @@ export default function RingGroupEditPage() {
 
   // ─── Fetch ring group detail ─────────────────────────────────────────────
   const { data: rg, isLoading } = useQuery({
-    queryKey: ["ring-group-detail", accountId, id],
+    queryKey: qk.ringGroups.detail(accountId, id),
     queryFn: () => fetchRingGroupDetail(accountId, id),
     enabled: !!accountId && !!id,
   });
 
   const { data: features = [] } = useQuery({
-    queryKey: ["ring-group-features", accountId, id],
+    queryKey: qk.ringGroups.features(accountId, id),
     queryFn: () => fetchRingGroupFeatures(accountId, id),
     enabled: !!accountId && !!id,
   });
 
   const { data: usersLight = [] } = useQuery({
-    queryKey: ["users-light", accountId],
+    queryKey: lightKeys.users(accountId),
     queryFn: () => fetchUsersLight(accountId),
     enabled: !!accountId,
   });
 
   const { data: deptsLight = [] } = useQuery({
-    queryKey: ["depts-light", accountId],
+    queryKey: lightKeys.departments(accountId),
     queryFn: () => fetchDepartmentsLight(accountId),
     enabled: !!accountId,
   });
@@ -98,8 +99,8 @@ export default function RingGroupEditPage() {
     mutationFn: (payload: Partial<RingGroupDetail>) =>
       updateRingGroupDetail(accountId, id, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ring-group-detail", accountId, id] });
-      queryClient.invalidateQueries({ queryKey: ["ring-groups", accountId] });
+      queryClient.invalidateQueries({ queryKey: qk.ringGroups.detail(accountId, id) });
+      queryClient.invalidateQueries({ queryKey: qk.ringGroups.all(accountId) });
       setSaveError(null);
     },
     onError: (e: Error) => setSaveError(e.message ?? "Failed to save"),
@@ -109,7 +110,7 @@ export default function RingGroupEditPage() {
     mutationFn: ({ active }: { active: boolean }) =>
       updateRingGroupFeature(accountId, id, "record", active),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ring-group-features", accountId, id] });
+      queryClient.invalidateQueries({ queryKey: qk.ringGroups.features(accountId, id) });
     },
   });
 

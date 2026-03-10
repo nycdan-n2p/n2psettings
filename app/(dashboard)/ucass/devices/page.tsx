@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DataTable } from "@/components/tables/DataTable";
 import { useApp } from "@/contexts/AppContext";
+import { qk } from "@/lib/query-keys";
 import { Loader } from "@/components/ui/Loader";
 import {
   fetchDevices,
@@ -32,25 +33,25 @@ export default function DevicesPage() {
   const [formTypeId, setFormTypeId] = useState("");
 
   const { data: devices = [], isLoading } = useQuery({
-    queryKey: ["devices", accountId],
+    queryKey: qk.devices.list(accountId),
     queryFn: () => fetchDevices(accountId),
     enabled: !!accountId,
   });
 
   const addMutation = useMutation({
     mutationFn: (payload: CreateDevicePayload) => createDevice(accountId, payload),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["devices", accountId] }); closeModal(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: qk.devices.all(accountId) }); closeModal(); },
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ macId, payload }: { macId: string; payload: Partial<CreateDevicePayload> }) =>
       updateDevice(accountId, macId, payload),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["devices", accountId] }); closeModal(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: qk.devices.all(accountId) }); closeModal(); },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (macId: string) => deleteDevice(accountId, macId),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["devices", accountId] }); setDeleteTarget(null); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: qk.devices.all(accountId) }); setDeleteTarget(null); },
   });
 
   const openAddModal = () => { setEditing(null); setFormMac(""); setFormDisplay(""); setFormTypeId(""); setModalOpen(true); };

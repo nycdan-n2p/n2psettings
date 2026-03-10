@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DataTable } from "@/components/tables/DataTable";
 import { useApp } from "@/contexts/AppContext";
+import { qk } from "@/lib/query-keys";
 import { Loader } from "@/components/ui/Loader";
 import {
   fetchSpecialExtensions,
@@ -32,25 +33,25 @@ export default function SpecialExtensionsPage() {
   const [form, setForm] = useState<CreateSpecialExtensionPayload>({ ...EMPTY_FORM });
 
   const { data: extensions = [], isLoading } = useQuery({
-    queryKey: ["special-extensions", accountId],
+    queryKey: qk.specialExtensions.list(accountId),
     queryFn: () => fetchSpecialExtensions(accountId),
     enabled: !!accountId,
   });
 
   const addMutation = useMutation({
     mutationFn: (payload: CreateSpecialExtensionPayload) => createSpecialExtension(accountId, payload),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["special-extensions", accountId] }); closeModal(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: qk.specialExtensions.all(accountId) }); closeModal(); },
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: Partial<CreateSpecialExtensionPayload> }) =>
       updateSpecialExtension(accountId, id, payload),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["special-extensions", accountId] }); closeModal(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: qk.specialExtensions.all(accountId) }); closeModal(); },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => deleteSpecialExtension(accountId, id),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["special-extensions", accountId] }); setDeleteTarget(null); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: qk.specialExtensions.all(accountId) }); setDeleteTarget(null); },
   });
 
   const openAddModal = () => { setEditing(null); setForm({ ...EMPTY_FORM }); setModalOpen(true); };

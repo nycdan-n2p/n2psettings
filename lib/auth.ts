@@ -107,18 +107,17 @@ export function getTokenClaims(): TokenClaims {
     return isNaN(n) ? null : n;
   };
 
+  // net2phone JWT uses short claim names: aid=accountId, uid=userId, cid=clientId
   const accountId =
-    pick("accountId", "account_id", "AccountId", "account") ??
+    pick("aid", "accountId", "account_id", "AccountId", "account") ??
     envNum("NEXT_PUBLIC_ACCOUNT_ID");
 
-  // sub is the standard OIDC subject — some issuers put userId there
   const userId =
-    pick("userId", "user_id", "UserId") ??
-    envNum("NEXT_PUBLIC_USER_ID") ??
-    pick("sub");
+    pick("uid", "userId", "user_id", "UserId") ??
+    envNum("NEXT_PUBLIC_USER_ID");
 
   const clientId =
-    pick("clientId", "client_id", "ClientId") ??
+    pick("cid", "clientId", "client_id", "ClientId") ??
     envNum("NEXT_PUBLIC_CLIENT_ID");
 
   const email = pickStr("email", "Email", "preferred_username");

@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useApp } from "@/contexts/AppContext";
+import { qk } from "@/lib/query-keys";
 import {
   fetchSIPTrunks,
   fetchSIPLimits,
@@ -14,25 +15,25 @@ export default function SIPTrunkingPage() {
   const clientId = bootstrap?.account?.clientId ?? 36422;
 
   const { data: trunks = [], isLoading: trunksLoading } = useQuery({
-    queryKey: ["sip-trunks", clientId],
+    queryKey: qk.sipTrunks.all(String(clientId)),
     queryFn: () => fetchSIPTrunks(clientId),
     enabled: !!clientId,
   });
 
   const { data: limits, isLoading: limitsLoading } = useQuery({
-    queryKey: ["sip-limits", clientId],
+    queryKey: qk.sipLimits.all(String(clientId)),
     queryFn: () => fetchSIPLimits(clientId),
     enabled: !!clientId,
   });
 
   const { data: serviceAddresses = [], isLoading: addressesLoading } = useQuery({
-    queryKey: ["sip-service-addresses", clientId],
+    queryKey: qk.sipAddresses.all(String(clientId)),
     queryFn: () => fetchSIPServiceAddresses(clientId),
     enabled: !!clientId,
   });
 
   const { data: phoneNumbers = [], isLoading: numbersLoading } = useQuery({
-    queryKey: ["sip-phone-numbers", clientId],
+    queryKey: qk.sipNumbers.all(String(clientId)),
     queryFn: () => fetchSIPPhoneNumbers(clientId),
     enabled: !!clientId,
   });

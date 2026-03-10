@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useApp } from "@/contexts/AppContext";
 import { fetchAccountAnalytics, fetchUserAnalyticsSummary, lastNDays } from "@/lib/api/analytics";
+import { qk } from "@/lib/query-keys";
 import { Phone, Users, Building2, Hash, PhoneCall, ListOrdered, Voicemail } from "lucide-react";
 import Link from "next/link";
 
@@ -49,14 +50,14 @@ export default function DashboardPage() {
   const range = lastNDays(7);
 
   const { data: accountStats } = useQuery({
-    queryKey: ["analytics-account", account?.accountId, "7d"],
+    queryKey: qk.analytics.account(account?.accountId ?? 0, "7d"),
     queryFn: () => fetchAccountAnalytics(account!.accountId, range),
     enabled: !!account?.accountId,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: userSummary } = useQuery({
-    queryKey: ["analytics-users-summary", account?.accountId, "7d"],
+    queryKey: qk.analytics.users(account?.accountId ?? 0, "7d"),
     queryFn: () => fetchUserAnalyticsSummary(account!.accountId, range),
     enabled: !!account?.accountId,
     staleTime: 5 * 60 * 1000,

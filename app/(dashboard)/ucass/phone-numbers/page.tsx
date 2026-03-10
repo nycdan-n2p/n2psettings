@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { DataTable } from "@/components/tables/DataTable";
 import { useApp } from "@/contexts/AppContext";
 import { fetchPhoneNumbers } from "@/lib/api/phone-numbers";
+import { qk } from "@/lib/query-keys";
 import type { ColumnDef } from "@tanstack/react-table";
 
 export default function PhoneNumbersPage() {
@@ -11,7 +12,7 @@ export default function PhoneNumbersPage() {
   const accountId = bootstrap?.account?.accountId ?? 0;
 
   const { data: numbers = [], isLoading } = useQuery({
-    queryKey: ["phone-numbers", accountId],
+    queryKey: qk.phoneNumbers.all(accountId),
     queryFn: () => fetchPhoneNumbers(accountId),
     enabled: !!accountId,
   });

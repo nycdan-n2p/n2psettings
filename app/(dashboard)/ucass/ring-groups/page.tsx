@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DataTable } from "@/components/tables/DataTable";
 import { useApp } from "@/contexts/AppContext";
+import { qk } from "@/lib/query-keys";
 import { Loader } from "@/components/ui/Loader";
 import {
   fetchRingGroups,
@@ -32,7 +33,7 @@ export default function RingGroupsPage() {
   const [form, setForm] = useState<CreateRingGroupPayload>({ ...EMPTY_FORM });
 
   const { data: groups = [], isLoading } = useQuery({
-    queryKey: ["ring-groups", accountId],
+    queryKey: qk.ringGroups.list(accountId),
     queryFn: () => fetchRingGroups(accountId),
     enabled: !!accountId,
   });
@@ -40,7 +41,7 @@ export default function RingGroupsPage() {
   const addMutation = useMutation({
     mutationFn: (payload: CreateRingGroupPayload) => createRingGroup(accountId, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ring-groups", accountId] });
+      queryClient.invalidateQueries({ queryKey: qk.ringGroups.all(accountId) });
       closeModal();
     },
   });
@@ -48,7 +49,7 @@ export default function RingGroupsPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string | number) => deleteRingGroup(accountId, id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ring-groups", accountId] });
+      queryClient.invalidateQueries({ queryKey: qk.ringGroups.all(accountId) });
       setDeleteTarget(null);
     },
   });

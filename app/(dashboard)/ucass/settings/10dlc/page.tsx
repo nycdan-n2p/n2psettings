@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { DataTable } from "@/components/tables/DataTable";
 import { fetchBrands, fetchCampaigns } from "@/lib/api/10dlc";
+import { qk } from "@/lib/query-keys";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Modal } from "@/components/settings/Modal";
 import { TextInput } from "@/components/settings/TextInput";
@@ -27,12 +28,12 @@ export default function TenDlcPage() {
   const [formName, setFormName] = useState("");
 
   const { data: brands = [], isLoading: brandsLoading } = useQuery({
-    queryKey: ["10dlc-brands"],
+    queryKey: qk.dlcBrands.all(),
     queryFn: () => fetchBrands(),
   });
 
   const { data: campaigns = [], isLoading: campaignsLoading } = useQuery({
-    queryKey: ["10dlc-campaigns"],
+    queryKey: qk.dlcCampaigns.all(),
     queryFn: () => fetchCampaigns(),
   });
 

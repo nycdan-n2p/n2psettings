@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DataTable } from "@/components/tables/DataTable";
 import { useApp } from "@/contexts/AppContext";
+import { qk } from "@/lib/query-keys";
 import {
   fetchVirtualFaxes,
   addVirtualFax,
@@ -31,7 +32,7 @@ export default function VirtualFaxPage() {
   const [formEncrypt, setFormEncrypt] = useState(false);
 
   const { data: faxes = [], isLoading } = useQuery({
-    queryKey: ["virtual-fax", accountId],
+    queryKey: qk.virtualFax.all(accountId),
     queryFn: () => fetchVirtualFaxes(accountId),
     enabled: !!accountId,
   });
@@ -39,7 +40,7 @@ export default function VirtualFaxPage() {
   const addMutation = useMutation({
     mutationFn: (payload: VirtualFax) => addVirtualFax(accountId, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["virtual-fax", accountId] });
+      queryClient.invalidateQueries({ queryKey: qk.virtualFax.all(accountId) });
       closeModal();
     },
   });
@@ -53,7 +54,7 @@ export default function VirtualFaxPage() {
       payload: Partial<VirtualFax>;
     }) => updateVirtualFax(accountId, phoneNumber, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["virtual-fax", accountId] });
+      queryClient.invalidateQueries({ queryKey: qk.virtualFax.all(accountId) });
       closeModal();
     },
   });
@@ -62,7 +63,7 @@ export default function VirtualFaxPage() {
     mutationFn: (phoneNumber: string) =>
       deleteVirtualFax(accountId, phoneNumber),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["virtual-fax", accountId] });
+      queryClient.invalidateQueries({ queryKey: qk.virtualFax.all(accountId) });
       setDeleteTarget(null);
     },
   });

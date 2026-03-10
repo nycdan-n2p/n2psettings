@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { DataTable } from "@/components/tables/DataTable";
 import { useApp } from "@/contexts/AppContext";
+import { qk } from "@/lib/query-keys";
 import { getApiClient, type V1Response } from "@/lib/api-client";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Modal } from "@/components/settings/Modal";
@@ -24,7 +25,7 @@ export default function NumberPortingPage() {
   const [formCarrier, setFormCarrier] = useState("");
 
   const { data: onboardings = [], isLoading } = useQuery({
-    queryKey: ["porting", accountId],
+    queryKey: qk.porting.all(accountId),
     queryFn: async () => {
       const api = await getApiClient();
       const res = await api.get<V1Response<PortingRequest[]>>(

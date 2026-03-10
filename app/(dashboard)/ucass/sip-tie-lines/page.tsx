@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DataTable } from "@/components/tables/DataTable";
 import { useApp } from "@/contexts/AppContext";
+import { qk } from "@/lib/query-keys";
 import {
   fetchTieLines,
   updateTieLine,
@@ -31,7 +32,7 @@ export default function SIPTieLinesPage() {
   const [formEnabled, setFormEnabled] = useState(true);
 
   const { data: tieLines = [], isLoading } = useQuery({
-    queryKey: ["tie-lines", accountId],
+    queryKey: qk.tieLines.all(accountId),
     queryFn: () => fetchTieLines(accountId),
     enabled: !!accountId,
   });
@@ -45,7 +46,7 @@ export default function SIPTieLinesPage() {
       enabled: boolean;
     }) => updateTieLine(accountId, tieLineId, { enabled }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tie-lines", accountId] });
+      queryClient.invalidateQueries({ queryKey: qk.tieLines.all(accountId) });
     },
   });
 
@@ -53,7 +54,7 @@ export default function SIPTieLinesPage() {
     mutationFn: (payload: Partial<TieLine>) =>
       addTieLine(accountId, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tie-lines", accountId] });
+      queryClient.invalidateQueries({ queryKey: qk.tieLines.all(accountId) });
       closeModal();
     },
   });
@@ -67,7 +68,7 @@ export default function SIPTieLinesPage() {
       payload: Partial<TieLine>;
     }) => updateTieLine(accountId, tieLineId, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tie-lines", accountId] });
+      queryClient.invalidateQueries({ queryKey: qk.tieLines.all(accountId) });
       closeModal();
     },
   });
@@ -75,7 +76,7 @@ export default function SIPTieLinesPage() {
   const deleteMutation = useMutation({
     mutationFn: (tieLineId: number) => deleteTieLine(accountId, tieLineId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tie-lines", accountId] });
+      queryClient.invalidateQueries({ queryKey: qk.tieLines.all(accountId) });
       setDeleteTarget(null);
     },
   });

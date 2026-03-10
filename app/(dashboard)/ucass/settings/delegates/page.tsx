@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DataTable } from "@/components/tables/DataTable";
 import { useApp } from "@/contexts/AppContext";
+import { qk } from "@/lib/query-keys";
 import {
   fetchDelegates,
   addDelegate,
@@ -29,7 +30,7 @@ export default function DelegatesPage() {
   const [formType, setFormType] = useState("client");
 
   const { data: delegates = [], isLoading } = useQuery({
-    queryKey: ["delegates", accountId],
+    queryKey: qk.delegates.all(accountId),
     queryFn: () => fetchDelegates(accountId),
     enabled: !!accountId,
   });
@@ -38,7 +39,7 @@ export default function DelegatesPage() {
     mutationFn: (payload: { name: string; email: string; type?: string }) =>
       addDelegate(accountId, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["delegates", accountId] });
+      queryClient.invalidateQueries({ queryKey: qk.delegates.all(accountId) });
       closeModal();
     },
   });
@@ -52,7 +53,7 @@ export default function DelegatesPage() {
       payload: Partial<Delegate>;
     }) => updateDelegate(accountId, id, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["delegates", accountId] });
+      queryClient.invalidateQueries({ queryKey: qk.delegates.all(accountId) });
       closeModal();
     },
   });
@@ -60,7 +61,7 @@ export default function DelegatesPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: number) => deleteDelegate(accountId, id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["delegates", accountId] });
+      queryClient.invalidateQueries({ queryKey: qk.delegates.all(accountId) });
       setDeleteTarget(null);
     },
   });

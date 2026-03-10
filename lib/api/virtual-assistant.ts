@@ -120,7 +120,7 @@ export async function fetchMenusLight(accountId: number): Promise<MenuLightItem[
   const api = await getApiClient();
   const res = await api.get<V1Response<{ total: number; items: MenuLightItem[] }>>(
     `/accounts/${accountId}/multiautoattendants/light`,
-    { params: { skip: 0, take: 0 } }
+    { params: { skip: 0, take: 500 } }
   );
   return res.data.data?.items ?? [];
 }
@@ -129,7 +129,7 @@ export async function fetchUsersLightForMenu(accountId: number): Promise<UserLig
   const api = await getApiClient();
   const res = await api.get<V1Response<{ total: number; items: UserLightItem[] }>>(
     `/accounts/${accountId}/users/light`,
-    { params: { skip: 0, take: 0 } }
+    { params: { skip: 0, take: 500 } }
   );
   return res.data.data?.items ?? [];
 }
@@ -138,7 +138,7 @@ export async function fetchDeptsLightForMenu(accountId: number): Promise<DeptLig
   const api = await getApiClient();
   const res = await api.get<V1Response<{ total: number; items: DeptLightItem[] }>>(
     `/accounts/${accountId}/departments/light`,
-    { params: { skip: 0, take: 0 } }
+    { params: { skip: 0, take: 500 } }
   );
   return res.data.data?.items ?? [];
 }
@@ -147,7 +147,7 @@ export async function fetchSpecialExtensionsLight(accountId: number): Promise<Sp
   const api = await getApiClient();
   const res = await api.get<V1Response<{ total: number; items: SpecialExtLightItem[] }>>(
     `/accounts/${accountId}/specialextensions/light`,
-    { params: { skip: 0, take: 0 } }
+    { params: { skip: 0, take: 500 } }
   );
   return res.data.data?.items ?? [];
 }
@@ -251,6 +251,8 @@ export async function uploadMenuGreeting(
   const api = await getApiClient();
   const formData = new FormData();
   formData.append("file", file);
+  // NOTE: The greeting file endpoint uses "multiAttendants" (camelCase), not
+  // "multiautoattendants" — this is an intentional inconsistency in the API itself.
   await api.post(
     `/accounts/${accountId}/multiAttendants/${menuId}/menu/menuGreetingFiles`,
     formData,

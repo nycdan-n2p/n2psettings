@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DataTable } from "@/components/tables/DataTable";
 import { useApp } from "@/contexts/AppContext";
+import { qk } from "@/lib/query-keys";
 import { Loader } from "@/components/ui/Loader";
 import {
   fetchSchedules,
@@ -45,25 +46,25 @@ export default function SchedulesPage() {
   const [form, setForm] = useState<CreateSchedulePayload>({ ...EMPTY_FORM });
 
   const { data: schedules = [], isLoading } = useQuery({
-    queryKey: ["schedules", accountId],
+    queryKey: qk.schedules.list(accountId),
     queryFn: () => fetchSchedules(accountId),
     enabled: !!accountId,
   });
 
   const addMutation = useMutation({
     mutationFn: (payload: CreateSchedulePayload) => createSchedule(accountId, payload),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["schedules", accountId] }); closeModal(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: qk.schedules.all(accountId) }); closeModal(); },
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: Partial<CreateSchedulePayload> }) =>
       updateSchedule(accountId, id, payload),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["schedules", accountId] }); closeModal(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: qk.schedules.all(accountId) }); closeModal(); },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => deleteSchedule(accountId, id),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["schedules", accountId] }); setDeleteTarget(null); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: qk.schedules.all(accountId) }); setDeleteTarget(null); },
   });
 
   const openAddModal = () => { setEditing(null); setForm({ ...EMPTY_FORM }); setModalOpen(true); };

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DataTable } from "@/components/tables/DataTable";
 import { useApp } from "@/contexts/AppContext";
+import { qk } from "@/lib/query-keys";
 import {
   fetchKarisLaw,
   addKarisLawNumber,
@@ -28,7 +29,7 @@ export default function KarisLawPage() {
   const [formOwner, setFormOwner] = useState("");
 
   const { data: entries = [], isLoading } = useQuery({
-    queryKey: ["karis-law", accountId],
+    queryKey: qk.karis.all(accountId),
     queryFn: () => fetchKarisLaw(accountId),
     enabled: !!accountId,
   });
@@ -37,7 +38,7 @@ export default function KarisLawPage() {
     mutationFn: (payload: { number: string; ownerName?: string }) =>
       addKarisLawNumber(accountId, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["karis-law", accountId] });
+      queryClient.invalidateQueries({ queryKey: qk.karis.all(accountId) });
       closeModal();
     },
   });
@@ -51,7 +52,7 @@ export default function KarisLawPage() {
       payload: Partial<KariLawEntry>;
     }) => updateKarisLawNumber(accountId, id, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["karis-law", accountId] });
+      queryClient.invalidateQueries({ queryKey: qk.karis.all(accountId) });
       closeModal();
     },
   });
@@ -59,7 +60,7 @@ export default function KarisLawPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: number) => deleteKarisLawNumber(accountId, id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["karis-law", accountId] });
+      queryClient.invalidateQueries({ queryKey: qk.karis.all(accountId) });
       setDeleteTarget(null);
     },
   });

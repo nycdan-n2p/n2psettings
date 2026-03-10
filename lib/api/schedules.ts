@@ -38,7 +38,7 @@ export async function fetchSchedules(accountId: number): Promise<Schedule[]> {
   const api = await getApiClient();
   const res = await api.get<V1Response<Schedule[] | SchedulesEnvelope>>(
     `/accounts/${accountId}/schedules`,
-    { params: { skip: 0, take: 0, order: 1 } }
+    { params: { skip: 0, take: 500, order: 1 } }
   );
   const data = res.data.data;
   if (Array.isArray(data)) return data;

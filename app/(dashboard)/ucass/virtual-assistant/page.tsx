@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DataTable } from "@/components/tables/DataTable";
 import { useApp } from "@/contexts/AppContext";
+import { qk } from "@/lib/query-keys";
 import { Loader } from "@/components/ui/Loader";
 import {
   fetchVirtualAssistants,
@@ -39,7 +40,7 @@ export default function VirtualAssistantPage() {
   const [form, setForm] = useState<CreateWelcomeMenuPayload>({ ...EMPTY_FORM });
 
   const { data: menus = [], isLoading } = useQuery({
-    queryKey: ["virtual-assistant", accountId],
+    queryKey: qk.welcomeMenus.list(accountId),
     queryFn: () => fetchVirtualAssistants(accountId),
     enabled: !!accountId,
   });
@@ -47,7 +48,7 @@ export default function VirtualAssistantPage() {
   const addMutation = useMutation({
     mutationFn: (payload: CreateWelcomeMenuPayload) => createVirtualAssistant(accountId, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["virtual-assistant", accountId] });
+      queryClient.invalidateQueries({ queryKey: qk.welcomeMenus.all(accountId) });
       closeModal();
     },
   });
@@ -55,7 +56,7 @@ export default function VirtualAssistantPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: number) => deleteVirtualAssistant(accountId, id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["virtual-assistant", accountId] });
+      queryClient.invalidateQueries({ queryKey: qk.welcomeMenus.all(accountId) });
       setDeleteTarget(null);
     },
   });

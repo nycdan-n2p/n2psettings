@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { Play } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
+import { qk } from "@/lib/query-keys";
 import { Loader } from "@/components/ui/Loader";
 import { VoicemailDetailModal } from "@/components/voicemail/VoicemailDetailModal";
 import { fetchVoicemails, type VoicemailItem } from "@/lib/api/voicemails";
@@ -16,7 +17,7 @@ export default function VoicemailPage() {
   const [selectedVoicemail, setSelectedVoicemail] = useState<VoicemailItem | null>(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["voicemails", accountId, userId],
+    queryKey: qk.voicemails.all(accountId, userId),
     queryFn: () => fetchVoicemails(accountId, userId, "All", 50, "desc"),
     enabled: !!accountId && !!userId,
   });
