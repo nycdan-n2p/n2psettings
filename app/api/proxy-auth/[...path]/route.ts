@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Configurable via env var — falls back to the production URL.
-// Set N2P_API_V2_URL in .env.local to target staging or other environments.
-// Live net2phone settings uses app.net2phone.com for v2 call-queues (HAR confirmed).
-// api.n2p.io/v2 returns 404 for single-queue detail.
-const N2P_V2_BASE =
-  (process.env.N2P_API_V2_URL ?? "https://app.net2phone.com/api/v2").replace(/\/$/, "");
+// Proxies requests to auth.net2phone.com/api
+// Forwards the Bearer token so we don't need cookie-based auth.
+const N2P_AUTH_BASE =
+  (process.env.N2P_API_AUTH_URL ?? "https://auth.net2phone.com").replace(/\/$/, "");
 
 export async function GET(
   request: NextRequest,
@@ -21,14 +19,14 @@ export async function POST(
   return proxyRequest(request, await params);
 }
 
-export async function PATCH(
+export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
   return proxyRequest(request, await params);
 }
 
-export async function PUT(
+export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
@@ -48,7 +46,7 @@ async function proxyRequest(
 ) {
   const pathStr = path.join("/");
   const url = new URL(request.url);
-  const targetUrl = `${N2P_V2_BASE}/${pathStr}${url.search}`;
+  const targetUrl = `${N2P_AUTH_BASE}/api/${pathStr}${url.search}`;
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
@@ -68,7 +66,7 @@ async function proxyRequest(
     try {
       body = await request.text();
     } catch {
-      // ignore read errors
+      // ignore
     }
   }
 
@@ -87,9 +85,9 @@ async function proxyRequest(
       },
     });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Proxy error";
+    const msg = e instanceof Error ? e.message : "Auth proxy error";
     const cause = e instanceof Error && e.cause instanceof Error ? e.cause.message : undefined;
-    console.error("[proxy/v2] fetch failed:", targetUrl, msg, cause ?? "");
+    console.error("[proxy/auth] fetch failed:", targetUrl, msg, cause ?? "");
     return NextResponse.json(
       {
         error: msg,

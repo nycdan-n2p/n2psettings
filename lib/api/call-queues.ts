@@ -1,5 +1,6 @@
 import { getApiClient, getV2ApiClient, type V1Response, type V2PaginatedResponse } from "../api-client";
 
+// ── List item (from v2 paginated list) ───────────────────────────────────────
 export interface CallQueue {
   id: string;
   name: string;
@@ -17,6 +18,78 @@ export interface CreateCallQueuePayload {
   max_wait_time?: number;
 }
 
+// ── Detail types (from GET /v2/call-queues/{id}) ─────────────────────────────
+export interface QueueAgent {
+  id?: number | string;
+  user_id?: number;
+  display_name?: string;
+  extension?: string;
+  status?: string;
+}
+
+export interface QueueAudioSetting {
+  type: "no_prompt" | "default" | "custom";
+  id?: string | null;
+}
+
+export interface QueueActionDestination {
+  type: "welcome_menu" | "call_queue" | "voicemail" | "external" | "user";
+  welcome_menu?: { id: string | number };
+  call_queue?: { id: string | number };
+  user?: { id: string | number };
+  external?: { number: string };
+}
+
+export interface QueueAction {
+  type: "forward" | "hangup" | "voicemail";
+  destination?: QueueActionDestination;
+}
+
+export interface QueueKeyAction {
+  key: string;  // "0"-"9", "*", "#"
+  destination?: QueueActionDestination;
+}
+
+export interface QueueAnnouncementSettings {
+  primary_audio?: QueueAudioSetting;
+  primary_audio_delay_seconds?: number;
+  secondary_audio?: QueueAudioSetting;
+}
+
+export interface CallQueueDetail {
+  id: string;
+  display_name: string;
+  extension?: string;
+  agents_count?: number;
+  agents?: QueueAgent[];
+  supervisors?: QueueAgent[];
+  max_capacity?: number;
+  max_wait_time_seconds?: number;
+  ring_strategy?: { type: string };
+  key_actions?: QueueKeyAction[];
+  no_agents_action?: QueueAction;
+  max_limit_reached_action?: QueueAction;
+  on_hold_audio?: QueueAudioSetting;
+  welcome_greeting_audio?: QueueAudioSetting;
+  announcement_settings?: QueueAnnouncementSettings;
+  /** true when loaded from v1 fallback (v2 detail returned 404) */
+  _isV1Fallback?: boolean;
+}
+
+export interface UpdateCallQueuePayload {
+  display_name?: string;
+  max_capacity?: number;
+  max_wait_time_seconds?: number;
+  ring_strategy?: { type: string };
+  key_actions?: QueueKeyAction[];
+  no_agents_action?: QueueAction;
+  max_limit_reached_action?: QueueAction;
+  on_hold_audio?: QueueAudioSetting;
+  welcome_greeting_audio?: QueueAudioSetting;
+  announcement_settings?: QueueAnnouncementSettings;
+}
+
+// ── List helpers ─────────────────────────────────────────────────────────────
 type RawCallQueueItem = Record<string, unknown>;
 
 function pickName(item: RawCallQueueItem): string {
@@ -32,6 +105,7 @@ function pickExtension(item: RawCallQueueItem): string | undefined {
   return typeof ext === "string" ? ext : typeof ext === "number" ? String(ext) : undefined;
 }
 
+// ── API functions ─────────────────────────────────────────────────────────────
 export async function fetchCallQueues(): Promise<CallQueue[]> {
   const api = await getV2ApiClient();
   const res = await api.get<V2PaginatedResponse<RawCallQueueItem>>("/call-queues", {
@@ -49,6 +123,85 @@ export async function fetchCallQueues(): Promise<CallQueue[]> {
       created_at_time: typeof item.created_at_time === "string" ? item.created_at_time : undefined,
     };
   });
+}
+
+function isAxios404(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "response" in err &&
+    (err as { response?: { status?: number } }).response?.status === 404
+  );
+}
+
+async function fetchCallQueueDetailV1Fallback(
+  accountId: number,
+  queueId: string
+): Promise<CallQueueDetail> {
+  const api = await getApiClient();
+  type V1Queue = Record<string, unknown>;
+  const res = await api.get<V1Response<V1Queue>>(`/accounts/${accountId}/callqueues/${queueId}`);
+  const d = res.data.data ?? {};
+  const ext = d.extension ?? d.Extension ?? d.extension_number;
+  return {
+    id: String(d.id ?? queueId),
+    display_name:
+      (d.display_name as string) ?? (d.name as string) ?? (d.queue_name as string) ?? "",
+    extension: typeof ext === "string" ? ext : typeof ext === "number" ? String(ext) : undefined,
+    agents_count: typeof d.agents_count === "number" ? d.agents_count : undefined,
+    ring_strategy: d.strategy ? { type: d.strategy as string } : undefined,
+    max_wait_time_seconds:
+      typeof d.max_wait_time === "number" ? d.max_wait_time : undefined,
+    _isV1Fallback: true,
+  };
+}
+
+/** Build minimal detail from list item when detail API returns 404 */
+function detailFromListQueue(q: CallQueue): CallQueueDetail {
+  return {
+    id: q.id,
+    display_name: q.name,
+    extension: q.extension,
+    agents_count: q.agents_count,
+    _isV1Fallback: true,
+  };
+}
+
+export async function fetchCallQueueDetail(
+  queueId: string,
+  accountId?: number
+): Promise<CallQueueDetail> {
+  const api = await getV2ApiClient();
+  try {
+    const res = await api.get<CallQueueDetail>(`/call-queues/${queueId}`);
+    return res.data;
+  } catch (err: unknown) {
+    if (isAxios404(err)) {
+      if (accountId) {
+        try {
+          return await fetchCallQueueDetailV1Fallback(accountId, queueId);
+        } catch {
+          // v1 also 404 — fall through to list fallback
+        }
+      }
+      // Fall back to list: find queue by id or extension
+      const queues = await fetchCallQueues();
+      const found =
+        queues.find((q) => q.id === queueId || q.extension === queueId) ??
+        queues.find((q) => String(q.id) === queueId || String(q.extension) === queueId);
+      if (found) return detailFromListQueue(found);
+    }
+    throw err;
+  }
+}
+
+export async function updateCallQueueV2(
+  queueId: string,
+  payload: UpdateCallQueuePayload
+): Promise<CallQueueDetail> {
+  const api = await getV2ApiClient();
+  const res = await api.patch<CallQueueDetail>(`/call-queues/${queueId}`, payload);
+  return res.data;
 }
 
 export async function createCallQueue(

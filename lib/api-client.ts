@@ -125,10 +125,14 @@ export async function getV2ApiClient(): Promise<AxiosInstance> {
 
 export async function getAuthApiClient(): Promise<AxiosInstance> {
   await loadEnv();
-  const env = getEnv();
-  const base = env.N2P_API_AUTH_URL.replace(/\/$/, "");
   if (!authClient) {
-    authClient = createApiClient(`${base}/api`);
+    // Browser: proxy through Next.js to avoid CORS on auth.net2phone.com
+    // Server: call auth.net2phone.com directly
+    const base =
+      typeof window !== "undefined"
+        ? "/api/proxy-auth"
+        : `${getEnv().N2P_API_AUTH_URL.replace(/\/$/, "")}/api`;
+    authClient = createApiClient(base);
   }
   return authClient;
 }

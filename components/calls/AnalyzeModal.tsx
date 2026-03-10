@@ -1,7 +1,7 @@
 "use client";
 
 import { X, TrendingUp, TrendingDown, Phone, Clock, Mic, AlertTriangle } from "lucide-react";
-import type { CallAnalysis, CallKPIs } from "@/app/api/analyze-calls/route";
+import type { CallAnalysis } from "@/app/api/analyze-calls/route";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function fmtSec(s: number): string {

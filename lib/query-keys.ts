@@ -54,8 +54,9 @@ export const qk = {
 
   // Call Queues
   callQueues: {
-    all:  (accountId: number)                           => ["call-queues", accountId]            as const,
-    list: (accountId: number)                           => ["call-queues", accountId, "list"]    as const,
+    all:    (accountId: number)                           => ["call-queues", accountId]                        as const,
+    list:   (accountId: number)                           => ["call-queues", accountId, "list"]                as const,
+    detail: (accountId: number, id: string | number)     => ["call-queues", accountId, "detail", id]          as const,
   },
 
   // Schedules
