@@ -4,7 +4,6 @@ import { useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApp } from "@/contexts/AppContext";
 import { qk } from "@/lib/query-keys";
-import { getApiClient } from "@/lib/api-client";
 import { Loader } from "@/components/ui/Loader";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import {
@@ -13,34 +12,12 @@ import {
 } from "lucide-react";
 
 // ── Types & API ───────────────────────────────────────────────────────────────
-interface MusicOption {
-  id: number;
-  name: string;
-  fileName?: string;
-  isDefault?: boolean;
-}
-
-async function fetchMusicOptions(accountId: number): Promise<MusicOption[]> {
-  const api = await getApiClient();
-  const res = await api.get<{ data?: MusicOption[] }>(`/accounts/${accountId}/musicoptions`);
-  return Array.isArray(res.data.data) ? res.data.data : [];
-}
-
-async function uploadMusicOption(accountId: number, file: File, name: string): Promise<MusicOption> {
-  const api = await getApiClient();
-  const form = new FormData();
-  form.append("file", file);
-  form.append("name", name);
-  const res = await api.post<{ data: MusicOption }>(`/accounts/${accountId}/musicoptions`, form, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-  return res.data.data;
-}
-
-async function deleteMusicOption(accountId: number, id: number): Promise<void> {
-  const api = await getApiClient();
-  await api.delete(`/accounts/${accountId}/musicoptions/${id}`);
-}
+import {
+  fetchMusicOptions,
+  uploadMusicOption,
+  deleteMusicOption,
+  type MusicOption,
+} from "@/lib/api/music-options";
 
 // ── Suno generation result shape ──────────────────────────────────────────────
 interface SunoResult {
@@ -465,9 +442,14 @@ export default function MusicOptionsPage() {
           <Loader variant="inline" label="Loading music options..." />
         </div>
       ) : options.length === 0 ? (
-        <p className="text-sm text-gray-400 py-4">
-          No audio files yet. Generate one with AI or upload a file above.
-        </p>
+        <div className="py-4 space-y-1">
+          <p className="text-sm text-gray-400">
+            No audio files yet. Generate one with AI or upload a file above.
+          </p>
+          <p className="text-xs text-gray-400">
+            If uploads fail with 404, the Music Options API may not be available for this account.
+          </p>
+        </div>
       ) : (
         <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
           {options.map((opt) => (

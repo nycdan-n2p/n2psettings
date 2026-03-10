@@ -67,11 +67,41 @@ export default function DepartmentsPage() {
   const isMutating = addMutation.isPending || updateMutation.isPending;
 
   const columns: ColumnDef<Department>[] = [
-    { accessorKey: "name", header: "Name" },
-    { accessorKey: "extension", header: "Extension", cell: ({ row }) => row.original.extension ?? "—" },
-    { id: "members", header: "Members", cell: ({ row }) => (row.original.memberCount as number | undefined) ?? "—" },
     {
-      id: "actions", header: "",
+      id: "department",
+      header: "Department",
+      accessorFn: (row) => row.name,
+      cell: ({ row }) => {
+        const initials = (row.original.name ?? "")
+          .split(" ")
+          .map((w) => w[0])
+          .join("")
+          .toUpperCase()
+          .slice(0, 2);
+        return (
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-[#1a73e8] text-white flex items-center justify-center text-xs font-semibold shrink-0">
+              {initials || "—"}
+            </div>
+            <span className="font-medium text-gray-900">{row.original.name}</span>
+          </div>
+        );
+      },
+    },
+    { accessorKey: "extension", header: "Ext", cell: ({ row }) => row.original.extension ?? "—" },
+    {
+      id: "teamMembers",
+      header: "Team Members",
+      accessorFn: (row) => row.teamMembersDisplay ?? "",
+      cell: ({ row }) => (
+        <span className="text-sm text-gray-800 truncate max-w-[300px] block" title={row.original.teamMembersDisplay}>
+          {row.original.teamMembersDisplay ?? "—"}
+        </span>
+      ),
+    },
+    {
+      id: "actions",
+      header: "",
       cell: ({ row }) => (
         <div className="flex gap-2">
           <button onClick={() => openEditModal(row.original)} className="p-1.5 rounded hover:bg-gray-100 text-gray-600" title="Edit"><Pencil className="w-4 h-4" /></button>
@@ -85,13 +115,13 @@ export default function DepartmentsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-medium text-gray-900">Departments</h1>
-          <p className="text-sm text-gray-500 mt-1">{departments.length} departments</p>
+          <h1 className="text-2xl font-bold text-gray-900">Departments</h1>
+          <p className="text-sm text-gray-500 mt-1">Total: <strong>{departments.length}</strong></p>
         </div>
         <button onClick={openAddModal} className="px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium">Add Department</button>
       </div>
       {isLoading ? <div className="py-12 flex justify-center"><Loader variant="inline" label="Loading departments..." /></div> : (
-        <DataTable columns={columns} data={departments} searchPlaceholder="Search departments..." />
+        <DataTable columns={columns} data={departments} searchPlaceholder="Search" />
       )}
       <Modal isOpen={modalOpen} onClose={closeModal} title={editing ? "Edit Department" : "Add Department"}>
         <form onSubmit={handleSubmit}>

@@ -175,3 +175,30 @@ export function formatDuration(seconds: number): string {
   const s = seconds % 60;
   return [h, m, s].map((v) => String(v).padStart(2, "0")).join(":");
 }
+
+/** Lightweight call stats from recent call history (fallback when analytics API unavailable) */
+export interface CallStatsFromHistory {
+  totalCalls: number;
+  answeredCalls: number;
+  missedCalls: number;
+}
+
+export async function fetchCallStatsFromHistory(
+  accountId: number,
+  currentUserId: number | null
+): Promise<CallStatsFromHistory> {
+  const res = await fetchCallHistory(accountId, currentUserId, {}, 500, null);
+  const cdrs = res.cdrs ?? [];
+  let answered = 0;
+  let missed = 0;
+  for (const cdr of cdrs) {
+    const result = (cdr.callResult ?? "").toLowerCase();
+    if (result.includes("answered") && !result.includes("not") && !result.includes("un")) answered++;
+    else if (result.includes("not answered") || result === "missed") missed++;
+  }
+  return {
+    totalCalls: cdrs.length,
+    answeredCalls: answered,
+    missedCalls: missed,
+  };
+}

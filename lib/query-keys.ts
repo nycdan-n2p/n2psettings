@@ -101,6 +101,8 @@ export const qk = {
     account: (accountId: number, preset: string)        => ["analytics", accountId, "account", preset]  as const,
     users:   (accountId: number, preset: string)        => ["analytics", accountId, "users",   preset]  as const,
     depts:   (accountId: number, preset: string)        => ["analytics", accountId, "depts",   preset]  as const,
+    fromHistory: (accountId: number, preset: string, direction: string) =>
+      ["analytics", accountId, "from-history", preset, direction] as const,
   },
 
   // Phone Numbers

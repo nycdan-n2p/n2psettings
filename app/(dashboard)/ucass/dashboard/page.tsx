@@ -2,7 +2,11 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useApp } from "@/contexts/AppContext";
-import { fetchAccountAnalytics, fetchUserAnalyticsSummary, lastNDays } from "@/lib/api/analytics";
+import { fetchAccountAnalytics, lastNDays } from "@/lib/api/analytics";
+import { fetchCallStatsFromHistory } from "@/lib/api/call-history";
+import { fetchTeamMembers } from "@/lib/api/team-members";
+import { fetchDepartments } from "@/lib/api/departments";
+import { fetchPhoneNumbers } from "@/lib/api/phone-numbers";
 import { qk } from "@/lib/query-keys";
 import { Phone, Users, Building2, Hash, PhoneCall, ListOrdered, Voicemail } from "lucide-react";
 import Link from "next/link";
@@ -51,14 +55,42 @@ export default function DashboardPage() {
 
   const { data: accountStats } = useQuery({
     queryKey: qk.analytics.account(account?.accountId ?? 0, "7d"),
-    queryFn: () => fetchAccountAnalytics(account!.accountId, range),
+    queryFn: async () => {
+      try {
+        const stats = await fetchAccountAnalytics(account!.accountId, range);
+        if (
+          (stats.totalCalls ?? 0) > 0 ||
+          (stats.answeredCalls ?? 0) > 0 ||
+          (stats.missedCalls ?? 0) > 0
+        ) {
+          return stats;
+        }
+      } catch {
+        /* analytics API may 404 */
+      }
+      return fetchCallStatsFromHistory(account!.accountId, user?.userId ?? null);
+    },
     enabled: !!account?.accountId,
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: userSummary } = useQuery({
-    queryKey: qk.analytics.users(account?.accountId ?? 0, "7d"),
-    queryFn: () => fetchUserAnalyticsSummary(account!.accountId, range),
+  const { data: teamMembers } = useQuery({
+    queryKey: qk.teamMembers.list(account?.accountId ?? 0),
+    queryFn: () => fetchTeamMembers(account!.accountId),
+    enabled: !!account?.accountId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: departments } = useQuery({
+    queryKey: qk.departments.list(account?.accountId ?? 0),
+    queryFn: () => fetchDepartments(account!.accountId),
+    enabled: !!account?.accountId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: phoneNumbers } = useQuery({
+    queryKey: qk.phoneNumbers.all(account?.accountId ?? 0),
+    queryFn: () => fetchPhoneNumbers(account!.accountId),
     enabled: !!account?.accountId,
     staleTime: 5 * 60 * 1000,
   });
@@ -71,7 +103,11 @@ export default function DashboardPage() {
     ? new Date(plan.nextBillingDate as string).toLocaleDateString()
     : null;
 
-  const activeUserCount = account?.maxUsers ? `/ ${account.maxUsers} max` : "";
+  const memberCount = teamMembers?.length ?? null;
+  const deptCount = departments?.length ?? null;
+  const phoneCount = phoneNumbers?.length ?? null;
+  const maxUsers = account?.maxUsers;
+  const teamMembersSub = maxUsers != null && memberCount != null ? `${memberCount} / ${maxUsers} max` : maxUsers != null ? `— / ${maxUsers} max` : memberCount != null ? `${memberCount} members` : undefined;
 
   return (
     <div>
@@ -83,42 +119,40 @@ export default function DashboardPage() {
       </div>
 
       {/* Call analytics */}
-      {accountStats && (
-        <div className="mb-8">
-          <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
-            Call Activity (7 days)
-          </h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard
-              label="Total Calls"
-              value={accountStats.totalCalls ?? "—"}
-              icon={Phone}
-              href="/ucass/call-history"
-            />
-            <StatCard
-              label="Answered"
-              value={accountStats.answeredCalls ?? "—"}
-              icon={PhoneCall}
-              color="text-green-600"
-              href="/ucass/call-history"
-            />
-            <StatCard
-              label="Missed"
-              value={accountStats.missedCalls ?? "—"}
-              icon={Phone}
-              color="text-red-500"
-              href="/ucass/call-history"
-            />
-            <StatCard
-              label="Unread Voicemails"
-              value={unread}
-              icon={Voicemail}
-              color="text-orange-500"
-              href="/ucass/voicemail"
-            />
-          </div>
+      <div className="mb-8">
+        <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
+          Call Activity (7 days)
+        </h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            label="Total Calls"
+            value={accountStats?.totalCalls ?? "—"}
+            icon={Phone}
+            href="/ucass/call-history"
+          />
+          <StatCard
+            label="Answered"
+            value={accountStats?.answeredCalls ?? "—"}
+            icon={PhoneCall}
+            color="text-green-600"
+            href="/ucass/call-history"
+          />
+          <StatCard
+            label="Missed"
+            value={accountStats?.missedCalls ?? "—"}
+            icon={Phone}
+            color="text-red-500"
+            href="/ucass/call-history"
+          />
+          <StatCard
+            label="Unread Voicemails"
+            value={unread}
+            icon={Voicemail}
+            color="text-orange-500"
+            href="/ucass/voicemail"
+          />
         </div>
-      )}
+      </div>
 
       {/* Account overview */}
       <div className="mb-8">
@@ -128,8 +162,8 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             label="Team Members"
-            value={userSummary?.totalCalls !== undefined ? user ? "Active" : "—" : "—"}
-            sub={activeUserCount}
+            value={memberCount ?? "—"}
+            sub={teamMembersSub}
             icon={Users}
             href="/ucass/team-members"
           />
@@ -141,14 +175,14 @@ export default function DashboardPage() {
           />
           <StatCard
             label="Phone Numbers"
-            value="View all"
+            value={phoneCount ?? "—"}
             sub="DIDs and extensions"
             icon={Hash}
             href="/ucass/phone-numbers"
           />
           <StatCard
             label="Departments"
-            value="View all"
+            value={deptCount ?? "—"}
             sub="Call routing groups"
             icon={Building2}
             href="/ucass/departments"

@@ -3,12 +3,15 @@ import { NextRequest, NextResponse } from "next/server";
 /**
  * AI Music-on-Hold generator using Suno API.
  *
- * Configure in .env.local:
- *   SUNO_API_BASE_URL=https://apibox.erweima.ai   (sunoapi.org hosted service)
- *   SUNO_API_KEY=your_api_key_here
+ * Official: https://docs.sunoapi.org/suno-api/quickstart
+ *   Base: https://api.sunoapi.org | Key: https://sunoapi.org/api-key
  *
- * Compatible with sunoapi.org (apibox.erweima.ai) as well as self-hosted
- * gcui-art/suno-api instances.
+ * API Box: https://docs.api.box/suno-api/generate-music
+ *   Base: https://apibox.erweima.ai | Key: https://api.box/api-key
+ *
+ * .env.local:
+ *   SUNO_API_BASE_URL=https://api.sunoapi.org
+ *   SUNO_API_KEY=your_api_key_here
  *
  * Request:  POST { prompt, style?, title?, instrumental }
  * Response: { audioUrl, title, imageUrl?, id }
@@ -21,74 +24,60 @@ interface SunoGenerateBody {
   instrumental: boolean;
 }
 
-// ── sunoapi.org (apibox.erweima.ai) response shapes ──────────────────────────
-interface SunoTaskResponse {
-  code: number;
-  msg?: string;
-  data?: {
-    taskId?: string;
-    // Some providers return the tracks directly
-    sunoData?: SunoTrack[];
-  };
-}
-
+// ── sunoapi.org response shapes (docs.sunoapi.org/suno-api/quickstart) ─────────
 interface SunoRecordResponse {
   code: number;
   data?: {
     status: "SUCCESS" | "IN_PROGRESS" | "FAILED" | "PENDING" | string;
     response?: {
-      sunoData?: SunoTrack[];
+      data?: SunoTrack[];      // official docs format
+      sunoData?: SunoTrack[];  // alternate
     };
-    // flat format (gcui-art style)
-    sunoData?: SunoTrack[];
+    sunoData?: SunoTrack[];    // flat gcui-art style
   };
 }
 
-// ── gcui-art/suno-api track shape ─────────────────────────────────────────────
+// ── Track shape (supports snake_case and camelCase from different providers) ───
 interface SunoTrack {
   id?: string;
   title?: string;
   audio_url?: string;
+  audioUrl?: string;  // api.box uses camelCase
   image_url?: string;
+  imageUrl?: string;
   status?: string;
   duration?: number;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const BASE_URL = (process.env.SUNO_API_BASE_URL ?? "").replace(/\/$/, "");
-const API_KEY  = process.env.SUNO_API_KEY ?? "";
+const API_KEY = process.env.SUNO_API_KEY ?? "";
+/** Override if your provider uses a different path, e.g. /api/v1/generate or /api/generate */
+const GENERATE_PATH = process.env.SUNO_API_GENERATE_PATH?.replace(/^\//, "");
 
 function sunoHeaders(): HeadersInit {
   const h: HeadersInit = { "Content-Type": "application/json" };
-  if (API_KEY) h["Authorization"] = `Bearer ${API_KEY}`;
+  if (API_KEY) (h as Record<string, string>)["Authorization"] = `Bearer ${API_KEY}`;
   return h;
 }
 
-/** Try sunoapi.org style first, then gcui-art style */
+/** Get audio URL from track (api.box uses audioUrl, others use audio_url) */
+function getAudioUrl(t: SunoTrack): string | undefined {
+  return t.audio_url ?? t.audioUrl;
+}
+
+/** Try sunoapi.org / api.box style first, then gcui-art. Use SUNO_API_GENERATE_PATH to override. */
 async function generateTrack(body: SunoGenerateBody): Promise<{ taskId?: string; tracks?: SunoTrack[] }> {
-  // sunoapi.org format: POST /api/v1/generate
   const sunoOrgPayload = {
     prompt: body.prompt,
     style: body.style ?? "",
     title: body.title ?? "Hold Music",
     customMode: !!(body.style || body.title),
     instrumental: body.instrumental,
-    model: "chirp-v4",
+    model: "V4_5ALL",
+    callBackUrl: "https://example.com/callback", // required by api.box (docs.api.box) - we poll instead
   };
 
-  const res = await fetch(`${BASE_URL}/api/v1/generate`, {
-    method: "POST",
-    headers: sunoHeaders(),
-    body: JSON.stringify(sunoOrgPayload),
-  });
-
-  if (res.ok) {
-    const data: SunoTaskResponse = await res.json();
-    if (data.data?.taskId) return { taskId: data.data.taskId };
-    if (data.data?.sunoData?.length) return { tracks: data.data.sunoData };
-  }
-
-  // Fallback: gcui-art format POST /api/generate
   const gcuiPayload = {
     prompt: body.prompt,
     tags: body.style ?? "",
@@ -97,22 +86,42 @@ async function generateTrack(body: SunoGenerateBody): Promise<{ taskId?: string;
     wait_audio: false,
   };
 
-  const res2 = await fetch(`${BASE_URL}/api/generate`, {
-    method: "POST",
-    headers: sunoHeaders(),
-    body: JSON.stringify(gcuiPayload),
-  });
+  const attempts: { path: string; payload: object; isSunoOrg: boolean }[] = GENERATE_PATH
+    ? [{ path: GENERATE_PATH, payload: sunoOrgPayload, isSunoOrg: true }]
+    : [
+        { path: "api/v1/generate", payload: sunoOrgPayload, isSunoOrg: true },
+        { path: "api/v2/generate", payload: sunoOrgPayload, isSunoOrg: true },
+        { path: "api/generate", payload: gcuiPayload, isSunoOrg: false },
+      ];
 
-  if (!res2.ok) {
-    const text = await res2.text().catch(() => "");
-    throw new Error(`Suno API error ${res2.status}: ${text.slice(0, 200)}`);
+  let lastErr: string | null = null;
+  for (const { path, payload, isSunoOrg } of attempts) {
+    const url = `${BASE_URL}/${path}`;
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: sunoHeaders(),
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (isSunoOrg) {
+          if (data.data?.taskId) return { taskId: data.data.taskId };
+          if (data.data?.sunoData?.length) return { tracks: data.data.sunoData };
+        } else {
+          const arr = Array.isArray(data) ? data : [];
+          const ids = arr.map((t: SunoTrack) => t.id).filter(Boolean).join(",");
+          return { taskId: ids || undefined, tracks: arr };
+        }
+      }
+      lastErr = `${res.status} at ${url}: ${(await res.text().catch(() => "")).slice(0, 150)}`;
+    } catch (e) {
+      lastErr = `Failed to reach ${url}: ${e instanceof Error ? e.message : "unknown"}`;
+    }
   }
 
-  const data2 = await res2.json();
-  // gcui-art returns an array of tracks directly (with wait_audio=false they may lack audio_url)
-  const arr = Array.isArray(data2) ? data2 : [];
-  const ids = arr.map((t: SunoTrack) => t.id).filter(Boolean).join(",");
-  return { taskId: ids || undefined, tracks: arr };
+  throw new Error(`Suno API error - all paths failed. Last: ${lastErr ?? "unknown"}`);
 }
 
 /** Poll sunoapi.org-style task status */
@@ -123,10 +132,11 @@ async function pollTaskStatus(taskId: string): Promise<SunoTrack | null> {
   if (!res.ok) return null;
   const data: SunoRecordResponse = await res.json();
   const tracks =
+    data.data?.response?.data ??
     data.data?.response?.sunoData ??
     data.data?.sunoData ??
     [];
-  const ready = tracks.find((t) => t.audio_url);
+  const ready = tracks.find((t) => getAudioUrl(t));
   if (ready) return ready;
   if (data.data?.status === "FAILED") throw new Error("Suno generation failed");
   return null;
@@ -140,7 +150,7 @@ async function pollGcuiTrack(ids: string): Promise<SunoTrack | null> {
   if (!res.ok) return null;
   const data = await res.json();
   const arr: SunoTrack[] = Array.isArray(data) ? data : [];
-  return arr.find((t) => t.audio_url && t.status !== "error") ?? null;
+  return arr.find((t) => getAudioUrl(t) && t.status !== "error") ?? null;
 }
 
 // ── GET: proxy-download Suno audio URL server-side (avoids browser CORS) ─────
@@ -195,13 +205,14 @@ export async function POST(request: NextRequest) {
     const result = await generateTrack(body);
 
     // If tracks returned immediately (wait_audio=true scenario), check for audio_url
-    const immediate = result.tracks?.find((t) => t.audio_url);
-    if (immediate?.audio_url) {
+    const immediate = result.tracks?.find((t) => getAudioUrl(t));
+    const immediateUrl = immediate ? getAudioUrl(immediate) : undefined;
+    if (immediateUrl) {
       return NextResponse.json({
-        id: immediate.id,
-        audioUrl: immediate.audio_url,
-        imageUrl: immediate.image_url ?? null,
-        title: immediate.title ?? body.title ?? "AI Hold Music",
+        id: immediate!.id,
+        audioUrl: immediateUrl,
+        imageUrl: immediate!.image_url ?? immediate!.imageUrl ?? null,
+        title: immediate!.title ?? body.title ?? "AI Hold Music",
       });
     }
 
@@ -217,12 +228,13 @@ export async function POST(request: NextRequest) {
     for (let i = 0; i < 36; i++) {
       await new Promise((r) => setTimeout(r, 5000)); // wait 5s between polls
       const track = await pollFn(taskId);
-      if (track?.audio_url) {
+      const trackUrl = track ? getAudioUrl(track) : undefined;
+      if (trackUrl) {
         return NextResponse.json({
-          id: track.id,
-          audioUrl: track.audio_url,
-          imageUrl: track.image_url ?? null,
-          title: track.title ?? body.title ?? "AI Hold Music",
+          id: track!.id,
+          audioUrl: trackUrl,
+          imageUrl: track!.image_url ?? track!.imageUrl ?? null,
+          title: track!.title ?? body.title ?? "AI Hold Music",
         });
       }
     }
@@ -230,7 +242,13 @@ export async function POST(request: NextRequest) {
     throw new Error("Music generation timed out after 3 minutes. Try again.");
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Music generation failed";
-    console.error("[generate-moh]", message);
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("[generate-moh]", message, err);
+    return NextResponse.json(
+      {
+        error: message,
+        hint: !BASE_URL ? "Add SUNO_API_BASE_URL and SUNO_API_KEY to .env.local" : undefined,
+      },
+      { status: 500 }
+    );
   }
 }

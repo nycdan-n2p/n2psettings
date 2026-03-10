@@ -724,7 +724,8 @@ function AnnouncementsSection({
     setSecondaryAudio(detail.announcement_settings?.secondary_audio ?? { type: "default" });
   }, [detail]);
 
-  function handleSunoAssign(audioUrl: string, ..._rest: unknown[]) {
+  function handleSunoAssign(audioUrl: string, ..._args: unknown[]) {
+    void _args; // additional callback args, unused
     // Set hold music to "custom" type with the Suno URL as the ID.
     // (Works for queues where the net2phone API accepts a direct URL as the custom audio ID.)
     setHoldAudio({ type: "custom", id: audioUrl });
