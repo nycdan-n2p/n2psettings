@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApp } from "@/contexts/AppContext";
@@ -655,7 +656,7 @@ export default function SchedulesPage() {
                   {/* Added By */}
                   <div className="flex items-center gap-2 min-w-0">
                     {avatarUrl ? (
-                      <img src={avatarUrl} alt={creatorName} className="w-7 h-7 rounded-full object-cover shrink-0" />
+                      <Image src={avatarUrl} alt={creatorName} width={28} height={28} className="rounded-full object-cover shrink-0" />
                     ) : (
                       <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${avatarColor(creatorName)}`}>
                         {getInitials(creatorName)}
