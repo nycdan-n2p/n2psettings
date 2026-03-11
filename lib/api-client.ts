@@ -15,6 +15,7 @@ function generateTraceId(): string {
 
 let apiClient: AxiosInstance | null = null;
 let v2ApiClient: AxiosInstance | null = null;
+let n2pApiClient: AxiosInstance | null = null;
 let authClient: AxiosInstance | null = null;
 
 async function refreshAccessToken(): Promise<string | null> {
@@ -121,6 +122,19 @@ export async function getV2ApiClient(): Promise<AxiosInstance> {
     v2ApiClient = createApiClient(base);
   }
   return v2ApiClient;
+}
+
+/** Client for api.n2p.io/v2 — sip-registrations, sip-trunks, etc. */
+export async function getN2pApiClient(): Promise<AxiosInstance> {
+  await loadEnv();
+  if (!n2pApiClient) {
+    const base =
+      typeof window !== "undefined"
+        ? "/api/proxy-n2p"
+        : "https://api.n2p.io/v2";
+    n2pApiClient = createApiClient(base);
+  }
+  return n2pApiClient;
 }
 
 export async function getAuthApiClient(): Promise<AxiosInstance> {

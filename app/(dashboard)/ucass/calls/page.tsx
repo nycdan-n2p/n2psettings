@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { Play, Pause, Download, RefreshCw, ChevronLeft, ChevronRight, Mic, BarChart2 } from "lucide-react";
+import {
+  Play, Pause, Download, RefreshCw, ChevronLeft, ChevronRight,
+  Mic, BarChart2, PhoneIncoming, PhoneOutgoing, Phone, Voicemail,
+} from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import { qk } from "@/lib/query-keys";
 import { Loader } from "@/components/ui/Loader";
@@ -18,7 +21,7 @@ import {
   type CDR,
   type CallRecording,
 } from "@/lib/api/call-history";
-import { fetchVoicemails, type VoicemailItem } from "@/lib/api/voicemails";
+import { fetchVoicemails, fetchVoicemailAudioUrl, type VoicemailItem } from "@/lib/api/voicemails";
 import { AnalyzeModal } from "@/components/calls/AnalyzeModal";
 import type { CallAnalysis } from "@/app/api/analyze-calls/route";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -26,25 +29,264 @@ import type { ColumnDef } from "@tanstack/react-table";
 type Tab = "all" | "voicemails" | "recordings";
 type Scope = "mine" | "company";
 
-// ── Inline audio player for a single recording ─────────────────────────────
-function RecordingPlayer({
-  recording,
+// ── Helpers ─────────────────────────────────────────────────────────────────
+function getInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join("");
+}
+
+// Stable color from string (for caller avatars)
+const AVATAR_COLORS = [
+  "bg-blue-100 text-blue-700",
+  "bg-green-100 text-green-700",
+  "bg-purple-100 text-purple-700",
+  "bg-amber-100 text-amber-700",
+  "bg-pink-100 text-pink-700",
+  "bg-teal-100 text-teal-700",
+];
+function avatarColor(seed: string): string {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
+
+function callResultColor(result: string): string {
+  const r = result.toLowerCase();
+  if (r.includes("answered") && !r.includes("not") && !r.includes("un")) {
+    return "bg-green-50 text-green-700 ring-green-200";
+  }
+  if (r.includes("not answered") || r.includes("missed") || r.includes("voicemail")) {
+    return "bg-amber-50 text-amber-700 ring-amber-200";
+  }
+  if (r.includes("drop") || r.includes("reject") || r.includes("block") || r.includes("cancel")) {
+    return "bg-red-50 text-red-700 ring-red-200";
+  }
+  return "bg-gray-50 text-gray-600 ring-gray-200";
+}
+
+function fmtTime(secs: number): string {
+  if (!isFinite(secs) || secs < 0) return "0:00";
+  const m = Math.floor(secs / 60);
+  const s = Math.floor(secs % 60);
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+// ── VoicemailRow — Google-style, inline audio player ────────────────────────
+function VoicemailRow({
+  vm,
   accountId,
+  userId,
+  onExpand,
+}: {
+  vm: VoicemailItem;
+  accountId: number;
+  userId: number;
+  onExpand: (vm: VoicemailItem) => void;
+}) {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [url, setUrl] = useState<string | null>(null);
+  const [loadingUrl, setLoadingUrl] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(vm.duration ?? 0);
+  const [unread, setUnread] = useState(vm.isRead === false);
+  const [seeking, setSeeking] = useState(false);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !url) return;
+    audio.src = url;
+    const onTime = () => { if (!seeking) setCurrentTime(audio.currentTime); };
+    const onMeta = () => setAudioDuration(isFinite(audio.duration) ? audio.duration : vm.duration ?? 0);
+    const onEnd = () => { setPlaying(false); setCurrentTime(0); };
+    audio.addEventListener("timeupdate", onTime);
+    audio.addEventListener("loadedmetadata", onMeta);
+    audio.addEventListener("ended", onEnd);
+    return () => {
+      audio.removeEventListener("timeupdate", onTime);
+      audio.removeEventListener("loadedmetadata", onMeta);
+      audio.removeEventListener("ended", onEnd);
+    };
+  }, [url, seeking, vm.duration]);
+
+  const handlePlay = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (playing) {
+      audio.pause();
+      setPlaying(false);
+      return;
+    }
+
+    if (!url) {
+      setLoadingUrl(true);
+      const fetchedUrl = await fetchVoicemailAudioUrl(vm.voicemailId!, accountId, userId);
+      setLoadingUrl(false);
+      if (!fetchedUrl) return;
+      setUrl(fetchedUrl);
+      setUnread(false);
+      // audio.src will be set by the effect above, then we play
+      setTimeout(() => {
+        audio.play().then(() => setPlaying(true)).catch(() => {});
+      }, 50);
+    } else {
+      audio.play().then(() => setPlaying(true)).catch(() => {});
+      setUnread(false);
+    }
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const val = Number(e.target.value);
+    audio.currentTime = val;
+    setCurrentTime(val);
+  };
+
+  const callerName = vm.from?.callerId ?? vm.from?.name ?? vm.from?.number ?? "Unknown";
+  const callDate = vm.callDate ? new Date(vm.callDate) : null;
+  const now = new Date();
+  const isToday = callDate?.toDateString() === now.toDateString();
+  const isYesterday = callDate?.toDateString() === new Date(now.getTime() - 86400000).toDateString();
+  const dateStr = !callDate
+    ? "—"
+    : isToday
+    ? `Today, ${callDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+    : isYesterday
+    ? `Yesterday, ${callDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+    : callDate.toLocaleDateString([], { month: "short", day: "numeric" }) +
+      ", " +
+      callDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+  const initials = getInitials(callerName);
+  const colorClass = avatarColor(callerName);
+  const progress = audioDuration > 0 ? (currentTime / audioDuration) * 100 : 0;
+
+  return (
+    <div
+      onClick={() => onExpand(vm)}
+      className={`group relative flex items-center gap-4 px-5 py-3.5 cursor-pointer transition-colors hover:bg-gray-50/80 ${
+        unread ? "bg-blue-50/30" : ""
+      }`}
+    >
+      {unread && (
+        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-7 bg-[#1a73e8] rounded-r-full" />
+      )}
+
+      <audio ref={audioRef} preload="none" className="hidden" />
+
+      {/* Caller avatar */}
+      <div
+        className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 ${colorClass}`}
+      >
+        {initials || <Voicemail className="w-4 h-4" />}
+      </div>
+
+      {/* Caller info */}
+      <div className="w-44 shrink-0 min-w-0">
+        <p className="text-sm font-medium text-gray-900 truncate">{callerName}</p>
+        {vm.from?.number && vm.from.number !== callerName && (
+          <p className="text-xs text-gray-400 truncate">{vm.from.number}</p>
+        )}
+      </div>
+
+      {/* Audio player */}
+      <div className="flex-1 flex items-center gap-2.5 min-w-0">
+        <button
+          onClick={handlePlay}
+          disabled={loadingUrl}
+          className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all ${
+            loadingUrl
+              ? "bg-gray-100 cursor-wait"
+              : playing
+              ? "bg-[#1a73e8] text-white shadow-md shadow-blue-200"
+              : "bg-[#1a73e8] text-white hover:bg-[#1557b0] hover:shadow-md hover:shadow-blue-200"
+          }`}
+          title={playing ? "Pause" : "Play voicemail"}
+        >
+          {loadingUrl ? (
+            <span className="w-3.5 h-3.5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+          ) : playing ? (
+            <Pause className="w-3.5 h-3.5" />
+          ) : (
+            <Play className="w-3.5 h-3.5 ml-0.5" fill="currentColor" />
+          )}
+        </button>
+
+        <div className="flex-1 flex flex-col gap-0.5 min-w-0" onClick={(e) => e.stopPropagation()}>
+          <div className="relative h-1.5">
+            <div className="absolute inset-0 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-[#1a73e8] rounded-full"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={audioDuration || 1}
+              step={0.5}
+              value={currentTime}
+              onMouseDown={() => setSeeking(true)}
+              onMouseUp={() => setSeeking(false)}
+              onChange={handleSeek}
+              disabled={!url}
+              className="absolute inset-0 w-full opacity-0 cursor-pointer disabled:cursor-default h-1.5"
+            />
+          </div>
+          <div className="flex justify-between">
+            <span className="text-[10px] text-gray-400 tabular-nums">{fmtTime(currentTime)}</span>
+            <span className="text-[10px] text-gray-400 tabular-nums">{fmtTime(audioDuration)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Date */}
+      <div className="w-40 shrink-0 text-right">
+        <span className="text-xs text-gray-500">{dateStr}</span>
+      </div>
+
+      {/* Unread badge */}
+      <div className="w-20 shrink-0 flex justify-end">
+        {unread ? (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200">
+            Unread
+          </span>
+        ) : (
+          <span className="text-xs text-gray-300">Heard</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── RecordingRow — Google-style card row ─────────────────────────────────────
+function RecordingRow({
+  recording,
   cdr,
+  accountId,
 }: {
   recording: CallRecording;
-  accountId: number;
   cdr: CDR;
+  accountId: number;
 }) {
   const queryClient = useQueryClient();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
   const [heard, setHeard] = useState(recording.status === "S");
+  const [currentTime, setCurrentTime] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(recording.duration ?? 0);
+  const [seeking, setSeeking] = useState(false);
 
   const { data: url, isFetching } = useQuery({
     queryKey: ["recording-url", recording.id],
     queryFn: () => fetchRecordingUrl(recording.id),
-    // Only fetch when we have the recording id — kept in cache for 10 min
     staleTime: 10 * 60 * 1000,
     enabled: !!recording.id,
   });
@@ -53,21 +295,47 @@ function RecordingPlayer({
     mutationFn: () => markRecordingHeard(accountId, recording.id),
     onSuccess: () => {
       setHeard(true);
-      // Invalidate call history so the "N" badge disappears
       queryClient.invalidateQueries({ queryKey: qk.callHistory.all(accountId) });
     },
   });
 
+  // Bind audio events when URL loads
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !url) return;
+    audio.src = url;
+    const onTime = () => { if (!seeking) setCurrentTime(audio.currentTime); };
+    const onMeta = () => setAudioDuration(isFinite(audio.duration) ? audio.duration : recording.duration);
+    const onEnd = () => { setPlaying(false); setCurrentTime(0); };
+    audio.addEventListener("timeupdate", onTime);
+    audio.addEventListener("loadedmetadata", onMeta);
+    audio.addEventListener("ended", onEnd);
+    return () => {
+      audio.removeEventListener("timeupdate", onTime);
+      audio.removeEventListener("loadedmetadata", onMeta);
+      audio.removeEventListener("ended", onEnd);
+    };
+  }, [url, seeking, recording.duration]);
+
   const togglePlay = () => {
-    if (!url || !audioRef.current) return;
+    const audio = audioRef.current;
+    if (!audio || !url) return;
     if (playing) {
-      audioRef.current.pause();
+      audio.pause();
       setPlaying(false);
     } else {
-      audioRef.current.play();
+      audio.play();
       setPlaying(true);
       if (!heard) markHeard.mutate();
     }
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const val = Number(e.target.value);
+    audio.currentTime = val;
+    setCurrentTime(val);
   };
 
   const handleDownload = () => {
@@ -79,49 +347,286 @@ function RecordingPlayer({
     a.click();
   };
 
+  const callerName =
+    cdr.from?.userDisplayName ?? cdr.from?.callerId ?? cdr.from?.number ?? "Unknown";
+  const callerNumber = cdr.from?.number ?? cdr.from?.callerId ?? "";
+  const destName =
+    cdr.to?.userDisplayName ?? cdr.to?.callerId ?? cdr.to?.number ?? "—";
+  const isInbound = cdr.direction === 0;
+  const callDate = new Date(cdr.callDate);
+  const now = new Date();
+  const isToday = callDate.toDateString() === now.toDateString();
+  const isYesterday =
+    callDate.toDateString() === new Date(now.getTime() - 86400000).toDateString();
+  const dateStr = isToday
+    ? `Today, ${callDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+    : isYesterday
+    ? `Yesterday, ${callDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+    : callDate.toLocaleDateString([], { month: "short", day: "numeric" }) +
+      ", " +
+      callDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+  const progress = audioDuration > 0 ? (currentTime / audioDuration) * 100 : 0;
+  const initials = getInitials(callerName);
+  const colorClass = avatarColor(callerName);
+
   return (
-    <div className="flex items-center gap-3">
-      {url && (
-        <audio
-          ref={audioRef}
-          src={url}
-          onEnded={() => setPlaying(false)}
-          onPause={() => setPlaying(false)}
-        />
+    <div
+      className={`group relative flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-gray-50/80 ${
+        !heard ? "bg-blue-50/30" : ""
+      }`}
+    >
+      {/* Unread indicator */}
+      {!heard && (
+        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-7 bg-[#1a73e8] rounded-r-full" />
       )}
-      <button
-        onClick={togglePlay}
-        disabled={isFetching || !url}
-        className="w-8 h-8 rounded-full bg-[#1a73e8] text-white flex items-center justify-center hover:bg-[#1557b0] disabled:opacity-50 disabled:cursor-not-allowed shrink-0 transition-colors"
-        title={playing ? "Pause" : "Play"}
+
+      <audio ref={audioRef} preload="none" className="hidden" />
+
+      {/* Caller avatar */}
+      <div
+        className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 ${colorClass}`}
       >
-        {isFetching ? (
-          <Loader variant="button" />
-        ) : playing ? (
-          <Pause className="w-4 h-4" />
-        ) : (
-          <Play className="w-4 h-4 ml-0.5" fill="currentColor" />
+        {initials || <Phone className="w-4 h-4" />}
+      </div>
+
+      {/* Caller info */}
+      <div className="w-44 shrink-0 min-w-0">
+        <p className="text-sm font-medium text-gray-900 truncate">{callerName}</p>
+        {callerNumber && callerNumber !== callerName && (
+          <p className="text-xs text-gray-400 truncate">{callerNumber}</p>
         )}
-      </button>
+      </div>
+
+      {/* Direction arrow + destination */}
+      <div className="w-40 shrink-0 flex items-center gap-1.5 min-w-0">
+        {isInbound ? (
+          <PhoneIncoming className="w-3.5 h-3.5 text-green-500 shrink-0" />
+        ) : (
+          <PhoneOutgoing className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+        )}
+        <span className="text-xs text-gray-500 truncate">{destName}</span>
+      </div>
+
+      {/* Audio player */}
+      <div className="flex-1 flex items-center gap-2.5 min-w-0">
+        {/* Play/pause button */}
+        <button
+          onClick={togglePlay}
+          disabled={isFetching || !url}
+          className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all ${
+            isFetching
+              ? "bg-gray-100 cursor-not-allowed"
+              : playing
+              ? "bg-[#1a73e8] text-white shadow-md shadow-blue-200"
+              : "bg-[#1a73e8] text-white hover:bg-[#1557b0] hover:shadow-md hover:shadow-blue-200"
+          }`}
+          title={playing ? "Pause" : "Play"}
+        >
+          {isFetching ? (
+            <Loader variant="button" />
+          ) : playing ? (
+            <Pause className="w-3.5 h-3.5" />
+          ) : (
+            <Play className="w-3.5 h-3.5 ml-0.5" fill="currentColor" />
+          )}
+        </button>
+
+        {/* Progress scrubber */}
+        <div className="flex-1 flex flex-col gap-0.5 min-w-0">
+          <div className="relative h-1.5 group/scrub">
+            <div className="absolute inset-0 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-[#1a73e8] rounded-full transition-none"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={audioDuration || 1}
+              step={0.5}
+              value={currentTime}
+              onMouseDown={() => setSeeking(true)}
+              onMouseUp={() => setSeeking(false)}
+              onChange={handleSeek}
+              disabled={!url}
+              className="absolute inset-0 w-full opacity-0 cursor-pointer disabled:cursor-default h-1.5"
+              aria-label="Seek"
+            />
+          </div>
+          <div className="flex justify-between">
+            <span className="text-[10px] text-gray-400 tabular-nums">
+              {fmtTime(currentTime)}
+            </span>
+            <span className="text-[10px] text-gray-400 tabular-nums">
+              {fmtTime(audioDuration)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Date */}
+      <div className="w-36 shrink-0 text-right">
+        <span className="text-xs text-gray-500">{dateStr}</span>
+      </div>
+
+      {/* Result chip */}
+      <div className="w-28 shrink-0 flex justify-end">
+        <span
+          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ring-1 ring-inset ${callResultColor(
+            cdr.callResult ?? ""
+          )}`}
+        >
+          {cdr.callResult ?? "—"}
+        </span>
+      </div>
+
+      {/* Download */}
       <button
         onClick={handleDownload}
         disabled={!url}
-        className="w-7 h-7 rounded-full text-gray-400 flex items-center justify-center hover:text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        title="Download recording"
+        className="w-8 h-8 rounded-full flex items-center justify-center text-gray-300 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-0 transition-all opacity-0 group-hover:opacity-100"
+        title="Download"
       >
         <Download className="w-4 h-4" />
       </button>
-      <span className="text-xs text-gray-400">{formatDuration(recording.duration)}</span>
-      {!heard && (
-        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
-          New
-        </span>
-      )}
     </div>
   );
 }
 
-// ── Main page ───────────────────────────────────────────────────────────────
+// ── Recordings Tab ────────────────────────────────────────────────────────────
+function RecordingsTab({
+  accountId,
+  userId,
+  scope,
+}: {
+  accountId: number;
+  userId: number;
+  scope: Scope;
+}) {
+  const [cursor, setCursor] = useState<string | null>(null);
+
+  const { data: recData, isLoading, refetch } = useQuery({
+    queryKey: [...qk.callHistory.list(accountId, userId, "recordings"), cursor, scope],
+    queryFn: () =>
+      fetchCallHistory(
+        accountId,
+        userId,
+        {
+          userId: scope === "mine" ? userId : undefined,
+          onlyRecordings: true,
+          resultTypes: [
+            "Call Answered",
+            "Call Rejected",
+            "Call Not Allowed",
+            "Voicemail",
+            "Call Blocked",
+            "Call Cancelled",
+            "Dropped",
+            "Unanswered Queue",
+          ],
+        },
+        50,
+        cursor
+      ),
+    enabled: !!accountId && !!userId,
+  });
+
+  const recCdrs: CDR[] = recData?.cdrs ?? [];
+  const nextCursor = recData?.nextCursor ?? null;
+  const prevCursor = recData?.prevCursor ?? null;
+
+  // Count total recordings across CDRs
+  const totalRecs = recCdrs.reduce((n, c) => n + (c.recordings?.length ?? 0), 0);
+
+  if (isLoading) {
+    return (
+      <div className="py-16 flex justify-center">
+        <Loader variant="inline" label="Loading recordings…" />
+      </div>
+    );
+  }
+
+  if (recCdrs.length === 0) {
+    return (
+      <div className="py-20 flex flex-col items-center gap-3 text-gray-400">
+        <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center">
+          <Mic className="w-7 h-7 text-gray-300" />
+        </div>
+        <p className="text-sm font-medium text-gray-500">No recordings found</p>
+        <p className="text-xs text-gray-400">Recordings will appear here after calls are completed</p>
+        <button
+          onClick={() => refetch()}
+          className="mt-1 text-xs text-[#1a73e8] hover:underline flex items-center gap-1"
+        >
+          <RefreshCw className="w-3 h-3" /> Refresh
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {/* Column headers */}
+      <div className="flex items-center gap-4 px-5 py-2 border-b border-gray-100 bg-gray-50/60">
+        <div className="w-10 shrink-0" /> {/* avatar */}
+        <div className="w-44 shrink-0 text-xs font-medium text-gray-400 uppercase tracking-wide">
+          Caller
+        </div>
+        <div className="w-40 shrink-0 text-xs font-medium text-gray-400 uppercase tracking-wide">
+          To
+        </div>
+        <div className="flex-1 text-xs font-medium text-gray-400 uppercase tracking-wide">
+          Recording · {totalRecs} total
+        </div>
+        <div className="w-36 shrink-0 text-xs font-medium text-gray-400 uppercase tracking-wide text-right">
+          Date
+        </div>
+        <div className="w-28 shrink-0 text-xs font-medium text-gray-400 uppercase tracking-wide text-right">
+          Result
+        </div>
+        <div className="w-8 shrink-0" /> {/* download */}
+      </div>
+
+      {/* Rows */}
+      <div className="divide-y divide-gray-100">
+        {recCdrs.map((cdr) =>
+          (cdr.recordings ?? []).map((rec) => (
+            <RecordingRow
+              key={`${cdr.callId}-${rec.id}`}
+              recording={rec}
+              cdr={cdr}
+              accountId={accountId}
+            />
+          ))
+        )}
+      </div>
+
+      {/* Pagination */}
+      {(prevCursor || nextCursor) && (
+        <div className="flex justify-between items-center px-5 py-3 border-t border-gray-100">
+          <button
+            onClick={() => setCursor(prevCursor)}
+            disabled={!prevCursor}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 border border-[#dadce0] rounded-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" /> Previous
+          </button>
+          <button
+            onClick={() => setCursor(nextCursor)}
+            disabled={!nextCursor}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 border border-[#dadce0] rounded-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            Next <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
 export default function CallsPage() {
   const { bootstrap } = useApp();
   const accountId = bootstrap?.account?.accountId ?? 0;
@@ -129,7 +634,6 @@ export default function CallsPage() {
   const [tab, setTab] = useState<Tab>("all");
   const [scope, setScope] = useState<Scope>("mine");
   const [cursor, setCursor] = useState<string | null>(null);
-  const [recCursor, setRecCursor] = useState<string | null>(null);
   const [selectedVoicemail, setSelectedVoicemail] = useState<VoicemailItem | null>(null);
   const [exporting, setExporting] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
@@ -154,36 +658,6 @@ export default function CallsPage() {
     enabled: !!accountId && !!userId && tab === "voicemails",
   });
   const voicemails = voicemailData?.items ?? [];
-
-  // ── Recordings — use onlyRecordings:true filter ──
-  const { data: recData, isLoading: recsLoading, refetch: refetchRecs } = useQuery({
-    queryKey: [...qk.callHistory.list(accountId, userId, "recordings"), recCursor],
-    queryFn: () =>
-      fetchCallHistory(
-        accountId,
-        userId,
-        {
-          userId: scope === "mine" ? userId : undefined,
-          onlyRecordings: true,
-          resultTypes: [
-            "Call Answered",
-            "Call Rejected",
-            "Call Not Allowed",
-            "Voicemail",
-            "Call Blocked",
-            "Call Cancelled",
-            "Dropped",
-            "Unanswered Queue",
-          ],
-        },
-        50,
-        recCursor
-      ),
-    enabled: !!accountId && !!userId && tab === "recordings",
-  });
-  const recCdrs: CDR[] = recData?.cdrs ?? [];
-  const recNextCursor = recData?.nextCursor ?? null;
-  const recPrevCursor = recData?.prevCursor ?? null;
 
   const handleExportCsv = async () => {
     setExporting(true);
@@ -222,7 +696,6 @@ export default function CallsPage() {
   const handleAnalyze = async () => {
     setAnalyzing(true);
     try {
-      // Fetch all calls (up to 200) for the current scope before analyzing
       const allData = await fetchCallHistory(accountId, userId, filter, 200, null);
       const res = await fetch("/api/analyze-calls", {
         method: "POST",
@@ -256,25 +729,19 @@ export default function CallsPage() {
       id: "from",
       accessorFn: (row) => row.from?.callerId ?? row.from?.number ?? "",
       header: "From",
-      cell: ({ row }) =>
-        row.original.from?.callerId ?? row.original.from?.number ?? "—",
+      cell: ({ row }) => row.original.from?.callerId ?? row.original.from?.number ?? "—",
     },
     {
       id: "to",
       accessorFn: (row) => row.to?.userDisplayName ?? row.to?.number ?? "",
       header: "To",
-      cell: ({ row }) =>
-        row.original.to?.userDisplayName ?? row.original.to?.number ?? "—",
+      cell: ({ row }) => row.original.to?.userDisplayName ?? row.original.to?.number ?? "—",
     },
     {
       accessorKey: "direction",
       header: "Direction",
       cell: ({ row }) =>
-        row.original.direction === 0
-          ? "Inbound"
-          : row.original.direction === 1
-          ? "Outbound"
-          : "—",
+        row.original.direction === 0 ? "Inbound" : row.original.direction === 1 ? "Outbound" : "—",
     },
     { accessorKey: "callResult", header: "Result" },
     {
@@ -295,11 +762,7 @@ export default function CallsPage() {
     <button
       key={s}
       type="button"
-      onClick={() => {
-        setScope(s);
-        setCursor(null);
-        setRecCursor(null);
-      }}
+      onClick={() => { setScope(s); setCursor(null); }}
       className={`px-4 py-1.5 text-sm font-medium rounded-full border transition-colors ${
         scope === s
           ? "bg-[#1a73e8] text-white border-[#1a73e8]"
@@ -309,36 +772,6 @@ export default function CallsPage() {
       {label}
     </button>
   );
-
-  const CursorNav = ({
-    prev,
-    next,
-    onPrev,
-    onNext,
-  }: {
-    prev: string | null;
-    next: string | null;
-    onPrev: () => void;
-    onNext: () => void;
-  }) =>
-    prev || next ? (
-      <div className="flex justify-between items-center pt-4 border-t border-gray-100">
-        <button
-          onClick={onPrev}
-          disabled={!prev}
-          className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 border border-[#dadce0] rounded-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          <ChevronLeft className="w-4 h-4" /> Previous
-        </button>
-        <button
-          onClick={onNext}
-          disabled={!next}
-          className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 border border-[#dadce0] rounded-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          Next <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
-    ) : null;
 
   return (
     <div>
@@ -353,12 +786,7 @@ export default function CallsPage() {
             {scopeBtn("company", "Company")}
           </div>
           <button
-            onClick={() => {
-              setCursor(null);
-              setRecCursor(null);
-              if (tab === "recordings") refetchRecs();
-              else refetchCalls();
-            }}
+            onClick={() => { setCursor(null); refetchCalls(); }}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 border border-[#dadce0] rounded-md hover:bg-gray-50"
           >
             <RefreshCw className="w-4 h-4" />
@@ -370,7 +798,7 @@ export default function CallsPage() {
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 border border-[#dadce0] rounded-md hover:bg-gray-50 disabled:opacity-50"
           >
             <Download className="w-4 h-4" />
-            {exporting ? "Exporting..." : "Export CSV"}
+            {exporting ? "Exporting…" : "Export CSV"}
           </button>
           <button
             onClick={handleAnalyze}
@@ -384,16 +812,13 @@ export default function CallsPage() {
       </div>
 
       <div className="mb-4">
-        <Link
-          href="/ucass/call-history"
-          prefetch={false}
-          className="text-sm text-[#1a73e8] hover:underline"
-        >
+        <Link href="/ucass/call-history" prefetch={false} className="text-sm text-[#1a73e8] hover:underline">
           View full Call History →
         </Link>
       </div>
 
-      <div className="border-b border-gray-200 mb-4">
+      {/* Tabs */}
+      <div className="border-b border-gray-200 mb-0">
         <nav className="flex gap-6">
           <button type="button" onClick={() => setTab("all")} className={tabClass("all")}>
             All Calls
@@ -407,36 +832,44 @@ export default function CallsPage() {
         </nav>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-b-xl border border-t-0 border-gray-200 shadow-sm overflow-hidden">
+
         {/* ── All Calls ── */}
         {tab === "all" && (
           <>
             <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-              <h2 className="text-lg font-medium text-gray-900">
-                {scope === "mine" ? "My Calls" : "Company Calls"} ({cdrs.length})
+              <h2 className="text-base font-medium text-gray-900">
+                {scope === "mine" ? "My Calls" : "Company Calls"}{" "}
+                <span className="text-gray-400 font-normal">({cdrs.length})</span>
               </h2>
             </div>
             {callsLoading ? (
               <div className="px-6 py-12 flex justify-center">
-                <Loader variant="inline" label="Loading calls..." />
+                <Loader variant="inline" label="Loading calls…" />
               </div>
             ) : cdrs.length === 0 ? (
-              <div className="px-6 py-8 text-gray-500">No calls found.</div>
+              <div className="px-6 py-8 text-gray-500 text-sm">No calls found.</div>
             ) : (
               <div className="p-4">
                 <DataTable
                   columns={callColumns}
                   data={cdrs}
-                  searchPlaceholder="Search calls..."
+                  searchPlaceholder="Search calls…"
                   initialSorting={[{ id: "callDate", desc: true }]}
                   pageSize={20}
                 />
-                <CursorNav
-                  prev={prevCursor}
-                  next={nextCursor}
-                  onPrev={() => setCursor(prevCursor)}
-                  onNext={() => setCursor(nextCursor)}
-                />
+                {(prevCursor || nextCursor) && (
+                  <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+                    <button onClick={() => setCursor(prevCursor)} disabled={!prevCursor}
+                      className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 border border-[#dadce0] rounded-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
+                      <ChevronLeft className="w-4 h-4" /> Previous
+                    </button>
+                    <button onClick={() => setCursor(nextCursor)} disabled={!nextCursor}
+                      className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 border border-[#dadce0] rounded-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
+                      Next <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </>
@@ -445,46 +878,38 @@ export default function CallsPage() {
         {/* ── Voicemails ── */}
         {tab === "voicemails" && (
           <>
-            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-              <h2 className="text-lg font-medium text-gray-900">
-                Voicemails ({voicemails.length})
-              </h2>
+            {/* Column headers */}
+            <div className="flex items-center gap-4 px-5 py-2 border-b border-gray-100 bg-gray-50/60">
+              <div className="w-10 shrink-0" />
+              <div className="w-44 shrink-0 text-xs font-medium text-gray-400 uppercase tracking-wide">Caller</div>
+              <div className="flex-1 text-xs font-medium text-gray-400 uppercase tracking-wide">
+                Voicemails · {voicemails.length} total
+              </div>
+              <div className="w-40 shrink-0 text-xs font-medium text-gray-400 uppercase tracking-wide text-right">Date</div>
+              <div className="w-20 shrink-0 text-xs font-medium text-gray-400 uppercase tracking-wide text-right">Status</div>
             </div>
+
             {voicemailsLoading ? (
-              <div className="px-6 py-12 flex justify-center">
-                <Loader variant="inline" label="Loading voicemails..." />
+              <div className="px-6 py-16 flex justify-center">
+                <Loader variant="inline" label="Loading voicemails…" />
               </div>
             ) : voicemails.length === 0 ? (
-              <div className="px-6 py-8 text-gray-500">No voicemails.</div>
+              <div className="py-20 flex flex-col items-center gap-3 text-gray-400">
+                <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center">
+                  <Voicemail className="w-7 h-7 text-gray-300" />
+                </div>
+                <p className="text-sm font-medium text-gray-500">No voicemails</p>
+              </div>
             ) : (
-              <div className="divide-y divide-gray-200">
+              <div className="divide-y divide-gray-100">
                 {voicemails.map((vm, i) => (
-                  <button
+                  <VoicemailRow
                     key={vm.voicemailId ?? i}
-                    type="button"
-                    onClick={() => setSelectedVoicemail(vm)}
-                    className={`w-full px-6 py-4 text-left hover:bg-gray-50 transition-colors flex items-center gap-4 ${
-                      vm.isRead === false ? "bg-blue-50/50" : ""
-                    }`}
-                  >
-                    <div className="w-10 h-10 rounded-full bg-[#e8f0fe] flex items-center justify-center shrink-0">
-                      <Play className="w-5 h-5 text-[#1a73e8]" fill="currentColor" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900">
-                        {vm.from?.callerId ?? vm.from?.number ?? "Unknown"}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {vm.callDate ? new Date(vm.callDate).toLocaleString() : "—"}
-                        {vm.duration != null ? ` · ${formatDuration(vm.duration)}` : ""}
-                      </p>
-                    </div>
-                    {vm.isRead === false && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 shrink-0">
-                        Unread
-                      </span>
-                    )}
-                  </button>
+                    vm={vm}
+                    accountId={accountId}
+                    userId={userId}
+                    onExpand={setSelectedVoicemail}
+                  />
                 ))}
               </div>
             )}
@@ -501,68 +926,10 @@ export default function CallsPage() {
 
         {/* ── Recordings ── */}
         {tab === "recordings" && (
-          <>
-            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-              <h2 className="text-lg font-medium text-gray-900">
-                Recordings ({recCdrs.length})
-              </h2>
-            </div>
-            {recsLoading ? (
-              <div className="px-6 py-12 flex justify-center">
-                <Loader variant="inline" label="Loading recordings..." />
-              </div>
-            ) : recCdrs.length === 0 ? (
-              <div className="px-6 py-8 flex flex-col items-center gap-2 text-gray-400">
-                <Mic className="w-8 h-8" />
-                <p className="text-sm">No recordings found.</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-gray-100">
-                {recCdrs.map((cdr) =>
-                  (cdr.recordings ?? []).map((rec) => (
-                    <div
-                      key={`${cdr.callId}-${rec.id}`}
-                      className={`px-6 py-4 flex items-center gap-4 ${
-                        rec.status === "N" ? "bg-blue-50/40" : ""
-                      }`}
-                    >
-                      {/* Player */}
-                      <RecordingPlayer
-                        recording={rec}
-                        accountId={accountId}
-                        cdr={cdr}
-                      />
-                      {/* Call info */}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900">
-                          {cdr.from?.callerId ?? cdr.from?.number ?? "Unknown"}{" "}
-                          <span className="font-normal text-gray-400">→</span>{" "}
-                          {cdr.to?.userDisplayName ?? cdr.to?.number ?? "—"}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          {new Date(cdr.callDate).toLocaleString()} ·{" "}
-                          {cdr.direction === 0 ? "Inbound" : "Outbound"} ·{" "}
-                          {cdr.callResult}
-                        </p>
-                      </div>
-                    </div>
-                  ))
-                )}
-                <div className="px-4 pb-4">
-                  <CursorNav
-                    prev={recPrevCursor}
-                    next={recNextCursor}
-                    onPrev={() => setRecCursor(recPrevCursor)}
-                    onNext={() => setRecCursor(recNextCursor)}
-                  />
-                </div>
-              </div>
-            )}
-          </>
+          <RecordingsTab accountId={accountId} userId={userId} scope={scope} />
         )}
       </div>
 
-      {/* Analyze modal */}
       {analysisResult && (
         <AnalyzeModal
           analysis={analysisResult}

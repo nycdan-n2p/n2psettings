@@ -86,6 +86,7 @@ function ucassNav(base: string): NavGroup[] {
       items: [
         { href: `${base}/phone-numbers`, label: "Phone Numbers", icon: Hash },
         { href: `${base}/devices`, label: "Devices", icon: Smartphone },
+        { href: `${base}/devices/management`, label: "Device Management", icon: Settings },
         { href: `${base}/schedules`, label: "Schedules", icon: Clock },
         { href: `${base}/special-extensions`, label: "Special Extensions", icon: Star },
         { href: `${base}/virtual-fax`, label: "Virtual Fax", icon: PhoneIcon },

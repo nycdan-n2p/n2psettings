@@ -1,25 +1,53 @@
 import { getApiClient, type V1Response } from "../api-client";
 
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+export interface ScheduleTimezone {
+  abbreviation: string;   // "EST", "PST" — stored on schedule
+  name: string;           // "Eastern Standard Time"
+  format: string;         // "US/Eastern"
+}
+
+/** One rule interval (weekday or calendar-date based) */
 export interface ScheduleRule {
-  day?: number;        // 0=Sun, 1=Mon ... 6=Sat
-  startTime?: string;  // "HH:mm"
-  endTime?: string;    // "HH:mm"
+  name?: string;
+  days: {
+    /** 1=Sun 2=Mon 3=Tue 4=Wed 5=Thu 6=Fri 7=Sat (null when calendar mode) */
+    weekDays: number[] | null;
+    /** ISO date strings (null when weekday mode) */
+    dates: string[] | null;
+    /** true = date/day range, false = individual days */
+    isRange: boolean;
+  };
+  time: {
+    start: string;   // "09:00 AM"
+    end: string;     // "05:00 PM"
+  };
+}
+
+export interface ScheduleUsed {
+  users?: { id: string; name: string }[] | null;
+  departments?: { id: string; name: string }[] | null;
+  welcomeMenus?: { id: string; name: string }[] | null;
+  ringGroups?: { id: string; name: string }[] | null;
+  callQueues?: { id: string; name: string }[] | null;
 }
 
 export interface Schedule {
   id: number;
   name: string;
-  type?: string;
-  timezone?: string;
+  type?: string;          // "24/7" | "Open" | "Custom"
+  timezone?: string;      // timezone abbreviation, e.g. "EST"
   ownerId?: number;
   ownerType?: string;
+  createdBy?: {
+    userId: string;
+    name: string;
+    email?: string;
+    avatars?: { size: string; url: string; type: string }[];
+  } | null;
   rules?: ScheduleRule[];
-  used?: {
-    users?: { id: string; name: string }[] | null;
-    departments?: { id: string; name: string }[] | null;
-    welcomeMenus?: { id: string; name: string }[] | null;
-    ringGroups?: { id: string; name: string }[] | null;
-  };
+  used?: ScheduleUsed;
   [key: string]: unknown;
 }
 
@@ -32,6 +60,19 @@ export interface CreateSchedulePayload {
 interface SchedulesEnvelope {
   total?: number;
   schedules?: Schedule[];
+}
+
+// ── API functions ─────────────────────────────────────────────────────────────
+
+export async function fetchTimezones(): Promise<ScheduleTimezone[]> {
+  const api = await getApiClient();
+  try {
+    const res = await api.get<V1Response<ScheduleTimezone[]>>("/timezones");
+    const data = res.data.data;
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
 }
 
 export async function fetchSchedules(accountId: number): Promise<Schedule[]> {
