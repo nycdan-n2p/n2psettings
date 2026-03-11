@@ -135,7 +135,8 @@ export const qk = {
   bulkOps:       { all: (accountId: number)             => ["bulk-load", accountId]              as const },
   porting:       { all: (accountId: number)             => ["porting", accountId]                as const },
 
-  // SIP Trunking (uses clientId, not accountId)
+  // SIP Trunking — sipAccounts uses the bearer token (no id), sub-resources use the SIP account id
+  sipAccounts:   { all: ()                              => ["sip-trunk-accounts"]                as const },
   sipTrunks:     { all: (clientId: string)              => ["sip-trunks", clientId]              as const },
   sipLimits:     { all: (clientId: string)              => ["sip-limits", clientId]              as const },
   sipAddresses:  { all: (clientId: string)              => ["sip-service-addresses", clientId]   as const },

@@ -19,7 +19,7 @@ import { Modal } from "@/components/settings/Modal";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import {
   Plus, Pencil, Trash2, Search, Calendar, Clock,
-  ChevronDown, X, CheckCircle2,
+  ChevronDown, X,
 } from "lucide-react";
 
 // ── Constants ─────────────────────────────────────────────────────────────────

@@ -14,13 +14,12 @@ import {
   deleteDevice,
   rebootDevice,
   type Device,
-  type DeviceOrder,
   type CreateDevicePayload,
 } from "@/lib/api/devices";
 import { Modal } from "@/components/settings/Modal";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import {
-  Monitor, Wifi, WifiOff, RefreshCw, Download, Upload, Plus,
+  Monitor, WifiOff, RefreshCw, Download, Upload, Plus,
   Trash2, ChevronLeft, ChevronRight, Package, ExternalLink,
   MapPin, User, Truck,
 } from "lucide-react";
@@ -156,8 +155,6 @@ function OrdersTab({ accountId }: { accountId: number }) {
               const contactName = `${order.contact.firstName} ${order.contact.lastName}`.trim();
               const addr = order.address;
               const addrLine = [addr.line1, addr.city, addr.state, addr.zip].filter(Boolean).join(", ");
-              const firstTracking = order.trackingList?.[0];
-
               return (
                 <div key={order.id}>
                   <button
