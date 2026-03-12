@@ -208,9 +208,15 @@ export const N2P_TOOLS: Tool[] = [
   { name: "get_account_analytics", description: "Get account-level call analytics", inputSchema: { type: "object", required: ["preset"], properties: { account_id: { type: "number" }, preset: { type: "string", enum: ["today","7days","14days","month"] } } } },
   { name: "get_user_analytics", description: "Get per-user call analytics", inputSchema: { type: "object", required: ["preset"], properties: { account_id: { type: "number" }, preset: { type: "string", enum: ["today","7days","14days","month"] } } } },
   { name: "get_department_analytics", description: "Get per-department call analytics", inputSchema: { type: "object", required: ["preset"], properties: { account_id: { type: "number" }, preset: { type: "string", enum: ["today","7days","14days","month"] } } } },
+  { name: "get_account_analytics_from_history", description: "Get call analytics from call history (works for today/short periods when preset API fails). Returns totalCalls, userRows (sorted by totalCalls, top caller first), busyTimesGrid.", inputSchema: { type: "object", required: ["days"], properties: { account_id: { type: "number" }, days: { type: "number" } } } },
+  { name: "get_busy_times", description: "Get busy times heatmap: call volume by day of week and hour", inputSchema: { type: "object", required: ["days"], properties: { account_id: { type: "number" }, days: { type: "number" } } } },
+  { name: "get_messaging_analytics", description: "Get SMS/MMS messaging analytics (placeholder - data not yet available)", inputSchema: { type: "object", properties: { account_id: { type: "number" }, days: { type: "number" } } } },
 
   // VOICEMAIL
   { name: "list_voicemails", description: "List voicemails for a user", inputSchema: { type: "object", required: ["user_id"], properties: { account_id: { type: "number" }, user_id: { type: "number" } } } },
+
+  // SUPPORT KNOWLEDGE
+  { name: "search_support", description: "Search net2phone support articles for product questions, how-to guides, and troubleshooting. Use when the user asks about features, setup, or how to do something.", inputSchema: { type: "object", required: ["query"], properties: { query: { type: "string", description: "Search query (e.g. 'call forwarding', 'web calling', 'voicemail setup')" } } } },
 ];
 
 // ─── Raw tool execution (for API route) ─────────────────────────────────────────
@@ -788,6 +794,34 @@ export async function executeN2PTool(
     const id = resolveAccountId(args, ctx);
     const res = await v1.get(`/accounts/${id}/users/${num(args, "user_id")}/voicemails`);
     return unwrap(res.data);
+  }
+
+  // SUPPORT KNOWLEDGE (static JSON, no N2P API)
+  if (name === "search_support") {
+    const query = str(args, "query").toLowerCase().trim();
+    if (!query) return { results: [], note: "Empty query." };
+    const { readFileSync } = await import("fs");
+    const { join } = await import("path");
+    let articles: Array<{ title: string; url: string; summary: string; keywords?: string }>;
+    try {
+      const p = join(process.cwd(), "data", "support-knowledge.json");
+      const raw = readFileSync(p, "utf-8");
+      articles = JSON.parse(raw) as typeof articles;
+    } catch {
+      return { results: [], note: "Support knowledge base not available." };
+    }
+    const terms = query.split(/\s+/).filter(Boolean);
+    const scored = articles.map((a) => {
+      const text = `${a.title} ${a.summary} ${a.keywords ?? ""}`.toLowerCase();
+      let score = 0;
+      for (const t of terms) {
+        if (text.includes(t)) score += 1;
+        if (a.title.toLowerCase().includes(t)) score += 2;
+      }
+      return { ...a, score };
+    });
+    const top = scored.filter((s) => s.score > 0).sort((a, b) => b.score - a.score).slice(0, 5);
+    return { results: top.map(({ title, url, summary }) => ({ title, url, summary })) };
   }
 
   throw new Error(`Unknown tool: ${name}`);

@@ -30,6 +30,8 @@ import {
   Mic,
   ArrowDownToLine,
   ArrowUpFromLine,
+  MessageSquare,
+  Users,
 } from "lucide-react";
 
 type Preset = "7d" | "30d" | "90d";
@@ -52,6 +54,18 @@ function formatDuration(seconds?: number): string {
   const s = seconds % 60;
   return m ? `${m}m ${s}s` : `${s}s`;
 }
+
+function formatTimeOnCalls(totalSeconds?: number): string {
+  if (!totalSeconds) return "00:00";
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  if (h > 0) return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+}
+
+const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
 
 function formatChartDate(dateStr: string, preset: Preset): string {
   const d = new Date(dateStr);
@@ -105,7 +119,41 @@ export default function AnalyticsPage() {
     { id: "missed", header: "Missed", accessorFn: (r) => r.missedCalls ?? 0 },
   ];
 
+  const totalDurationSec = stats
+    ? (stats.totalCalls ?? 0) * (stats.avgDurationSec ?? 0)
+    : 0;
+
   const statCards = [
+    {
+      label: "Messages",
+      value: "—",
+      icon: MessageSquare,
+      color: "text-violet-600",
+      bg: "bg-violet-50",
+      hint: "Messaging data not yet available",
+    },
+    {
+      label: "Calls",
+      value: stats?.totalCalls ?? "—",
+      icon: Phone,
+      color: "text-slate-600",
+      bg: "bg-slate-50",
+    },
+    {
+      label: "Unique conversations",
+      value: "—",
+      icon: Users,
+      color: "text-indigo-600",
+      bg: "bg-indigo-50",
+      hint: "Messaging data not yet available",
+    },
+    {
+      label: "Time on calls",
+      value: formatTimeOnCalls(totalDurationSec),
+      icon: Clock,
+      color: "text-amber-600",
+      bg: "bg-amber-50",
+    },
     {
       label: "Total Calls",
       value: stats?.totalCalls ?? "—",
@@ -223,9 +271,28 @@ export default function AnalyticsPage() {
         </div>
       ) : (
         <>
-          {/* Stats grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-8">
-            {statCards.map((s) => (
+          {/* Overview metrics */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+            {statCards.slice(0, 4).map((s) => (
+              <div
+                key={s.label}
+                className={`rounded-xl border border-gray-100 p-4 ${s.bg} transition-shadow hover:shadow-sm`}
+                title={"hint" in s ? s.hint : undefined}
+              >
+                <div className={`mt-0.5 ${s.color}`}>
+                  <s.icon className="w-5 h-5" />
+                </div>
+                <p className="text-xs font-medium text-gray-500 mt-2">{s.label}</p>
+                <p className="text-xl font-semibold text-gray-900 mt-0.5">
+                  {s.value}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Call stats grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 mb-8">
+            {statCards.slice(4).map((s) => (
               <div
                 key={s.label}
                 className={`rounded-xl border border-gray-100 p-4 ${s.bg} transition-shadow hover:shadow-sm`}
@@ -302,6 +369,93 @@ export default function AnalyticsPage() {
                   </AreaChart>
                 </ResponsiveContainer>
               )}
+            </div>
+          </div>
+
+          {/* Activities: Busy times */}
+          <div className="mb-10">
+            <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
+              Activities
+            </h2>
+            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+              <h3 className="text-sm font-medium text-gray-900 mb-4">Busy times</h3>
+              <p className="text-xs text-gray-500 mb-4">
+                Call volume by day of week and hour (darker = more calls)
+              </p>
+              {(() => {
+                const grid = stats?.busyTimesGrid ?? [];
+                const maxCount = Math.max(
+                  1,
+                  ...grid.flat()
+                );
+                return (
+                  <div className="overflow-x-auto">
+                    <div className="min-w-[600px]">
+                      {/* Hour labels */}
+                      <div className="flex mb-1">
+                        <div className="w-12 shrink-0" />
+                        <div className="flex flex-1 gap-0.5">
+                          {Array.from({ length: 24 }, (_, h) => (
+                            <div
+                              key={h}
+                              className="flex-1 text-[10px] text-gray-400 text-center truncate"
+                            >
+                              {h % 6 === 0 ? h : ""}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      {/* Rows: Mon-Sun (grid uses getDay: 0=Sun, 1=Mon, ...) */}
+                      {DAY_LABELS.map((label, i) => {
+                        const dayIdx = DAY_ORDER[i];
+                        return (
+                        <div key={label} className="flex items-center gap-1 mb-0.5">
+                          <div className="w-12 shrink-0 text-xs text-gray-600">{label}</div>
+                          <div className="flex flex-1 gap-0.5">
+                            {Array.from({ length: 24 }, (_, hour) => {
+                              const count = grid[dayIdx]?.[hour] ?? 0;
+                              const intensity = maxCount > 0 ? count / maxCount : 0;
+                              const bg =
+                                intensity === 0
+                                  ? "bg-gray-100"
+                                  : intensity < 0.25
+                                    ? "bg-indigo-200"
+                                    : intensity < 0.5
+                                      ? "bg-indigo-400"
+                                      : intensity < 0.75
+                                        ? "bg-indigo-600"
+                                        : "bg-indigo-700";
+                              return (
+                                <div
+                                  key={hour}
+                                  className={`flex-1 h-4 rounded-sm ${bg} min-w-[4px]`}
+                                  title={`${label} ${hour}:00 — ${count} calls`}
+                                />
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );})}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+
+          {/* Messaging */}
+          <div className="mb-10">
+            <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
+              Messaging
+            </h2>
+            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+              <div className="flex items-center gap-2 text-gray-500 mb-2">
+                <MessageSquare className="w-5 h-5" />
+                <span className="text-sm font-medium text-gray-700">SMS / MMS analytics</span>
+              </div>
+              <p className="text-sm text-gray-500">
+                Messaging data is not yet available. When enabled, you will see message volume, unique conversations, and response metrics here.
+              </p>
             </div>
           </div>
 

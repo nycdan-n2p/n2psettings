@@ -157,6 +157,23 @@ const TOOLS: Anthropic.Tool[] = [
       required: [],
     },
   },
+
+  // ── Support knowledge ───────────────────────────────────────────────────────
+  {
+    name: "search_support",
+    description:
+      "Search net2phone support articles for product questions, how-to guides, and troubleshooting. Use when the user asks how to do something, about a feature, or needs help with setup.",
+    input_schema: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description: "Search query, e.g. 'call forwarding', 'web calling', 'voicemail setup'",
+        },
+      },
+      required: ["query"],
+    },
+  },
 ];
 
 // ─── System prompt ────────────────────────────────────────────────────────────
@@ -171,6 +188,7 @@ const SYSTEM_PROMPT = `You are an AI assistant for net2phone UCaaS account admin
 - **Departments**: List departments and assign users
 - **Bulk users**: If the admin uploads a CSV, process each row sequentially using create_user
 - **Call stats**: Pull analytics for individual users or the whole account
+- **Support knowledge**: When the user asks how to do something, about a feature, or needs help, use search_support to find relevant articles from support.net2phone.com
 
 ## Workflow for adding a single user
 1. Greet and call get_account_summary (once per session)
@@ -187,6 +205,9 @@ When you receive a list of users (from a CSV upload), process them one by one wi
 ## Workflow for group/queue/department operations
 - If admin says "add John to Sales ring group": call search_users("John") to get userId, call list_ring_groups to find Sales, then add_user_to_ring_group
 - If admin says "show me call stats for Jane": call search_users("Jane") to get userId, then get_user_call_stats
+
+## Workflow for support/product questions
+- When the user asks "how do I set up call forwarding?", "what is web calling?", "help with voicemail", or similar: call search_support with a relevant query, then summarize the results and include links to the articles.
 
 ## Style
 - Be brief and direct. No walls of bullet points.

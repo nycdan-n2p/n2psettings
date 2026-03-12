@@ -145,6 +145,9 @@ export function adaptForMCP(
       };
     }
 
+    case "search_support":
+      return { tool: "search_support", args: { query: input.query } };
+
     default:
       return { tool: anthropicTool, args: { ...base, ...camelToSnake(input) } };
   }

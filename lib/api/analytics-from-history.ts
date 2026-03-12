@@ -16,6 +16,8 @@ export interface AnalyticsFromHistory {
   dailyVolume: { date: string; calls: number; answered: number; missed: number }[];
   userRows: { name: string; totalCalls: number; answeredCalls: number; missedCalls: number; avgDurationSec: number }[];
   deptRows: { name: string; totalCalls: number; answeredCalls: number; missedCalls: number }[];
+  /** Busy times: [dayOfWeek 0-6][hour 0-23] = call count */
+  busyTimesGrid: number[][];
 }
 
 function getDateRange(days: number): { start: Date; end: Date } {
@@ -82,6 +84,7 @@ export async function fetchAnalyticsFromCallHistory(
     { total: number; answered: number; missed: number }
   >();
   const hourCounts: Record<number, number> = {};
+  const busyTimesMap: Record<string, number> = {};
 
   let totalDuration = 0;
   let recordingCount = 0;
@@ -116,8 +119,12 @@ export async function fetchAnalyticsFromCallHistory(
     if (missed) dep.missed++;
     deptMap.set(dept, dep);
 
-    const hour = new Date(cdr.callDate).getHours();
+    const callDate = new Date(cdr.callDate);
+    const hour = callDate.getHours();
+    const dayOfWeek = callDate.getDay();
     hourCounts[hour] = (hourCounts[hour] ?? 0) + 1;
+    const key = `${dayOfWeek}-${hour}`;
+    busyTimesMap[key] = (busyTimesMap[key] ?? 0) + 1;
 
     totalDuration += cdr.duration ?? 0;
     if ((cdr.recordings?.length ?? 0) > 0) recordingCount++;
@@ -155,6 +162,14 @@ export async function fetchAnalyticsFromCallHistory(
   const peakHour =
     Object.entries(hourCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 0;
 
+  const busyTimesGrid: number[][] = Array.from({ length: 7 }, () =>
+    Array.from({ length: 24 }, () => 0)
+  );
+  for (const [key, count] of Object.entries(busyTimesMap)) {
+    const [d, h] = key.split("-").map(Number);
+    busyTimesGrid[d][h] = count;
+  }
+
   return {
     totalCalls,
     answeredCalls,
@@ -168,5 +183,6 @@ export async function fetchAnalyticsFromCallHistory(
     dailyVolume,
     userRows,
     deptRows,
+    busyTimesGrid,
   };
 }

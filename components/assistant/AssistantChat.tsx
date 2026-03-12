@@ -75,12 +75,13 @@ const TOOL_LABELS: Record<string, string> = {
   assign_user_to_department: "Assigning user to department",
   get_user_call_stats: "Fetching call statistics",
   get_account_call_stats: "Fetching account analytics",
+  search_support: "Searching support articles",
 };
 
 const INITIAL_MESSAGE: DisplayMessage = {
   id: "init",
   role: "assistant",
-  text: "Hi! I'm the N2P Assistant. I can help you:\n\n• Add new users and assign phone numbers\n• Add users to ring groups, call queues, or departments\n• Pull call stats for any user or the whole account\n• Bulk-create users from a CSV (click the 📎 icon)\n\nWhat would you like to do?",
+  text: "Hi! I'm the N2P Assistant. I can help you:\n\n• Add new users and assign phone numbers\n• Add users to ring groups, call queues, or departments\n• Pull call stats for any user or the whole account\n• Answer product questions and find support articles\n• Bulk-create users from a CSV (click the 📎 icon)\n\nWhat would you like to do?",
 };
 
 function UserBubble({ text }: { text: string }) {

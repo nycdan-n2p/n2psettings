@@ -1,0 +1,62 @@
+[
+  {
+    "title": "Web Calling: User Guide",
+    "url": "https://support.net2phone.com/s/article/Web-Calling-User-Guide",
+    "summary": "Complete guide to using net2phone Web Calling. Covers setup, making and receiving calls from your browser, microphone permissions, and troubleshooting.",
+    "keywords": "web calling, browser calling, softphone, make calls, receive calls"
+  },
+  {
+    "title": "Web Calling: Video Tutorial",
+    "url": "https://support.net2phone.com/s/article/Web-Calling-Video-Tutorial",
+    "summary": "Video walkthrough of net2phone Web Calling features. Step-by-step visual guide for getting started with browser-based calling.",
+    "keywords": "web calling, video, tutorial, how to"
+  },
+  {
+    "title": "Data vs. Minute Calling",
+    "url": "https://support.net2phone.com/s/article/Data-vs-Minute-Calling",
+    "summary": "Explains the difference between data-based calling (VoIP over internet) and minute-based calling plans. Helps you choose the right plan for your usage.",
+    "keywords": "data calling, minute calling, plans, VoIP"
+  },
+  {
+    "title": "Enabling and Disabling Web Calling: Getting Started",
+    "url": "https://support.net2phone.com/s/article/Enabling-and-Disabling-Web-Calling-Getting-Started",
+    "summary": "How to enable or disable Web Calling for your account or individual users. Admin settings and user preferences.",
+    "keywords": "enable, disable, web calling, settings, admin"
+  },
+  {
+    "title": "How To Setup Your Call Forwarding",
+    "url": "https://support.net2phone.com/s/article/How-To-Setup-Your-Call-Forwarding",
+    "summary": "Step-by-step instructions for setting up call forwarding. Configure where your calls go when you're busy or unavailable.",
+    "keywords": "call forwarding, forward calls, busy, unavailable"
+  },
+  {
+    "title": "Voicemail Setup and Management",
+    "url": "https://support.net2phone.com/s/article/Voicemail-Setup",
+    "summary": "Configure voicemail, set up greetings, and manage voicemail settings. Includes visual voicemail and email notifications.",
+    "keywords": "voicemail, greeting, setup, notifications"
+  },
+  {
+    "title": "Ring Groups Overview",
+    "url": "https://support.net2phone.com/s/article/Ring-Groups",
+    "summary": "Create and manage ring groups. Add users, set ring strategies (simultaneous, sequential), and configure time-based routing.",
+    "keywords": "ring group, hunt group, simultaneous ring, sequential"
+  },
+  {
+    "title": "Call Queues Setup",
+    "url": "https://support.net2phone.com/s/article/Call-Queues",
+    "summary": "Set up call queues for your team. Configure agents, wait times, overflow, and queue strategies.",
+    "keywords": "call queue, ACD, agents, wait time"
+  },
+  {
+    "title": "Adding Users and Extensions",
+    "url": "https://support.net2phone.com/s/article/Adding-Users",
+    "summary": "Add new users to your net2phone account. Assign extensions, phone numbers, and configure user settings.",
+    "keywords": "add user, create user, extension, new user"
+  },
+  {
+    "title": "Phone Number Porting",
+    "url": "https://support.net2phone.com/s/article/Number-Porting",
+    "summary": "Port your existing phone numbers to net2phone. Requirements, timeline, and what to expect during the porting process.",
+    "keywords": "port, porting, transfer number, keep number"
+  }
+]

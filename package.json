@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "crawl-support": "npx ts-node scripts/crawl-support.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
