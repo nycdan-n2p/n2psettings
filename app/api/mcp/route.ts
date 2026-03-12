@@ -89,6 +89,6 @@ export async function GET(request: NextRequest) {
 }
 
 // DELETE for session cleanup (no-op in stateless mode, but required by spec)
-export async function DELETE(_request: NextRequest) {
+export async function DELETE() {
   return new Response(null, { status: 200 });
 }
