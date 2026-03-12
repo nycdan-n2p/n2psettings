@@ -83,11 +83,16 @@ async function handleMCP(request: NextRequest): Promise<Response> {
 
   // ?refreshToken= → exchange for a fresh access token every request (long-lived)
   // ?token=        → use directly as access token (expires in ~1hr)
+  // Bearer header  → if it doesn't look like a JWT (no "eyJ" prefix), treat as refresh token
   const refreshParam = url.searchParams.get("refreshToken");
   let token = tokenFromHeader || url.searchParams.get("token") || "";
 
-  if (!token && refreshParam) {
-    const exchanged = await exchangeRefreshToken(refreshParam);
+  // Auto-detect refresh tokens: JWTs start with "eyJ", anything else is a refresh token
+  const isRefreshToken = (t: string) => t.length > 0 && !t.startsWith("eyJ");
+
+  const rawRefresh = refreshParam || (isRefreshToken(token) ? token : null);
+  if (rawRefresh) {
+    const exchanged = await exchangeRefreshToken(rawRefresh);
     if (!exchanged) {
       return NextResponse.json(
         { error: "Failed to exchange refresh token. It may be expired or revoked." },
