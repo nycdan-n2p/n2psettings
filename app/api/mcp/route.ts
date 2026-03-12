@@ -37,6 +37,29 @@ import { createN2PMCPServer } from "@/lib/mcp/server";
 // Allow long-running tool calls (Vercel Pro: 60s, Hobby: 10s)
 export const maxDuration = 60;
 
+// ─── Refresh token → access token ─────────────────────────────────────────────
+
+const N2P_AUTH_URL = "https://auth.net2phone.com/connect/token";
+
+async function exchangeRefreshToken(refreshToken: string): Promise<string | null> {
+  try {
+    const res = await fetch(N2P_AUTH_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: "unite.webapp",
+        grant_type: "refresh_token",
+        refresh_token: refreshToken,
+      }).toString(),
+    });
+    if (!res.ok) return null;
+    const data = await res.json() as { access_token?: string };
+    return data.access_token ?? null;
+  } catch {
+    return null;
+  }
+}
+
 // ─── CORS headers (required for Claude connector UI) ──────────────────────────
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -52,20 +75,46 @@ export async function OPTIONS() {
 // ─── Request handler ──────────────────────────────────────────────────────────
 
 async function handleMCP(request: NextRequest): Promise<Response> {
-  // Extract Bearer token — accept from Authorization header OR ?token= query param
   const url = new URL(request.url);
   const authHeader = request.headers.get("authorization") ?? "";
   const tokenFromHeader = authHeader.startsWith("Bearer ")
     ? authHeader.slice(7).trim()
     : authHeader.trim();
-  const token = tokenFromHeader || url.searchParams.get("token") || "";
+
+  // ?refreshToken= → exchange for a fresh access token every request (long-lived)
+  // ?token=        → use directly as access token (expires in ~1hr)
+  const refreshParam = url.searchParams.get("refreshToken");
+  let token = tokenFromHeader || url.searchParams.get("token") || "";
+
+  if (!token && refreshParam) {
+    const exchanged = await exchangeRefreshToken(refreshParam);
+    if (!exchanged) {
+      return NextResponse.json(
+        { error: "Failed to exchange refresh token. It may be expired or revoked." },
+        { status: 401, headers: CORS_HEADERS }
+      );
+    }
+    token = exchanged;
+  }
 
   if (!token) {
     return NextResponse.json(
-      { error: "Missing auth. Pass Authorization: Bearer <token> header or ?token= query param." },
+      { error: "Missing auth. Pass ?refreshToken= (recommended) or ?token= or Authorization: Bearer header." },
       { status: 401, headers: CORS_HEADERS }
     );
   }
+
+  // If the caller passed a refresh token but no explicit account/sip IDs,
+  // decode them from the freshly issued access token JWT claims
+  const autoAccountId = (() => {
+    try {
+      const payload = JSON.parse(
+        Buffer.from(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"), "base64").toString()
+      ) as Record<string, unknown>;
+      const id = payload["aid"] ?? payload["accountId"] ?? payload["account_id"];
+      return id ? Number(id) : undefined;
+    } catch { return undefined; }
+  })();
 
   // Optional overrides via headers OR query params
   const accountIdHeader =
@@ -79,7 +128,7 @@ async function handleMCP(request: NextRequest): Promise<Response> {
       ? Number(accountIdHeader)
       : process.env.N2P_DEFAULT_ACCOUNT_ID
       ? Number(process.env.N2P_DEFAULT_ACCOUNT_ID)
-      : undefined,
+      : autoAccountId,
     sipClientId: sipClientIdHeader ?? process.env.N2P_DEFAULT_SIP_CLIENT_ID,
   };
 
