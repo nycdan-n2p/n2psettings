@@ -37,6 +37,18 @@ import { createN2PMCPServer } from "@/lib/mcp/server";
 // Allow long-running tool calls (Vercel Pro: 60s, Hobby: 10s)
 export const maxDuration = 60;
 
+// ─── CORS headers (required for Claude connector UI) ──────────────────────────
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers":
+    "Content-Type, Authorization, X-Account-Id, X-Sip-Client-Id, Mcp-Session-Id",
+};
+
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+}
+
 // ─── Request handler ──────────────────────────────────────────────────────────
 
 async function handleMCP(request: NextRequest): Promise<Response> {
@@ -51,7 +63,7 @@ async function handleMCP(request: NextRequest): Promise<Response> {
   if (!token) {
     return NextResponse.json(
       { error: "Missing auth. Pass Authorization: Bearer <token> header or ?token= query param." },
-      { status: 401 }
+      { status: 401, headers: CORS_HEADERS }
     );
   }
 
@@ -81,7 +93,11 @@ async function handleMCP(request: NextRequest): Promise<Response> {
   await server.connect(transport);
 
   // Handle the MCP request and return the response
-  return transport.handleRequest(request);
+  const response = await transport.handleRequest(request);
+  // Attach CORS headers to every MCP response
+  const headers = new Headers(response.headers);
+  Object.entries(CORS_HEADERS).forEach(([k, v]) => headers.set(k, v));
+  return new Response(response.body, { status: response.status, headers });
 }
 
 // All MCP traffic goes through POST (stateless Streamable HTTP)
@@ -96,5 +112,5 @@ export async function GET(request: NextRequest) {
 
 // DELETE for session cleanup (no-op in stateless mode, but required by spec)
 export async function DELETE() {
-  return new Response(null, { status: 200 });
+  return new Response(null, { status: 200, headers: CORS_HEADERS });
 }
