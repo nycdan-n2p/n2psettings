@@ -12,7 +12,6 @@ export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const redirectUri = url.searchParams.get("redirect_uri") ?? "";
   const state = url.searchParams.get("state") ?? "";
-  const clientId = url.searchParams.get("client_id") ?? "";
 
   const html = `<!DOCTYPE html>
 <html lang="en">

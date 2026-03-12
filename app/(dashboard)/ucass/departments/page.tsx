@@ -129,17 +129,17 @@ function DepartmentEditModal({
   const [name, setName] = useState(department.name);
   const [members, setMembers] = useState<DepartmentMember[]>(department.members ?? []);
 
-  useEffect(() => {
-    setName(latestDept.name);
-    setMembers(latestDept.members ?? []);
-  }, [latestDept]);
-
   const { data: departmentsList = [] } = useQuery({
     queryKey: qk.departments.list(accountId),
     queryFn: () => fetchDepartments(accountId),
     enabled: !!accountId && isOpen,
   });
   const latestDept = departmentsList.find((d) => d.deptId === department.deptId) ?? department;
+
+  useEffect(() => {
+    setName(latestDept.name);
+    setMembers(latestDept.members ?? []);
+  }, [latestDept]);
 
   const { data: features = [] } = useQuery({
     queryKey: qk.departments.features(accountId, department.deptId),
