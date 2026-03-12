@@ -89,6 +89,12 @@ export function adaptForMCP(
     case "list_ring_groups":
       return { tool: "list_ring_groups", args: { ...base } };
 
+    case "get_ring_group":
+      return {
+        tool: "get_ring_group",
+        args: { ...base, ring_group_id: input.ringGroupId },
+      };
+
     case "add_user_to_ring_group":
       return {
         tool: "add_user_to_ring_group",
@@ -147,6 +153,22 @@ export function adaptForMCP(
 
     case "search_support":
       return { tool: "search_support", args: { query: input.query } };
+
+    case "create_schedule": {
+      const args: Record<string, unknown> = { ...base, name: input.name };
+      if (input.timezone) args.timezone = input.timezone;
+      if (input.rules) args.rules = input.rules;
+      return { tool: "create_schedule", args };
+    }
+
+    case "build_call_flow": {
+      const args: Record<string, unknown> = { ...base };
+      if (input.mainNumber !== undefined) args.main_number = input.mainNumber;
+      if (input.workHours !== undefined) args.work_hours = input.workHours;
+      if (input.afterHours !== undefined) args.after_hours = input.afterHours;
+      if (input.noAnswer !== undefined) args.no_answer = input.noAnswer;
+      return { tool: "build_call_flow", args };
+    }
 
     default:
       return { tool: anthropicTool, args: { ...base, ...camelToSnake(input) } };

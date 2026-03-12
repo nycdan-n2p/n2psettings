@@ -76,6 +76,9 @@ const TOOL_LABELS: Record<string, string> = {
   get_user_call_stats: "Fetching call statistics",
   get_account_call_stats: "Fetching account analytics",
   search_support: "Searching support articles",
+  get_ring_group: "Loading ring group details",
+  create_schedule: "Creating schedule",
+  build_call_flow: "Building call flow",
 };
 
 const INITIAL_MESSAGE: DisplayMessage = {

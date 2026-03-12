@@ -217,6 +217,9 @@ export const N2P_TOOLS: Tool[] = [
 
   // SUPPORT KNOWLEDGE
   { name: "search_support", description: "Search net2phone support articles for product questions, how-to guides, and troubleshooting. Use when the user asks about features, setup, or how to do something.", inputSchema: { type: "object", required: ["query"], properties: { query: { type: "string", description: "Search query (e.g. 'call forwarding', 'web calling', 'voicemail setup')" } } } },
+
+  // CALL FLOW BUILDER
+  { name: "build_call_flow", description: "Build a call flow from structured request. Creates schedules, ring groups, and time-based routing (work hours vs after hours).", inputSchema: { type: "object", properties: { main_number: { type: "string" }, work_hours: { type: "object" }, after_hours: { type: "object" }, no_answer: { type: "object" } } } },
 ];
 
 // ─── Raw tool execution (for API route) ─────────────────────────────────────────
@@ -794,6 +797,19 @@ export async function executeN2PTool(
     const id = resolveAccountId(args, ctx);
     const res = await v1.get(`/accounts/${id}/users/${num(args, "user_id")}/voicemails`);
     return unwrap(res.data);
+  }
+
+  // CALL FLOW BUILDER
+  if (name === "build_call_flow") {
+    const id = resolveAccountId(args, ctx);
+    const { buildCallFlow } = await import("@/lib/call-flow-builder");
+    const buildArgs = {
+      main_number: args.main_number,
+      work_hours: args.work_hours,
+      after_hours: args.after_hours,
+      no_answer: args.no_answer,
+    } as import("@/lib/call-flow-builder").BuildCallFlowArgs;
+    return buildCallFlow(v1, id, buildArgs);
   }
 
   // SUPPORT KNOWLEDGE (bundled at build time, no N2P API)

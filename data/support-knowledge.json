@@ -42,6 +42,36 @@
     "keywords": "ring group, hunt group, simultaneous ring, sequential"
   },
   {
+    "title": "Ring Groups and Time-Based Routing",
+    "url": "https://support.net2phone.com/s/article/Ring-Groups-Time-Based-Routing",
+    "summary": "Configure ring groups to route calls differently by time of day. Use schedules to define work hours vs after hours, and assign different destinations (ring groups or departments) to each time block.",
+    "keywords": "ring group, time-based routing, work hours, after hours, schedule"
+  },
+  {
+    "title": "Schedules and Time Blocks",
+    "url": "https://support.net2phone.com/s/article/Schedules-Time-Blocks",
+    "summary": "Create schedules to define when your business is open. Schedules use weekdays and time ranges. Time blocks in ring groups reference schedules for work-hours vs after-hours routing.",
+    "keywords": "schedule, time block, work hours, business hours, weekdays"
+  },
+  {
+    "title": "Welcome Menus and DTMF Options",
+    "url": "https://support.net2phone.com/s/article/Welcome-Menus-DTMF",
+    "summary": "Set up auto-attendant menus with DTMF options. Callers hear a greeting and can press a key to reach departments, ring groups, or extensions.",
+    "keywords": "welcome menu, auto-attendant, DTMF, IVR, press 1"
+  },
+  {
+    "title": "Overflow and Final Tier (Voicemail)",
+    "url": "https://support.net2phone.com/s/article/Ring-Group-Overflow-Voicemail",
+    "summary": "When no one answers in a ring group, calls can overflow to voicemail. The final tier defines what happens when all members fail to answer. Configure department or user voicemail as the overflow destination.",
+    "keywords": "overflow, final tier, voicemail, no answer, ring group"
+  },
+  {
+    "title": "Assigning Phone Numbers to Ring Groups and Menus",
+    "url": "https://support.net2phone.com/s/article/Assign-Phone-Number-Ring-Group",
+    "summary": "Assign a main number or DID to a ring group or welcome menu so incoming calls route correctly. Use the admin portal to set the route type and destination for each phone number.",
+    "keywords": "assign phone number, main number, DID, ring group, welcome menu, route"
+  },
+  {
     "title": "Call Queues Setup",
     "url": "https://support.net2phone.com/s/article/Call-Queues",
     "summary": "Set up call queues for your team. Configure agents, wait times, overflow, and queue strategies.",

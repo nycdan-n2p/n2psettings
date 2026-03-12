@@ -74,6 +74,18 @@ const TOOLS: Anthropic.Tool[] = [
     input_schema: { type: "object", properties: {}, required: [] },
   },
   {
+    name: "get_ring_group",
+    description:
+      "Get full details for a ring group including routing (time blocks, tiers, final tier). Use when building call flows or inspecting existing config.",
+    input_schema: {
+      type: "object",
+      properties: {
+        ringGroupId: { type: "string", description: "Ring group ID from list_ring_groups." },
+      },
+      required: ["ringGroupId"],
+    },
+  },
+  {
     name: "add_user_to_ring_group",
     description:
       "Add an existing user to a ring group. Use search_users to get the userId if needed.",
@@ -158,6 +170,105 @@ const TOOLS: Anthropic.Tool[] = [
     },
   },
 
+  // ── Schedules ──────────────────────────────────────────────────────────────
+  {
+    name: "create_schedule",
+    description:
+      "Create a schedule with time rules (e.g. work hours Mon-Fri 9-5). Used for time-based call routing.",
+    input_schema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Schedule name, e.g. 'Work Hours'." },
+        timezone: { type: "string", description: "Timezone abbreviation, e.g. EST, America/New_York." },
+        rules: {
+          type: "array",
+          description: "Schedule rules. Each: { days: { weekDays: [1-7] }, time: { start: '09:00 AM', end: '05:00 PM' } }. 1=Sun, 2=Mon, ... 7=Sat.",
+          items: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              days: {
+                type: "object",
+                properties: {
+                  weekDays: { type: "array", items: { type: "number" } },
+                  dates: { type: "array", items: { type: "string" } },
+                  isRange: { type: "boolean" },
+                },
+              },
+              time: {
+                type: "object",
+                properties: {
+                  start: { type: "string" },
+                  end: { type: "string" },
+                },
+              },
+            },
+          },
+        },
+      },
+      required: ["name"],
+    },
+  },
+
+  // ── Call flow builder ───────────────────────────────────────────────────────
+  {
+    name: "build_call_flow",
+    description:
+      "Build a call flow from a structured request. Use when the user describes routing like 'main number to X during work hours, Y after hours, no answer to voicemail'. Creates schedules, ring groups, and time-based routing.",
+    input_schema: {
+      type: "object",
+      properties: {
+        mainNumber: {
+          type: "string",
+          description: "Phone number (E.164) or 'main' to use first available. May require manual assignment after.",
+        },
+        workHours: {
+          type: "object",
+          description: "Routing during work hours.",
+          properties: {
+            schedule: {
+              type: "object",
+              properties: {
+                weekDays: { type: "array", items: { type: "number" }, description: "1=Sun..7=Sat. e.g. [2,3,4,5,6] for Mon-Fri." },
+                start: { type: "string", description: "e.g. 09:00 AM" },
+                end: { type: "string", description: "e.g. 05:00 PM" },
+              },
+            },
+            destination: {
+              type: "object",
+              properties: {
+                type: { type: "string", enum: ["ring_group", "department"] },
+                name: { type: "string", description: "Name of ring group or department." },
+              },
+            },
+          },
+        },
+        afterHours: {
+          type: "object",
+          description: "Routing after hours.",
+          properties: {
+            destination: {
+              type: "object",
+              properties: {
+                type: { type: "string", enum: ["ring_group", "department"] },
+                name: { type: "string" },
+              },
+            },
+          },
+        },
+        noAnswer: {
+          type: "object",
+          description: "Overflow when no one answers.",
+          properties: {
+            type: { type: "string", enum: ["voicemail"] },
+            target: { type: "string", enum: ["department", "user"], description: "Optional. Department or user for voicemail." },
+          },
+        },
+      },
+      required: [],
+    },
+  },
+
   // ── Support knowledge ───────────────────────────────────────────────────────
   {
     name: "search_support",
@@ -208,6 +319,13 @@ When you receive a list of users (from a CSV upload), process them one by one wi
 
 ## Workflow for support/product questions
 - When the user asks "how do I set up call forwarding?", "what is web calling?", "help with voicemail", or similar: call search_support with a relevant query, then summarize the results and include links to the articles.
+
+## Workflow for call flow requests
+When the user describes a call routing setup (e.g. "main number to XYZ during work hours, ABC after hours, no answer to voicemail"):
+1. Clarify: main number (or "main"), work hours (e.g. Mon-Fri 9-5), destinations (ring groups or departments by name), overflow (voicemail if no answer).
+2. Call list_ring_groups and list_departments to verify the names exist.
+3. Call build_call_flow with the structured request: workHours.destination (type + name), afterHours.destination, optional workHours.schedule (weekDays: [], start, end), optional noAnswer (type: voicemail).
+4. Summarize what was created. If manual steps are returned (e.g. assign main number), explain them clearly.
 
 ## Style
 - Be brief and direct. No walls of bullet points.
