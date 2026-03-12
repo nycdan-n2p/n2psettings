@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   User,
   Building2,
@@ -13,10 +13,12 @@ import {
   Music2,
   X,
   Loader2,
+  ChevronDown,
 } from "lucide-react";
 import { Modal } from "@/components/settings/Modal";
 import { TextInput } from "@/components/settings/TextInput";
 import { Toggle } from "@/components/settings/Toggle";
+import { SettingsRow } from "@/components/settings/SettingsGroup";
 import { Loader } from "@/components/ui/Loader";
 import { useApp } from "@/contexts/AppContext";
 import { qk } from "@/lib/query-keys";
@@ -112,30 +114,28 @@ export function EditTeamMemberModal({
   )?.url;
 
   const headerContent = (
-    <div className="flex items-center gap-4 px-6 py-4 border-b border-gray-200/80">
-      <div className="flex-shrink-0 w-12 h-12 rounded-full bg-[#e8f0fe] flex items-center justify-center overflow-hidden">
-        {avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- external avatar URL
-          <img
-            src={avatarUrl}
-            alt=""
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <span className="text-lg font-medium text-[#1a73e8]">
-            {displayName.charAt(0) || "?"}
-          </span>
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <h2 className="text-lg font-medium text-gray-900 truncate">
-          Edit {displayName}
-        </h2>
-        <p className="text-sm text-gray-500 truncate">{user.email}</p>
+    <div className="flex items-center justify-between px-6 py-4 border-b border-[#dadce0] bg-white">
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#f1f3f4] flex items-center justify-center overflow-hidden">
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- external avatar URL
+            <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-sm font-medium text-gray-600">
+              {displayName.charAt(0) || "?"}
+            </span>
+          )}
+        </div>
+        <div className="min-w-0">
+          <h2 className="text-base font-medium text-gray-900 truncate">
+            Edit {displayName}
+          </h2>
+          <p className="text-sm text-gray-500 truncate">{user.email}</p>
+        </div>
       </div>
       <button
         onClick={onClose}
-        className="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors"
+        className="p-2 rounded-full hover:bg-[#f1f3f4] text-gray-500 transition-colors shrink-0"
         aria-label="Close"
       >
         <X className="w-5 h-5" />
@@ -152,30 +152,30 @@ export function EditTeamMemberModal({
       headerContent={headerContent}
     >
       <div className="flex flex-col -mx-6 -mb-4">
-        {/* Tabs - Google Material 3 style */}
-        <div className="flex overflow-x-auto border-b border-gray-200/80">
+        {/* Tabs - Google Admin style */}
+        <div className="flex overflow-x-auto border-b border-[#dadce0] bg-[#f8f9fa]">
           {TABS.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               onClick={() => setActiveTab(id)}
               className={`
-                flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap
+                flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap
                 border-b-2 -mb-px transition-colors
                 ${
                   activeTab === id
-                    ? "border-[#1a73e8] text-[#1a73e8]"
-                    : "border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50/50"
+                    ? "border-[#1a73e8] text-[#1a73e8] bg-white"
+                    : "border-transparent text-gray-600 hover:text-gray-900 hover:bg-[#f1f3f4]"
                 }
               `}
             >
-              <Icon className="w-4 h-4 flex-shrink-0" />
+              <Icon className="w-4 h-4 flex-shrink-0 opacity-70" />
               {label}
             </button>
           ))}
         </div>
 
         {/* Tab content */}
-        <div className="px-6 py-5 min-h-[320px]">
+        <div className="px-6 py-6 min-h-[320px] bg-[#fafafa]">
           {isLoading ? (
             <div className="flex justify-center py-12">
               <Loader variant="inline" label="Loading..." />
@@ -267,14 +267,10 @@ function ProfileTab({
     form.email !== undefined;
 
   return (
-    <div className="space-y-5">
-      <div className="rounded-xl border border-gray-200/80 p-6 bg-gray-50/30">
-        <p className="text-sm text-gray-600 mb-4">
-          Drag and drop your avatar here, or browse to upload.
-        </p>
-        <p className="text-xs text-gray-500">
-          Supported: .png, .jpg, .jpeg · Max size: 4 MB
-        </p>
+    <div className="border border-[#dadce0] rounded-lg bg-white p-6 space-y-6">
+      <div className="border border-dashed border-[#dadce0] rounded-lg p-6 bg-[#fafafa]">
+        <p className="text-sm text-gray-600">Drag and drop your avatar here, or browse to upload.</p>
+        <p className="text-xs text-gray-500 mt-1">Supported: .png, .jpg, .jpeg · Max size: 4 MB</p>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <TextInput
@@ -298,15 +294,88 @@ function ProfileTab({
         placeholder="user@example.com"
       />
       {hasChanges && (
-        <div className="pt-2">
-          <button
-            onClick={onSave}
-            disabled={isSaving}
-            className="px-4 py-2 bg-[#1a73e8] text-white text-sm font-medium rounded-lg hover:bg-[#1557b0] disabled:opacity-50 flex items-center gap-2"
-          >
-            {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-            Save changes
-          </button>
+        <button
+          onClick={onSave}
+          disabled={isSaving}
+          className="px-4 py-2 bg-[#1a73e8] text-white text-sm font-medium rounded-lg hover:bg-[#1557b0] disabled:opacity-50 flex items-center gap-2"
+        >
+          {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+          Save changes
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ─── Department dropdown (schedules-style) ────────────────────────────────────
+function DepartmentSelect({
+  departments,
+  selectedIds,
+  onSelect,
+}: {
+  departments: Array<{ deptId: number; name: string }>;
+  selectedIds: Set<number>;
+  onSelect: (ids: number[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const count = selectedIds.size;
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const toggle = (deptId: number) => {
+    const next = new Set(selectedIds);
+    if (next.has(deptId)) next.delete(deptId);
+    else next.add(deptId);
+    onSelect(Array.from(next));
+  };
+
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-2 px-3 py-2 text-sm border border-[#dadce0] rounded-lg bg-white hover:bg-[#f8f9fa] text-left min-w-[200px]"
+      >
+        <span className="flex-1 truncate text-gray-700">
+          {count === 0
+            ? "No departments"
+            : `${count} department${count !== 1 ? "s" : ""} selected`}
+        </span>
+        <ChevronDown
+          className={`w-4 h-4 text-gray-500 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open && (
+        <div className="absolute z-50 top-full left-0 mt-1 w-72 max-h-64 bg-white rounded-lg shadow-lg border border-[#dadce0] overflow-hidden">
+          <div className="px-3 py-2 border-b border-[#f1f3f4] bg-[#f8f9fa]">
+            <span className="text-xs font-medium text-gray-600">
+              Select departments
+            </span>
+          </div>
+          <div className="max-h-48 overflow-y-auto py-1">
+            {departments.map((d) => (
+              <label
+                key={d.deptId}
+                className="flex items-center gap-2 px-3 py-2 hover:bg-[#f8f9fa] cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedIds.has(d.deptId)}
+                  onChange={() => toggle(d.deptId)}
+                  className="rounded border-[#dadce0] text-[#1a73e8] focus:ring-[#1a73e8]"
+                />
+                <span className="text-sm text-gray-700 truncate">{d.name}</span>
+              </label>
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -334,95 +403,64 @@ function CompanyTab({
     form.members?.map((m) => m.id) ?? memberIds
   );
 
-  const toggleDept = (deptId: number) => {
-    const next = new Set(selectedIds);
-    if (next.has(deptId)) next.delete(deptId);
-    else next.add(deptId);
-    onUpdate({
-      members: Array.from(next).map((id) => ({ id })),
-    });
-  };
-
-  const roleId = (user as { roleId?: number }).roleId;
+  const roleId = form.roleId ?? (user as { roleId?: number }).roleId;
+  const isAdmin =
+    user.role?.toLowerCase() === "admin" || roleId === 2;
   const compDirEnabled = form.compDir?.enabled ?? ud.compDir?.enabled ?? false;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Phone Number
-        </label>
-        <p className="text-sm text-gray-600">
+    <div className="border border-[#dadce0] rounded-lg bg-white divide-y divide-[#f1f3f4]">
+      <div className="p-4">
+        <p className="text-xs font-medium text-gray-500 mb-1">Phone Number</p>
+        <p className="text-sm text-gray-900">
           {(ud.lineNumber?.[0] ?? "—")} · Ext {(user as { extension?: string }).extension ?? "—"}
         </p>
       </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Departments
-        </label>
-        <div className="flex flex-wrap gap-2">
-          {departments.map((d) => (
-            <button
-              key={d.deptId}
-              type="button"
-              onClick={() => toggleDept(d.deptId)}
-              className={`
-                px-3 py-1.5 rounded-full text-sm font-medium
-                ${
-                  selectedIds.has(d.deptId)
-                    ? "bg-[#1a73e8] text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }
-              `}
-            >
-              {d.name}
-            </button>
-          ))}
-        </div>
+      <div className="p-4">
+        <p className="text-xs font-medium text-gray-500 mb-2">Departments</p>
+        <DepartmentSelect
+          departments={departments}
+          selectedIds={selectedIds}
+          onSelect={(ids) => onUpdate({ members: ids.map((id) => ({ id })) })}
+        />
       </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Role
-        </label>
-        <div className="flex gap-2">
-          {["User", "Admin"].map((r) => (
+      <div className="p-4">
+        <p className="text-xs font-medium text-gray-500 mb-2">Role</p>
+        <div className="flex gap-0.5 p-0.5 bg-[#f1f3f4] rounded-lg w-fit">
+          {(["User", "Admin"] as const).map((r) => (
             <button
               key={r}
               type="button"
-              className={`
-                px-4 py-2 rounded-lg text-sm font-medium
-                ${
-                  (user.role?.toLowerCase() === r.toLowerCase() ||
-                    (r === "Admin" && roleId === 1))
-                    ? "bg-[#1a73e8] text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }
-              `}
+              onClick={() => onUpdate({ roleId: r === "Admin" ? 2 : 1 })}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                (r === "Admin" && isAdmin) || (r === "User" && !isAdmin)
+                  ? "bg-white text-[#1a73e8] shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
             >
               {r}
             </button>
           ))}
         </div>
       </div>
-      <div className="flex items-center justify-between py-2">
-        <div>
-          <p className="text-sm font-medium text-gray-900">Company Directory</p>
-          <p className="text-xs text-gray-500">
-            When on, callers can reach you by name in the directory.
-          </p>
-        </div>
+      <SettingsRow
+        label="Company Directory"
+        description="When on, callers can reach you by name in the directory."
+      >
         <Toggle
           checked={compDirEnabled}
           onChange={(v) => onUpdate({ compDir: { enabled: v } })}
         />
+      </SettingsRow>
+      <div className="p-4">
+        <button
+          onClick={onSave}
+          disabled={isSaving || Object.keys(form).length === 0}
+          className="px-4 py-2 bg-[#1a73e8] text-white text-sm font-medium rounded-lg hover:bg-[#1557b0] disabled:opacity-50"
+        >
+          {isSaving ? "Saving..." : "Save changes"}
+        </button>
       </div>
-      <button
-        onClick={onSave}
-        disabled={isSaving || Object.keys(form).length === 0}
-        className="px-4 py-2 bg-[#1a73e8] text-white text-sm font-medium rounded-lg hover:bg-[#1557b0] disabled:opacity-50"
-      >
-        {isSaving ? "Saving..." : "Save changes"}
-      </button>
     </div>
   );
 }
@@ -433,25 +471,18 @@ function LicensesTab({
   licenses: Array<{ code?: string; name?: string }>;
 }) {
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-gray-600">
-        Licenses granted by your company admins.
-      </p>
-      <div className="rounded-lg border border-gray-200 divide-y divide-gray-100">
+    <div className="border border-[#dadce0] rounded-lg bg-white">
+      <div className="px-4 py-3 border-b border-[#f1f3f4]">
+        <p className="text-sm text-gray-600">Licenses granted by your company admins.</p>
+      </div>
+      <div className="divide-y divide-[#f1f3f4]">
         {licenses.length === 0 ? (
-          <p className="py-6 text-center text-sm text-gray-500">
-            No licenses to display
-          </p>
+          <p className="py-8 text-center text-sm text-gray-500">No licenses to display</p>
         ) : (
           licenses.map((l) => (
-            <div
-              key={l.code ?? l.name ?? ""}
-              className="flex items-center gap-3 px-4 py-3"
-            >
-              <FileBarChart className="w-5 h-5 text-gray-400" />
-              <span className="text-sm font-medium text-gray-900">
-                {l.name ?? l.code ?? "License"}
-              </span>
+            <div key={l.code ?? l.name ?? ""} className="flex items-center gap-3 px-4 py-3">
+              <FileBarChart className="w-5 h-5 text-gray-400 shrink-0" />
+              <span className="text-sm text-gray-900">{l.name ?? l.code ?? "License"}</span>
             </div>
           ))
         )}
@@ -462,11 +493,11 @@ function LicensesTab({
 
 function CallForwardingTab() {
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-gray-600">
+    <div className="border border-[#dadce0] rounded-lg bg-white p-6">
+      <p className="text-sm text-gray-600 mb-4">
         Enable call forwarding and choose when and where to forward calls.
       </p>
-      <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4">
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
         <p className="text-sm text-amber-800">
           Call forwarding configuration is managed at the account level. Contact
           your admin or use the main settings to configure forwarding rules.
@@ -494,14 +525,12 @@ function CallOptionsTab({
     form.isRingGroupCallsEnabled ?? ud.isRingGroupCallsEnabled ?? false;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <p className="text-sm font-medium text-gray-900 mb-1">
-          Ring Group Status
-        </p>
+    <div className="border border-[#dadce0] rounded-lg bg-white divide-y divide-[#f1f3f4]">
+      <div className="p-4">
+        <p className="text-xs font-medium text-gray-500 mb-1">Ring Group Status</p>
         <div className="flex items-center gap-2">
           <span
-            className={`w-2.5 h-2.5 rounded-full ${
+            className={`w-2 h-2 rounded-full shrink-0 ${
               ringGroupEnabled ? "bg-green-500" : "bg-gray-300"
             }`}
           />
@@ -512,25 +541,24 @@ function CallOptionsTab({
           </span>
         </div>
       </div>
-      <div className="flex items-center justify-between py-2">
-        <div>
-          <p className="text-sm font-medium text-gray-900">Ring group calls</p>
-          <p className="text-xs text-gray-500">
-            Allow this user to receive ring group calls.
-          </p>
-        </div>
+      <SettingsRow
+        label="Ring group calls"
+        description="Allow this user to receive ring group calls."
+      >
         <Toggle
           checked={ringGroupEnabled}
           onChange={(v) => onUpdate({ isRingGroupCallsEnabled: v })}
         />
+      </SettingsRow>
+      <div className="p-4">
+        <button
+          onClick={onSave}
+          disabled={isSaving || Object.keys(form).length === 0}
+          className="px-4 py-2 bg-[#1a73e8] text-white text-sm font-medium rounded-lg hover:bg-[#1557b0] disabled:opacity-50"
+        >
+          {isSaving ? "Saving..." : "Save changes"}
+        </button>
       </div>
-      <button
-        onClick={onSave}
-        disabled={isSaving || Object.keys(form).length === 0}
-        className="px-4 py-2 bg-[#1a73e8] text-white text-sm font-medium rounded-lg hover:bg-[#1557b0] disabled:opacity-50"
-      >
-        {isSaving ? "Saving..." : "Save changes"}
-      </button>
     </div>
   );
 }
@@ -550,11 +578,9 @@ function DevicesTab({
   const ud = user as UserDetail;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Caller ID
-        </label>
+    <div className="border border-[#dadce0] rounded-lg bg-white divide-y divide-[#f1f3f4]">
+      <div className="p-4">
+        <p className="text-xs font-medium text-gray-500 mb-1">Caller ID</p>
         <p className="text-sm text-gray-600">
           Your outbound calls will appear from this number.
         </p>
@@ -562,21 +588,15 @@ function DevicesTab({
           {ud.callerId ?? ud.lineNumber?.[0] ?? "—"}
         </p>
       </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Phone Rings
-        </label>
-        <p className="text-sm text-gray-600">
-          All desk phones ring simultaneously.
-        </p>
+      <div className="p-4">
+        <p className="text-xs font-medium text-gray-500 mb-1">Phone Rings</p>
+        <p className="text-sm text-gray-600">All desk phones ring simultaneously.</p>
         <p className="mt-1 text-sm font-medium text-gray-900">
           {ud.sipDeviceRings ?? 3} Rings
         </p>
       </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Desk Phones
-        </label>
+      <div className="p-4">
+        <p className="text-xs font-medium text-gray-500 mb-2">Desk Phones</p>
         {devices.length === 0 ? (
           <p className="text-sm text-gray-500">No desk phones assigned</p>
         ) : (
@@ -584,9 +604,9 @@ function DevicesTab({
             {devices.map((d) => (
               <div
                 key={d.macId}
-                className="flex items-center justify-between rounded-lg border border-gray-200 p-3"
+                className="flex items-center justify-between rounded-lg border border-[#dadce0] p-3 bg-[#fafafa]"
               >
-                <span className="text-sm font-medium">
+                <span className="text-sm text-gray-900">
                   {d.deviceType?.name ?? d.displayName ?? d.macId}
                 </span>
                 {d.provisioningUrl && (
@@ -594,7 +614,7 @@ function DevicesTab({
                     href={d.provisioningUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs text-[#1a73e8] hover:underline"
+                    className="text-sm text-[#1a73e8] hover:underline"
                   >
                     Config
                   </a>
@@ -603,10 +623,7 @@ function DevicesTab({
             ))}
           </div>
         )}
-        <button
-          type="button"
-          className="mt-2 text-sm text-[#1a73e8] hover:underline"
-        >
+        <button type="button" className="mt-2 text-sm text-[#1a73e8] hover:underline font-medium">
           Add Desk Phone
         </button>
       </div>
@@ -642,44 +659,30 @@ function VoicemailTab({
     false;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between py-2">
-        <div>
-          <p className="text-sm font-medium text-gray-900">Voicemail</p>
-          <p className="text-xs text-gray-500">
-            When off, callers cannot leave voicemail if you miss their call.
-          </p>
-        </div>
-        <Toggle
-          checked={enabled}
-          onChange={(v) => onUpdate({ voicemailEnabled: v })}
-        />
-      </div>
-      <div className="flex items-center justify-between py-2">
-        <div>
-          <p className="text-sm font-medium text-gray-900">
-            Voicemail-to-Email
-          </p>
-          <p className="text-xs text-gray-500">
-            Email me when I get a new voicemail.
-          </p>
-        </div>
+    <div className="border border-[#dadce0] rounded-lg bg-white divide-y divide-[#f1f3f4]">
+      <SettingsRow
+        label="Voicemail"
+        description="When off, callers cannot leave voicemail if you miss their call."
+      >
+        <Toggle checked={enabled} onChange={(v) => onUpdate({ voicemailEnabled: v })} />
+      </SettingsRow>
+      <SettingsRow
+        label="Voicemail-to-Email"
+        description="Email me when I get a new voicemail."
+      >
         <Toggle
           checked={emailNotify}
           onChange={(v) =>
             onUpdate({
-              voicemailNotification: {
-                ...form.voicemailNotification,
-                ...vm,
-                emailNotify: v,
-              },
+              voicemailNotification: { ...form.voicemailNotification, ...vm, emailNotify: v },
             })
           }
         />
-      </div>
+      </SettingsRow>
       {emailNotify && (
-        <div className="pl-4 space-y-2 border-l-2 border-gray-200">
-          <label className="flex items-center gap-2">
+        <div className="p-4 space-y-3 bg-[#fafafa]">
+          <p className="text-xs font-medium text-gray-500">Email options</p>
+          <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
               checked={emailIncludeVM}
@@ -692,11 +695,11 @@ function VoicemailTab({
                   },
                 })
               }
-              className="rounded border-gray-300"
+              className="rounded border-[#dadce0] text-[#1a73e8]"
             />
-            <span className="text-sm">Include Audio File Attachment</span>
+            <span className="text-sm text-gray-700">Include Audio File Attachment</span>
           </label>
-          <label className="flex items-center gap-2">
+          <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
               checked={emailTranscribe}
@@ -709,11 +712,11 @@ function VoicemailTab({
                   },
                 })
               }
-              className="rounded border-gray-300"
+              className="rounded border-[#dadce0] text-[#1a73e8]"
             />
-            <span className="text-sm">Include Audio Transcript</span>
+            <span className="text-sm text-gray-700">Include Audio Transcript</span>
           </label>
-          <label className="flex items-center gap-2">
+          <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
               checked={emailIncludeCaller}
@@ -726,19 +729,21 @@ function VoicemailTab({
                   },
                 })
               }
-              className="rounded border-gray-300"
+              className="rounded border-[#dadce0] text-[#1a73e8]"
             />
-            <span className="text-sm">Include Caller Details</span>
+            <span className="text-sm text-gray-700">Include Caller Details</span>
           </label>
         </div>
       )}
-      <button
-        onClick={onSave}
-        disabled={isSaving || Object.keys(form).length === 0}
-        className="px-4 py-2 bg-[#1a73e8] text-white text-sm font-medium rounded-lg hover:bg-[#1557b0] disabled:opacity-50"
-      >
-        {isSaving ? "Saving..." : "Save changes"}
-      </button>
+      <div className="p-4">
+        <button
+          onClick={onSave}
+          disabled={isSaving || Object.keys(form).length === 0}
+          className="px-4 py-2 bg-[#1a73e8] text-white text-sm font-medium rounded-lg hover:bg-[#1557b0] disabled:opacity-50"
+        >
+          {isSaving ? "Saving..." : "Save changes"}
+        </button>
+      </div>
     </div>
   );
 }
@@ -760,39 +765,43 @@ function HoldMusicTab({
   const custom = form.hasCustomMusicOnHold ?? ud.hasCustomMusicOnHold ?? false;
 
   return (
-    <div className="space-y-6">
-      <p className="text-sm text-gray-600">
-        Choose Default to use standard hold music, or Custom to upload your own.
-      </p>
-      <div className="space-y-2">
-        <label className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50">
-          <input
-            type="radio"
-            name="holdMusic"
-            checked={!custom}
-            onChange={() => onUpdate({ hasCustomMusicOnHold: false })}
-            className="text-[#1a73e8]"
-          />
-          <span className="text-sm font-medium">Default Music on Hold</span>
-        </label>
-        <label className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50">
-          <input
-            type="radio"
-            name="holdMusic"
-            checked={custom}
-            onChange={() => onUpdate({ hasCustomMusicOnHold: true })}
-            className="text-[#1a73e8]"
-          />
-          <span className="text-sm font-medium">Custom Music on Hold</span>
-        </label>
+    <div className="border border-[#dadce0] rounded-lg bg-white divide-y divide-[#f1f3f4]">
+      <div className="p-4">
+        <p className="text-sm text-gray-600 mb-4">
+          Choose Default to use standard hold music, or Custom to upload your own.
+        </p>
+        <div className="space-y-2">
+          <label className="flex items-center gap-3 p-3 rounded-lg border border-[#dadce0] cursor-pointer hover:bg-[#f8f9fa]">
+            <input
+              type="radio"
+              name="holdMusic"
+              checked={!custom}
+              onChange={() => onUpdate({ hasCustomMusicOnHold: false })}
+              className="text-[#1a73e8]"
+            />
+            <span className="text-sm text-gray-900">Default Music on Hold</span>
+          </label>
+          <label className="flex items-center gap-3 p-3 rounded-lg border border-[#dadce0] cursor-pointer hover:bg-[#f8f9fa]">
+            <input
+              type="radio"
+              name="holdMusic"
+              checked={custom}
+              onChange={() => onUpdate({ hasCustomMusicOnHold: true })}
+              className="text-[#1a73e8]"
+            />
+            <span className="text-sm text-gray-900">Custom Music on Hold</span>
+          </label>
+        </div>
       </div>
-      <button
-        onClick={onSave}
-        disabled={isSaving || Object.keys(form).length === 0}
-        className="px-4 py-2 bg-[#1a73e8] text-white text-sm font-medium rounded-lg hover:bg-[#1557b0] disabled:opacity-50"
-      >
-        {isSaving ? "Saving..." : "Save changes"}
-      </button>
+      <div className="p-4">
+        <button
+          onClick={onSave}
+          disabled={isSaving || Object.keys(form).length === 0}
+          className="px-4 py-2 bg-[#1a73e8] text-white text-sm font-medium rounded-lg hover:bg-[#1557b0] disabled:opacity-50"
+        >
+          {isSaving ? "Saving..." : "Save changes"}
+        </button>
+      </div>
     </div>
   );
 }
