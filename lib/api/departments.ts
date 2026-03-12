@@ -171,3 +171,46 @@ export async function updateDepartmentFeature(
     [{ id: featureId, active }]
   );
 }
+
+// ─── Department call forward rules (Call Options) ──────────────────────────────
+
+export interface CallForwardRuleItem {
+  sequence: string;
+  type: "user" | "department";
+  value: string;
+  rings: number;
+  status: string;
+}
+
+export interface DepartmentCallForwardRules {
+  ruletype: string;
+  voicemailPin?: string;
+  forwardTo: CallForwardRuleItem[];
+  callerIdFlag: boolean;
+  callScreeningFlag: boolean;
+  posAck?: boolean;
+}
+
+export async function fetchDepartmentCallForwardRules(
+  accountId: number,
+  deptId: number
+): Promise<DepartmentCallForwardRules> {
+  const api = await getApiClient();
+  const res = await api.get<V1Response<DepartmentCallForwardRules>>(
+    `/accounts/${accountId}/departments/${deptId}/callForwardRules`
+  );
+  return res.data.data ?? { ruletype: "seq", forwardTo: [], callerIdFlag: false, callScreeningFlag: false };
+}
+
+export async function updateDepartmentCallForwardRules(
+  accountId: number,
+  deptId: number,
+  payload: Partial<DepartmentCallForwardRules>
+): Promise<DepartmentCallForwardRules> {
+  const api = await getApiClient();
+  const res = await api.put<V1Response<DepartmentCallForwardRules>>(
+    `/accounts/${accountId}/departments/${deptId}/callForwardRules`,
+    payload
+  );
+  return res.data.data;
+}

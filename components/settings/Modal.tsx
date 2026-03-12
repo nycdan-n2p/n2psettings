@@ -10,9 +10,11 @@ interface ModalProps {
   children: React.ReactNode;
   /** "md" (default) or "lg" for wider modal */
   size?: "md" | "lg";
+  /** Custom header content; when provided, replaces default title + close */
+  headerContent?: React.ReactNode;
 }
 
-export function Modal({ isOpen, onClose, title, children, size = "md" }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, size = "md", headerContent }: ModalProps) {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -37,23 +39,31 @@ export function Modal({ isOpen, onClose, title, children, size = "md" }: ModalPr
         aria-hidden
       />
       <div
-        className={`relative z-10 w-full bg-white rounded-lg shadow-xl mx-4 max-h-[90vh] overflow-hidden flex flex-col ${size === "lg" ? "max-w-2xl" : "max-w-md"}`}
+        className={`relative z-10 w-full bg-white mx-4 max-h-[90vh] overflow-hidden flex flex-col ${
+          size === "lg"
+            ? "max-w-[560px] rounded-xl shadow-2xl"
+            : "max-w-md rounded-lg shadow-xl"
+        }`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#dadce0]">
-          <h2 id="modal-title" className="text-lg font-medium text-gray-900">
-            {title}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-md hover:bg-gray-100 text-gray-500"
-            aria-label="Close"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        {headerContent ? (
+          <div className="border-b border-gray-200">{headerContent}</div>
+        ) : (
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+            <h2 id="modal-title" className="text-lg font-medium text-gray-900">
+              {title}
+            </h2>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500 transition-colors"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        )}
         <div className="px-6 py-4 overflow-auto flex-1">{children}</div>
       </div>
     </div>

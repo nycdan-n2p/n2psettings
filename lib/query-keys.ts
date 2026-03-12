@@ -42,9 +42,10 @@ export const qk = {
 
   // Departments
   departments: {
-    all:     (accountId: number)                         => ["departments", accountId]                      as const,
-    list:    (accountId: number)                         => ["departments", accountId, "list"]              as const,
-    features: (accountId: number, deptId: number)       => ["departments", accountId, "features", deptId]  as const,
+    all:           (accountId: number)                         => ["departments", accountId]                      as const,
+    list:          (accountId: number)                         => ["departments", accountId, "list"]              as const,
+    features:      (accountId: number, deptId: number)       => ["departments", accountId, "features", deptId]  as const,
+    callForwardRules: (accountId: number, deptId: number)     => ["departments", accountId, "callForwardRules", deptId] as const,
   },
 
   // Team Members

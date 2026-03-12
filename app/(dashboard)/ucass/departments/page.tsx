@@ -16,9 +16,12 @@ import {
   unassignUserFromDepartment,
   fetchDepartmentFeatures,
   updateDepartmentFeature,
+  fetchDepartmentCallForwardRules,
+  updateDepartmentCallForwardRules,
   type Department,
   type CreateDepartmentPayload,
   type DepartmentMember,
+  type DepartmentCallForwardRules,
 } from "@/lib/api/departments";
 import { fetchPhoneNumbers } from "@/lib/api/phone-numbers";
 import { fetchUsersLight } from "@/lib/api/ring-groups";
@@ -26,7 +29,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Modal } from "@/components/settings/Modal";
 import { TextInput } from "@/components/settings/TextInput";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
-import { Pencil, Trash2, Phone, ChevronDown, Plus, X } from "lucide-react";
+import { Pencil, Trash2, Phone, ChevronDown, Plus, X, GripVertical, Play } from "lucide-react";
 
 const EMPTY_FORM: CreateDepartmentPayload = { name: "", extension: "" };
 
@@ -64,6 +67,187 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
   );
 }
 
+// ── Call Options Tab ─────────────────────────────────────────────────────────────
+const RULE_TYPE_OPTIONS = [
+  { value: "seq", label: "Ring 1 Team Member At A Time" },
+  { value: "ring_all", label: "Ring All Team Members" },
+];
+
+const RINGS_OPTIONS = [3, 4, 5, 6, 7, 8, 9, 10];
+
+function CallOptionsTab({
+  callForwardRules,
+  isLoading,
+  usersLight,
+  onUpdate,
+  isUpdating,
+}: {
+  callForwardRules: DepartmentCallForwardRules | undefined;
+  isLoading: boolean;
+  usersLight: Array<{ userId: number; firstName: string; lastName: string; extension?: string }>;
+  onUpdate: (payload: Partial<DepartmentCallForwardRules>) => void;
+  isUpdating: boolean;
+}) {
+  const rules = callForwardRules ?? { ruletype: "seq", forwardTo: [], callerIdFlag: false, callScreeningFlag: false };
+  const defaultRings = rules.forwardTo[0]?.rings ?? 5;
+
+  const getUserName = (userId: string) => {
+    const u = usersLight.find((x) => String(x.userId) === userId);
+    return u ? `${u.firstName} ${u.lastName}` : `User ${userId}`;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="py-12 flex justify-center">
+        <Loader variant="inline" label="Loading call options..." />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <div className="grid grid-cols-[1fr_100px] gap-4 mb-4">
+          <div>
+            <label className="block text-[13px] font-medium text-gray-700 mb-2">Call Forwarding Rule</label>
+            <select
+              value={rules.ruletype}
+              onChange={(e) => onUpdate({ ...rules, ruletype: e.target.value })}
+              disabled={isUpdating}
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-[14px] bg-white focus:outline-none focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8]"
+            >
+              {RULE_TYPE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-[13px] font-medium text-gray-700 mb-2">Rings</label>
+            <select
+              value={defaultRings}
+              onChange={(e) => {
+                const rings = Number(e.target.value);
+                const forwardTo = rules.forwardTo.map((f) => ({ ...f, rings }));
+                onUpdate({ ...rules, forwardTo });
+              }}
+              disabled={isUpdating}
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-[14px] bg-white focus:outline-none focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8]"
+            >
+              {RINGS_OPTIONS.map((n) => (
+                <option key={n} value={n}>{n} Rings</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {rules.forwardTo.length > 0 && (
+        <div>
+          <label className="block text-[13px] font-medium text-gray-700 mb-2">Call Order</label>
+          <div className="flex flex-col gap-2">
+            {rules.forwardTo
+              .sort((a, b) => Number(a.sequence) - Number(b.sequence))
+              .map((item, i) => (
+                <div
+                  key={`${item.type}-${item.value}-${i}`}
+                  className="flex items-center gap-3 py-2.5 px-4 rounded-lg bg-gray-50 border border-gray-100"
+                >
+                  <div className="w-8 h-8 rounded-full bg-[#1a73e8] text-white flex items-center justify-center text-xs font-medium shrink-0">
+                    {(getUserName(item.value) ?? "?").split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)}
+                  </div>
+                  <span className="flex-1 text-[14px] text-gray-800">{getUserName(item.value)}</span>
+                  <span className="text-[13px] text-gray-600">{item.rings} Rings</span>
+                  <GripVertical className="w-4 h-4 text-gray-400 shrink-0" />
+                </div>
+              ))}
+          </div>
+          <p className="text-[13px] text-gray-500 mt-1">Call order is determined by the members in the Department tab.</p>
+        </div>
+      )}
+
+      <div className="rounded-lg border border-gray-200 bg-gray-50/30 px-4 py-4 flex items-center justify-between gap-4">
+        <div>
+          <h4 className="text-[14px] font-medium text-gray-900">Incoming Call ID</h4>
+          <p className="text-[13px] text-gray-600 mt-0.5">
+            Caller ID will show your net2phone number instead of the caller&apos;s phone number.
+          </p>
+        </div>
+        <Toggle
+          checked={rules.callerIdFlag}
+          onChange={(v) => onUpdate({ ...rules, callerIdFlag: v })}
+        />
+      </div>
+
+      <div className="rounded-lg border border-gray-200 bg-gray-50/30 px-4 py-4 flex items-center justify-between gap-4">
+        <div>
+          <h4 className="text-[14px] font-medium text-gray-900">Call Screening</h4>
+          <p className="text-[13px] text-gray-600 mt-0.5">
+            Informs you that it&apos;s a net2phone call, not in your personal line, and provides Accept/Deny Call capabilities.
+          </p>
+        </div>
+        <Toggle
+          checked={rules.callScreeningFlag}
+          onChange={(v) => onUpdate({ ...rules, callScreeningFlag: v })}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ── Voicemail Tab ───────────────────────────────────────────────────────────────
+function VoicemailTab() {
+  return (
+    <div className="space-y-6">
+      <div className="rounded-lg border border-gray-200 bg-gray-50/30 px-4 py-4 flex items-center justify-between gap-4">
+        <div>
+          <h4 className="text-[14px] font-medium text-gray-900">Voicemail</h4>
+          <p className="text-[13px] text-gray-600 mt-0.5">
+            When off, your callers won&apos;t be able to leave you a voicemail if you miss their calls.
+          </p>
+        </div>
+        <Toggle checked={true} onChange={() => {}} />
+      </div>
+
+      <div className="rounded-lg border border-gray-200 bg-gray-50/30 px-4 py-4 flex items-center justify-between gap-4">
+        <div>
+          <h4 className="text-[14px] font-medium text-gray-900">Voicemail-To-Email</h4>
+          <p className="text-[13px] text-gray-600 mt-0.5">
+            Email me when I get a new voicemail.
+          </p>
+        </div>
+        <Toggle checked={true} onChange={() => {}} />
+      </div>
+
+      <div className="rounded-lg border border-gray-200 px-4 py-4">
+        <h4 className="text-[14px] font-medium text-gray-900 mb-2">Greeting</h4>
+        <p className="text-[13px] text-gray-600 mb-3">Playing: Default Voicemail Greeting.</p>
+        <div className="flex items-center gap-2">
+          <button className="w-9 h-9 rounded-full bg-[#1a73e8] text-white flex items-center justify-center hover:bg-[#1557b0]">
+            <Play className="w-4 h-4 ml-0.5 fill-white" />
+          </button>
+          <div className="flex-1 h-2 bg-gray-200 rounded-full" />
+          <span className="text-[13px] text-gray-600">00:00</span>
+        </div>
+        <div className="mt-3 space-y-2">
+          {["Default Voicemail Greeting", "Custom Voicemail Greeting", "Record Greeting via Phone"].map((opt, i) => (
+            <label key={opt} className="flex items-center gap-2">
+              <input type="radio" name="greeting" defaultChecked={i === 0} className="rounded-full border-gray-300 text-[#1a73e8] focus:ring-[#1a73e8]" />
+              <span className="text-[14px] text-gray-700">{opt}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <Link
+        href="/ucass/settings/voicemail"
+        className="text-[14px] text-[#1a73e8] hover:underline"
+      >
+        Update Password
+      </Link>
+    </div>
+  );
+}
+
 // ── Add Member Row ──────────────────────────────────────────────────────────────
 function AddMemberRow({
   users,
@@ -79,11 +263,11 @@ function AddMemberRow({
   const available = users.filter((u) => !currentIds.has(u.userId));
 
   return (
-    <div className="flex gap-2 items-center mt-2.5">
+    <div className="flex gap-2 items-center mt-3">
       <select
         value={selectedId}
         onChange={(e) => setSelectedId(e.target.value)}
-        className="flex-1 px-2 py-1.5 border border-[#dadce0] rounded-md text-sm bg-white"
+        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-[14px] bg-white focus:outline-none focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8]"
       >
         <option value="">Select team member…</option>
         {available.map((u) => (
@@ -100,9 +284,9 @@ function AddMemberRow({
           setSelectedId("");
         }}
         disabled={!selectedId}
-        className="flex items-center gap-1 px-3 py-1.5 bg-[#1a73e8] text-white rounded-md text-sm hover:bg-[#1557b0] disabled:opacity-40 shrink-0"
+        className="flex items-center gap-1.5 px-4 py-2 bg-[#1a73e8] text-white rounded-lg text-[14px] font-medium hover:bg-[#1557b0] disabled:opacity-40 shrink-0 transition-colors"
       >
-        <Plus className="w-3.5 h-3.5" /> Add
+        <Plus className="w-4 h-4" /> Add
       </button>
     </div>
   );
@@ -159,6 +343,12 @@ function DepartmentEditModal({
     enabled: !!accountId && isOpen,
   });
 
+  const { data: callForwardRules, isLoading: callForwardLoading } = useQuery({
+    queryKey: qk.departments.callForwardRules(accountId, department.deptId),
+    queryFn: () => fetchDepartmentCallForwardRules(accountId, department.deptId),
+    enabled: !!accountId && !!department.deptId && isOpen && activeTab === "callOptions",
+  });
+
   const updateMutation = useMutation({
     mutationFn: (payload: Partial<CreateDepartmentPayload>) =>
       updateDepartment(accountId, department.deptId, payload),
@@ -195,6 +385,14 @@ function DepartmentEditModal({
       queryClient.invalidateQueries({ queryKey: lightKeys.users(accountId) });
       queryClient.invalidateQueries({ queryKey: qk.teamMembers.all(accountId) });
       queryClient.invalidateQueries({ queryKey: qk.departments.list(accountId) });
+    },
+  });
+
+  const callForwardMutation = useMutation({
+    mutationFn: (payload: Partial<DepartmentCallForwardRules>) =>
+      updateDepartmentCallForwardRules(accountId, department.deptId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: qk.departments.callForwardRules(accountId, department.deptId) });
     },
   });
 
@@ -243,24 +441,37 @@ function DepartmentEditModal({
     .toUpperCase()
     .slice(0, 2);
 
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title="" size="lg">
-      <div className="flex items-center gap-3 px-1 pb-4 border-b border-[#dadce0]">
-        <div className="w-10 h-10 rounded-full bg-[#1a73e8] text-white flex items-center justify-center text-sm font-semibold shrink-0">
+  const headerContent = (
+    <div className="flex items-center justify-between px-6 py-5">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-[#1a73e8] text-white flex items-center justify-center text-[14px] font-medium shrink-0">
           {initials || "—"}
         </div>
-        <h2 className="text-lg font-medium text-gray-900">{department.name}</h2>
+        <h2 id="modal-title" className="text-[22px] font-normal text-gray-900">
+          {department.name}
+        </h2>
       </div>
+      <button
+        onClick={onClose}
+        className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500 transition-colors"
+        aria-label="Close"
+      >
+        <X className="w-5 h-5" />
+      </button>
+    </div>
+  );
 
-      <div className="flex gap-2 border-b border-[#dadce0] mt-4 -mb-px">
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="" size="lg" headerContent={headerContent}>
+      <div className="flex gap-1 border-b border-gray-200 -mb-px">
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setActiveTab(t.id)}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+            className={`px-5 py-3 text-[14px] font-medium border-b-2 -mb-px transition-colors ${
               activeTab === t.id
-                ? "border-[#1a73e8] text-[#1a73e8]"
-                : "border-transparent text-gray-500 hover:text-gray-700"
+                ? "border-[#1a73e8] text-gray-900"
+                : "border-transparent text-gray-600 hover:text-gray-900"
             }`}
           >
             {t.label}
@@ -268,62 +479,64 @@ function DepartmentEditModal({
         ))}
       </div>
 
-      <div className="pt-5">
+      <div className="pt-6">
         {activeTab === "department" && (
-          <div className="space-y-5">
-            <div className="grid grid-cols-[1fr_120px] gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Department Name</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  onBlur={handleSaveName}
-                  className="w-full px-3 py-2 border border-[#dadce0] rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#1a73e8]"
-                  placeholder="e.g. Product Management"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Ext Auto</label>
-                <input
-                  type="text"
-                  value={department.extension ?? "—"}
-                  readOnly
-                  className="w-full px-3 py-2 border border-[#dadce0] rounded-md text-sm bg-gray-50 text-gray-500 cursor-not-allowed"
-                />
+          <div className="space-y-6">
+            <div className="rounded-lg bg-gray-50/50 border border-gray-200 px-4 py-4">
+              <div className="grid grid-cols-[1fr_120px] gap-4">
+                <div>
+                  <label className="block text-[13px] font-medium text-gray-700 mb-2">Department Name</label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    onBlur={handleSaveName}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-[14px] focus:outline-none focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8]"
+                    placeholder="e.g. Product Management"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[13px] font-medium text-gray-700 mb-2">Ext Auto</label>
+                  <input
+                    type="text"
+                    value={department.extension ?? "—"}
+                    readOnly
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-[14px] bg-gray-100 text-gray-600 cursor-not-allowed"
+                  />
+                </div>
               </div>
             </div>
 
             {lineNumbers.length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Phone Number</label>
-                <div className="flex flex-wrap gap-2">
+                <label className="block text-[13px] font-medium text-gray-700 mb-2">Phone Number</label>
+                <div className="flex flex-col gap-2">
                   {lineNumbers.slice(0, 3).map((num, i) => (
                     <div
                       key={i}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-md text-sm text-gray-700"
+                      className="flex items-center gap-2 py-2 px-3 rounded-lg bg-gray-50 border border-gray-100 text-[14px] text-gray-700"
                     >
-                      <Phone className="w-3.5 h-3.5 text-gray-500" />
+                      <Phone className="w-4 h-4 text-gray-400 shrink-0" />
                       {formatPhoneDisplay(num)} · {department.extension}
                     </div>
                   ))}
                   {lineNumbers.length > 3 && (
-                    <div className="flex items-center gap-1 px-2 py-1.5 bg-gray-100 rounded-md text-sm text-gray-600">
-                      {lineNumbers.length - 3}+ <ChevronDown className="w-3.5 h-3.5" />
+                    <div className="flex items-center gap-1 py-2 px-3 rounded-lg bg-gray-50 border border-gray-100 text-[14px] text-gray-600">
+                      {lineNumbers.length - 3}+ <ChevronDown className="w-4 h-4" />
                     </div>
                   )}
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Manage phone numbers in{" "}
-                  <Link href="/ucass/phone-numbers" className="text-[#1a73e8] hover:underline">
-                    Phone Numbers
-                  </Link>
-                </p>
+                <Link
+                  href="/ucass/phone-numbers"
+                  className="inline-block mt-2 text-[13px] text-[#1a73e8] hover:underline"
+                >
+                  Manage phone numbers in Phone Numbers
+                </Link>
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Team Members Optional</label>
+              <label className="block text-[13px] font-medium text-gray-700 mb-2">Team Members Optional</label>
               <div className="flex flex-wrap gap-2">
                 {members.map((m) => {
                   const label = [m.firstName, m.lastName].filter(Boolean).join(" ");
@@ -331,17 +544,17 @@ function DepartmentEditModal({
                   return (
                     <span
                       key={m.userId}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#e8f0fe] text-[#1a73e8] rounded-md text-sm"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-100 text-gray-800 text-[14px]"
                     >
                       {label}
                       {ext}
                       <button
                         type="button"
                         onClick={() => handleRemoveMember(m.userId)}
-                        className="p-0.5 rounded hover:bg-[#1a73e8]/20"
+                        className="rounded-full p-1 hover:bg-gray-200 text-gray-500 transition-colors"
                         aria-label="Remove"
                       >
-                        <X className="w-3 h-3" />
+                        <X className="w-3.5 h-3.5" />
                       </button>
                     </span>
                   );
@@ -354,10 +567,10 @@ function DepartmentEditModal({
               />
             </div>
 
-            <div className="flex items-start justify-between gap-4 py-3 border-t border-[#dadce0]">
+            <div className="rounded-lg border border-gray-200 bg-gray-50/30 px-4 py-4 flex items-center justify-between gap-4">
               <div>
-                <h4 className="text-sm font-medium text-gray-900">Call Recording</h4>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <h4 className="text-[14px] font-medium text-gray-900">Call Recording</h4>
+                <p className="text-[13px] text-gray-600 mt-0.5">
                   Records all of the department incoming and outgoing calls, to all of its phone numbers.
                 </p>
               </div>
@@ -368,16 +581,16 @@ function DepartmentEditModal({
             </div>
 
             {(updateMutation.isError || recordMutation.isError || assignMutation.isError || unassignMutation.isError) && (
-              <p className="text-sm text-red-600">
+              <p className="text-[14px] text-red-600">
                 {((updateMutation.error || recordMutation.error || assignMutation.error || unassignMutation.error) as Error)?.message ?? "Failed to save"}
               </p>
             )}
 
-            <div className="flex justify-between items-center pt-4 border-t border-[#dadce0]">
+            <div className="border-t border-gray-200 bg-gray-50/50 -mx-6 -mb-4 px-6 py-4 mt-6 flex justify-between items-center">
               <button
                 type="button"
                 onClick={onDelete}
-                className="px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md"
+                className="text-[14px] font-medium text-red-600 hover:bg-red-50 px-3 py-2 rounded-lg transition-colors"
               >
                 Delete
               </button>
@@ -385,14 +598,14 @@ function DepartmentEditModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                  className="h-9 px-4 text-[14px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={() => { handleSaveName(); onClose(); }}
-                  className="px-4 py-2 text-sm font-medium text-white bg-[#1a73e8] rounded-md hover:bg-[#1557b0]"
+                  className="h-9 px-4 text-[14px] font-medium text-white bg-[#1a73e8] rounded-lg hover:bg-[#1557b0] transition-colors"
                 >
                   Save
                 </button>
@@ -402,15 +615,17 @@ function DepartmentEditModal({
         )}
 
         {activeTab === "callOptions" && (
-          <div className="py-4 text-sm text-gray-500">
-            Call options for this department. Additional settings coming soon.
-          </div>
+          <CallOptionsTab
+            callForwardRules={callForwardRules}
+            isLoading={callForwardLoading}
+            usersLight={usersLight}
+            onUpdate={callForwardMutation.mutate}
+            isUpdating={callForwardMutation.isPending}
+          />
         )}
 
         {activeTab === "voicemail" && (
-          <div className="py-4 text-sm text-gray-500">
-            Voicemail settings for this department. Coming soon.
-          </div>
+          <VoicemailTab />
         )}
       </div>
     </Modal>
