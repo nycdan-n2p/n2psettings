@@ -42,8 +42,9 @@ export const qk = {
 
   // Departments
   departments: {
-    all:  (accountId: number)                           => ["departments", accountId]            as const,
-    list: (accountId: number)                           => ["departments", accountId, "list"]    as const,
+    all:     (accountId: number)                         => ["departments", accountId]                      as const,
+    list:    (accountId: number)                         => ["departments", accountId, "list"]              as const,
+    features: (accountId: number, deptId: number)       => ["departments", accountId, "features", deptId]  as const,
   },
 
   // Team Members

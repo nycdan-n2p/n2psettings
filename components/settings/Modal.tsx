@@ -8,9 +8,11 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  /** "md" (default) or "lg" for wider modal */
+  size?: "md" | "lg";
 }
 
-export function Modal({ isOpen, onClose, title, children }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, size = "md" }: ModalProps) {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -35,7 +37,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
         aria-hidden
       />
       <div
-        className="relative z-10 w-full max-w-md bg-white rounded-lg shadow-xl mx-4 max-h-[90vh] overflow-hidden flex flex-col"
+        className={`relative z-10 w-full bg-white rounded-lg shadow-xl mx-4 max-h-[90vh] overflow-hidden flex flex-col ${size === "lg" ? "max-w-2xl" : "max-w-md"}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
