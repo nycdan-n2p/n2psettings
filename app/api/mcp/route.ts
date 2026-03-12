@@ -40,20 +40,26 @@ export const maxDuration = 60;
 // ─── Request handler ──────────────────────────────────────────────────────────
 
 async function handleMCP(request: NextRequest): Promise<Response> {
-  // Extract Bearer token
+  // Extract Bearer token — accept from Authorization header OR ?token= query param
+  const url = new URL(request.url);
   const authHeader = request.headers.get("authorization") ?? "";
-  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : authHeader.trim();
+  const tokenFromHeader = authHeader.startsWith("Bearer ")
+    ? authHeader.slice(7).trim()
+    : authHeader.trim();
+  const token = tokenFromHeader || url.searchParams.get("token") || "";
 
   if (!token) {
     return NextResponse.json(
-      { error: "Missing Authorization header. Pass: Authorization: Bearer <your-n2p-token>" },
+      { error: "Missing auth. Pass Authorization: Bearer <token> header or ?token= query param." },
       { status: 401 }
     );
   }
 
-  // Optional overrides via headers
-  const accountIdHeader = request.headers.get("x-account-id");
-  const sipClientIdHeader = request.headers.get("x-sip-client-id");
+  // Optional overrides via headers OR query params
+  const accountIdHeader =
+    request.headers.get("x-account-id") ?? url.searchParams.get("accountId");
+  const sipClientIdHeader =
+    request.headers.get("x-sip-client-id") ?? url.searchParams.get("sipClientId");
 
   const ctx = {
     token,
