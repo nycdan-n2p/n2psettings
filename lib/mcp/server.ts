@@ -95,7 +95,7 @@ export const N2P_TOOLS: Tool[] = [
   { name: "list_team_members", description: "List all team members / users", inputSchema: { type: "object", properties: { account_id: { type: "number" } } } },
   { name: "get_team_member", description: "Get a specific team member by user ID", inputSchema: { type: "object", required: ["user_id"], properties: { account_id: { type: "number" }, user_id: { type: "number" } } } },
   { name: "create_team_member", description: "Create a new team member", inputSchema: { type: "object", required: ["first_name","last_name","email","extension"], properties: { account_id: { type: "number" }, first_name: { type: "string" }, last_name: { type: "string" }, email: { type: "string" }, extension: { type: "string" }, role_id: { type: "number" }, dept_id: { type: "number" } } } },
-  { name: "update_team_member", description: "Update a team member", inputSchema: { type: "object", required: ["user_id"], properties: { account_id: { type: "number" }, user_id: { type: "number" }, first_name: { type: "string" }, last_name: { type: "string" }, email: { type: "string" }, extension: { type: "string" } } } },
+  { name: "update_team_member", description: "Update a team member. Supports profile, company, voicemail, call options, and hold music.", inputSchema: { type: "object", required: ["user_id"], properties: { account_id: { type: "number" }, user_id: { type: "number" }, first_name: { type: "string" }, last_name: { type: "string" }, email: { type: "string" }, extension: { type: "string" }, role_id: { type: "number" }, dept_id: { type: "number" }, members: { type: "array", items: { type: "object", properties: { id: { type: "number" } } } }, voicemail_enabled: { type: "boolean" }, voicemail_notification: { type: "object", properties: { email_notify: { type: "boolean" }, email_include_vm: { type: "boolean" }, email_transcribe: { type: "boolean" }, email_include_caller_details: { type: "boolean" } } }, comp_dir_enabled: { type: "boolean" }, is_ring_group_calls_enabled: { type: "boolean" }, has_custom_music_on_hold: { type: "boolean" }, sip_device_rings: { type: "number" }, caller_id: { type: "string" }, line_number: { type: "array", items: { type: "string" } } } } },
   { name: "delete_team_member", description: "Delete a team member", inputSchema: { type: "object", required: ["user_id"], properties: { account_id: { type: "number" }, user_id: { type: "number" } } } },
   { name: "search_team_members", description: "Search team members by name, email, or extension", inputSchema: { type: "object", required: ["query"], properties: { account_id: { type: "number" }, query: { type: "string" } } } },
   { name: "list_team_members_light", description: "List lightweight user records for dropdowns", inputSchema: { type: "object", properties: { account_id: { type: "number" } } } },
@@ -348,12 +348,29 @@ export async function executeN2PTool(
   if (name === "update_team_member") {
     const id = resolveAccountId(args, ctx);
     const payload: Args = {};
-    if (args.first_name) payload.firstName = args.first_name;
-    if (args.last_name)  payload.lastName  = args.last_name;
-    if (args.email)      payload.email     = args.email;
-    if (args.extension)  payload.extension = args.extension;
-    if (args.role_id)    payload.roleId    = args.role_id;
-    if (args.dept_id)    payload.deptId    = args.dept_id;
+    if (args.first_name !== undefined) payload.firstName = args.first_name;
+    if (args.last_name !== undefined)  payload.lastName  = args.last_name;
+    if (args.email !== undefined)      payload.email     = args.email;
+    if (args.extension !== undefined)  payload.extension = args.extension;
+    if (args.role_id !== undefined)    payload.roleId   = args.role_id;
+    if (args.dept_id !== undefined)    payload.deptId   = args.dept_id;
+    if (args.voicemail_enabled !== undefined) payload.voicemailEnabled = args.voicemail_enabled;
+    if (args.voicemail_notification !== undefined) {
+      const vn = args.voicemail_notification as Record<string, boolean>;
+      payload.voicemailNotification = {
+        emailNotify: vn.email_notify,
+        emailIncludeVM: vn.email_include_vm,
+        emailTranscribe: vn.email_transcribe,
+        emailIncludeCallerDetails: vn.email_include_caller_details,
+      };
+    }
+    if (args.comp_dir_enabled !== undefined) payload.compDir = { enabled: args.comp_dir_enabled };
+    if (args.is_ring_group_calls_enabled !== undefined) payload.isRingGroupCallsEnabled = args.is_ring_group_calls_enabled;
+    if (args.has_custom_music_on_hold !== undefined) payload.hasCustomMusicOnHold = args.has_custom_music_on_hold;
+    if (args.sip_device_rings !== undefined) payload.sipDeviceRings = args.sip_device_rings;
+    if (args.caller_id !== undefined) payload.callerId = args.caller_id;
+    if (args.line_number !== undefined) payload.lineNumber = args.line_number as string[];
+    if (args.members !== undefined) payload.members = (args.members as Array<{ id: number }>).map((m) => ({ id: m.id }));
     const res = await v1.put(`/accounts/${id}/users/${num(args, "user_id")}`, payload);
     return unwrap(res.data);
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DataTable } from "@/components/tables/DataTable";
 import { useApp } from "@/contexts/AppContext";
@@ -9,7 +9,6 @@ import { Loader } from "@/components/ui/Loader";
 import {
   fetchTeamMembers,
   createUser,
-  updateUser,
   deleteUser,
   exportUsersCsv,
   type TeamMember,
@@ -20,7 +19,86 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Modal } from "@/components/settings/Modal";
 import { TextInput } from "@/components/settings/TextInput";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
-import { Pencil, Trash2, Download, Music2 } from "lucide-react";
+import { EditTeamMemberModal } from "@/components/team-members/EditTeamMemberModal";
+import { Pencil, Trash2, Download, Music2, ChevronDown, X } from "lucide-react";
+
+// ─── Department dropdown (schedules-style) ────────────────────────────────────
+const AVATAR_COLORS = [
+  "bg-blue-100 text-blue-700",
+  "bg-green-100 text-green-700",
+  "bg-purple-100 text-purple-700",
+  "bg-amber-100 text-amber-700",
+  "bg-pink-100 text-pink-700",
+  "bg-teal-100 text-teal-700",
+];
+function avatarColor(seed: string): string {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
+function getInitials(name: string): string {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
+}
+
+function DepartmentDropdown({ departmentsStr }: { departmentsStr?: string | null }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const items = departmentsStr
+    ? departmentsStr.split(",").map((s) => s.trim()).filter(Boolean)
+    : [];
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  if (items.length === 0) return <span className="text-sm text-gray-400">None</span>;
+
+  const total = items.length;
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-1.5 group"
+      >
+        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold ${avatarColor(String(total))}`}>
+          {total > 9 ? "9+" : total}
+        </div>
+        <span className="text-sm text-[#1a73e8] group-hover:underline font-medium">
+          {total} department{total !== 1 ? "s" : ""}
+        </span>
+        <ChevronDown className={`w-3.5 h-3.5 text-[#1a73e8] transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div className="absolute z-50 top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-[#dadce0] overflow-hidden">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-[#f1f3f4] bg-[#f8f9fa]">
+            <span className="text-xs font-semibold text-gray-600">
+              {total} department{total !== 1 ? "s" : ""}
+            </span>
+            <button onClick={() => setOpen(false)} className="p-0.5 rounded hover:bg-[#e8eaed] text-gray-400">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <div className="max-h-72 overflow-y-auto py-1">
+            {items.map((name) => (
+              <div key={name} className="flex items-center gap-2 px-3 py-1.5 hover:bg-[#f8f9fa]">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${avatarColor(name)}`}>
+                  {getInitials(name)}
+                </div>
+                <span className="text-sm text-gray-700 truncate">{name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const EMPTY_FORM: CreateUserPayload = {
   firstName: "",
@@ -62,15 +140,6 @@ export default function TeamMembersPage() {
     },
   });
 
-  const updateMutation = useMutation({
-    mutationFn: ({ userId, payload }: { userId: number; payload: Partial<CreateUserPayload> }) =>
-      updateUser(accountId, userId, payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: qk.teamMembers.all(accountId) });
-      closeModal();
-    },
-  });
-
   const deleteMutation = useMutation({
     mutationFn: (userId: number) => deleteUser(accountId, userId),
     onSuccess: () => {
@@ -87,20 +156,10 @@ export default function TeamMembersPage() {
 
   const openEditModal = (u: TeamMember) => {
     setEditingUser(u);
-    setForm({
-      firstName: u.firstName,
-      lastName: u.lastName,
-      email: u.email,
-      extension: u.extension,
-      deptId: u.deptId,
-      password: "",
-    });
-    setModalOpen(true);
   };
 
   const closeModal = () => {
     setModalOpen(false);
-    setEditingUser(null);
     setForm({ ...EMPTY_FORM });
   };
 
@@ -108,11 +167,7 @@ export default function TeamMembersPage() {
     e.preventDefault();
     const payload = { ...form };
     if (!payload.password) delete payload.password;
-    if (editingUser) {
-      updateMutation.mutate({ userId: editingUser.userId, payload });
-    } else {
-      addMutation.mutate(payload);
-    }
+    addMutation.mutate(payload);
   };
 
   const handleExportCsv = async () => {
@@ -138,7 +193,7 @@ export default function TeamMembersPage() {
     }
   };
 
-  const isMutating = addMutation.isPending || updateMutation.isPending;
+  const isMutating = addMutation.isPending;
 
   const columns: ColumnDef<TeamMember>[] = [
     {
@@ -158,9 +213,7 @@ export default function TeamMembersPage() {
       header: "Department",
       accessorFn: (row) => row.departments ?? "",
       cell: ({ row }) => (
-        <span className={row.original.departments ? "text-gray-900" : "text-gray-400"}>
-          {row.original.departments ?? "None"}
-        </span>
+        <DepartmentDropdown departmentsStr={row.original.departments} />
       ),
     },
     {
@@ -260,10 +313,16 @@ export default function TeamMembersPage() {
         />
       )}
 
+      <EditTeamMemberModal
+        user={editingUser}
+        isOpen={!!editingUser}
+        onClose={() => setEditingUser(null)}
+      />
+
       <Modal
-        isOpen={modalOpen}
+        isOpen={modalOpen && !editingUser}
         onClose={closeModal}
-        title={editingUser ? "Edit Team Member" : "Add Team Member"}
+        title="Add Team Member"
       >
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-2 gap-3">
@@ -297,15 +356,13 @@ export default function TeamMembersPage() {
             placeholder="e.g. 1001"
             required
           />
-          {!editingUser && (
-            <TextInput
-              label="Password"
-              value={form.password ?? ""}
-              onChange={(v) => setForm((f) => ({ ...f, password: v }))}
-              type="password"
-              placeholder="Temporary password"
-            />
-          )}
+          <TextInput
+            label="Password"
+            value={form.password ?? ""}
+            onChange={(v) => setForm((f) => ({ ...f, password: v }))}
+            type="password"
+            placeholder="Temporary password"
+          />
           {departments.length > 0 && (
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -330,9 +387,9 @@ export default function TeamMembersPage() {
               </select>
             </div>
           )}
-          {(addMutation.isError || updateMutation.isError) && (
+          {addMutation.isError && (
             <p className="text-sm text-red-600 mb-2">
-              {((addMutation.error || updateMutation.error) as Error)?.message ?? "Failed to save user"}
+              {(addMutation.error as Error)?.message ?? "Failed to add user"}
             </p>
           )}
           <div className="flex justify-end gap-2 mt-4">
@@ -348,7 +405,7 @@ export default function TeamMembersPage() {
               disabled={isMutating}
               className="px-4 py-2 text-sm font-medium text-white bg-[#1a73e8] rounded-md hover:bg-[#1557b0] disabled:opacity-50"
             >
-              {isMutating ? "Saving..." : editingUser ? "Save" : "Add"}
+              {isMutating ? "Saving..." : "Add"}
             </button>
           </div>
         </form>

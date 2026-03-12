@@ -18,6 +18,27 @@ export interface TeamMember {
   musicOnHold?: string;
 }
 
+/** Full user detail from GET /accounts/{id}/users/{userId} — used for edit modal */
+export interface UserDetail extends TeamMember {
+  callerId?: string;
+  lineNumber?: string[];
+  timeZone?: string;
+  voicemailEnabled?: boolean;
+  voicemailPin?: string;
+  voicemailNotification?: {
+    emailNotify?: boolean;
+    emailIncludeVM?: boolean;
+    emailTranscribe?: boolean;
+    emailIncludeCallerDetails?: boolean;
+  };
+  sipDeviceRings?: number;
+  compDir?: { enabled?: boolean; audioType?: number };
+  isRingGroupCallsEnabled?: boolean;
+  hasCustomMusicOnHold?: boolean;
+  members?: Array<{ id: number; name: string }>;
+  avatars?: Array<{ size: string; url: string }>;
+}
+
 export interface CreateUserPayload {
   firstName: string;
   lastName: string;
@@ -27,6 +48,24 @@ export interface CreateUserPayload {
   deptId?: number;
   phoneNumber?: string;
   password?: string;
+}
+
+/** Extended payload for PUT /accounts/{id}/users/{userId} */
+export interface UpdateUserPayload extends Partial<CreateUserPayload> {
+  voicemailEnabled?: boolean;
+  voicemailNotification?: {
+    emailNotify?: boolean;
+    emailIncludeVM?: boolean;
+    emailTranscribe?: boolean;
+    emailIncludeCallerDetails?: boolean;
+  };
+  compDir?: { enabled?: boolean; audioType?: number };
+  isRingGroupCallsEnabled?: boolean;
+  hasCustomMusicOnHold?: boolean;
+  sipDeviceRings?: number;
+  callerId?: string;
+  lineNumber?: string[];
+  members?: Array<{ id: number }>;
 }
 
 type RawUser = {
@@ -65,6 +104,39 @@ function mapUser(raw: RawUser): TeamMember {
   };
 }
 
+export async function fetchUser(
+  accountId: number,
+  userId: number
+): Promise<UserDetail | null> {
+  const api = await getApiClient();
+  try {
+    const res = await api.get<V1Response<RawUser & Record<string, unknown>>>(
+      `/accounts/${accountId}/users/${userId}`
+    );
+    const raw = res.data.data;
+    if (!raw) return null;
+    const base = mapUser(raw as RawUser);
+    const d = raw as Record<string, unknown>;
+    return {
+      ...base,
+      callerId: d.callerId as string | undefined,
+      lineNumber: Array.isArray(d.lineNumber) ? (d.lineNumber as string[]) : undefined,
+      timeZone: d.timeZone as string | undefined,
+      voicemailEnabled: d.voicemailEnabled as boolean | undefined,
+      voicemailPin: d.voicemailPin as string | undefined,
+      voicemailNotification: d.voicemailNotification as UserDetail["voicemailNotification"],
+      sipDeviceRings: typeof d.sipDeviceRings === "number" ? d.sipDeviceRings : undefined,
+      compDir: d.compDir as UserDetail["compDir"],
+      isRingGroupCallsEnabled: d.isRingGroupCallsEnabled as boolean | undefined,
+      hasCustomMusicOnHold: d.hasCustomMusicOnHold as boolean | undefined,
+      members: Array.isArray(d.members) ? (d.members as UserDetail["members"]) : undefined,
+      avatars: Array.isArray(d.avatars) ? (d.avatars as UserDetail["avatars"]) : undefined,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchTeamMembers(accountId: number): Promise<TeamMember[]> {
   const api = await getApiClient();
   const res = await api.get<V1Response<RawUser[]>>(
@@ -90,7 +162,7 @@ export async function createUser(
 export async function updateUser(
   accountId: number,
   userId: number,
-  payload: Partial<CreateUserPayload>
+  payload: UpdateUserPayload
 ): Promise<TeamMember> {
   const api = await getApiClient();
   const res = await api.put<V1Response<TeamMember>>(
