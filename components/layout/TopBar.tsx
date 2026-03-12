@@ -7,12 +7,15 @@ import {
   ChevronDown,
   User,
   LogOut,
+  MessageCircle,
 } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
+import { useAssistant } from "@/contexts/AssistantContext";
 import { clearTokens } from "@/lib/auth";
 
 export function TopBar() {
   const { bootstrap } = useApp();
+  const { open: openAssistant } = useAssistant();
 
   const handleLogout = () => {
     clearTokens();
@@ -46,6 +49,14 @@ export function TopBar() {
         <span className="text-sm text-white/90 hidden sm:block">
           {bootstrap?.account?.company ?? "Account"}
         </span>
+        <button
+          onClick={openAssistant}
+          className="p-2 rounded-full hover:bg-white/20 transition-colors"
+          title="N2P Assistant"
+          aria-label="Open assistant"
+        >
+          <MessageCircle className="w-5 h-5" />
+        </button>
         <Link
           href="/ucass/voicemail"
           prefetch={false}

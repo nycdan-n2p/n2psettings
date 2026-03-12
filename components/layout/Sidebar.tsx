@@ -4,15 +4,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
+import { useAssistant } from "@/contexts/AssistantContext";
 import { useState } from "react";
 import { getNavForProduct } from "@/lib/config/nav";
 import { getProductFromPath, PRODUCTS } from "@/lib/config/products";
 
 interface NavItem {
-  href: string;
+  href?: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   feature?: string;
+  action?: "openAssistant";
 }
 
 interface NavGroup {
@@ -23,6 +25,7 @@ interface NavGroup {
 function NavGroupSection({ group }: { group: NavGroup }) {
   const pathname = usePathname();
   const { bootstrap } = useApp();
+  const { open: openAssistant } = useAssistant();
   const [expanded, setExpanded] = useState(true);
 
   const visibleItems = group.items.filter((item) => {
@@ -49,12 +52,38 @@ function NavGroupSection({ group }: { group: NavGroup }) {
         <div className="space-y-0.5">
           {visibleItems.map((item) => {
             const Icon = item.icon;
-            const isActive =
-              pathname === item.href || pathname.startsWith(`${item.href}/`);
+            if (item.action === "openAssistant") {
+              return (
+                <button
+                  key={item.label}
+                  onClick={openAssistant}
+                  className="flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors text-gray-700 hover:bg-[#e8eaed] w-full text-left"
+                >
+                  <Icon className="w-5 h-5 shrink-0" />
+                  {item.label}
+                </button>
+              );
+            }
+            if (item.href?.startsWith("http")) {
+              return (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors text-gray-700 hover:bg-[#e8eaed]"
+                >
+                  <Icon className="w-5 h-5 shrink-0" />
+                  {item.label}
+                </a>
+              );
+            }
+            const href = item.href!;
+            const isActive = pathname === href || pathname.startsWith(`${href}/`);
             return (
               <Link
-                key={item.href}
-                href={item.href}
+                key={href}
+                href={href}
                 prefetch={false}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
                   isActive

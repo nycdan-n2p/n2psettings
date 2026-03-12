@@ -32,13 +32,16 @@ import {
   LockKeyhole,
   ShieldCheck,
   MessageSquare,
+  HelpCircle,
 } from "lucide-react";
 
 interface NavItem {
-  href: string;
+  href?: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   feature?: string;
+  /** If set, clicking opens the assistant side panel instead of navigating */
+  action?: "openAssistant";
 }
 
 interface NavGroup {
@@ -53,7 +56,6 @@ function ucassNav(base: string): NavGroup[] {
       items: [
         { href: `${base}/dashboard`, label: "Dashboard", icon: LayoutDashboard },
         { href: `${base}/analytics`, label: "Analytics", icon: BarChart2 },
-        { href: `${base}/onboarding`, label: "N2P Assistant", icon: Bot },
       ],
     },
     {
@@ -99,6 +101,13 @@ function ucassNav(base: string): NavGroup[] {
         { href: `${base}/sip-tie-lines`, label: "SIP Tie-Lines", icon: Link2 },
         { href: `${base}/settings/webhooks`, label: "Webhooks/API", icon: Webhook },
         { href: `${base}/settings/api-setup`, label: "API Setup", icon: KeyRound },
+      ],
+    },
+    {
+      label: "Help",
+      items: [
+        { label: "N2P Assistant", icon: Bot, action: "openAssistant" },
+        { href: "https://support.net2phone.com", label: "Help and support", icon: HelpCircle },
       ],
     },
     {

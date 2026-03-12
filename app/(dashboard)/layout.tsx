@@ -2,6 +2,8 @@
 
 import { TopBar } from "@/components/layout/TopBar";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { AssistantSidePanel } from "@/components/assistant/AssistantSidePanel";
+import { AssistantProvider } from "@/contexts/AssistantContext";
 import { Loader } from "@/components/ui/Loader";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { useApp } from "@/contexts/AppContext";
@@ -66,14 +68,17 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f8f9fa]">
-      <TopBar />
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
-        <main className="flex-1 overflow-auto p-6">
-          <ErrorBoundary>{children}</ErrorBoundary>
-        </main>
+    <AssistantProvider>
+      <div className="min-h-screen flex flex-col bg-[#f8f9fa]">
+        <TopBar />
+        <div className="flex flex-1 overflow-hidden">
+          <Sidebar />
+          <main className="flex-1 overflow-auto p-6">
+            <ErrorBoundary>{children}</ErrorBoundary>
+          </main>
+        </div>
+        <AssistantSidePanel />
       </div>
-    </div>
+    </AssistantProvider>
   );
 }
