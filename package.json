@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run crawl-support || true && next build",
     "start": "next start",
     "lint": "next lint",
     "crawl-support": "npx ts-node scripts/crawl-support.ts"

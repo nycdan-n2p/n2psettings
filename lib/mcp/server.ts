@@ -796,20 +796,12 @@ export async function executeN2PTool(
     return unwrap(res.data);
   }
 
-  // SUPPORT KNOWLEDGE (static JSON, no N2P API)
+  // SUPPORT KNOWLEDGE (bundled at build time, no N2P API)
   if (name === "search_support") {
     const query = str(args, "query").toLowerCase().trim();
     if (!query) return { results: [], note: "Empty query." };
-    const { readFileSync } = await import("fs");
-    const { join } = await import("path");
-    let articles: Array<{ title: string; url: string; summary: string; keywords?: string }>;
-    try {
-      const p = join(process.cwd(), "data", "support-knowledge.json");
-      const raw = readFileSync(p, "utf-8");
-      articles = JSON.parse(raw) as typeof articles;
-    } catch {
-      return { results: [], note: "Support knowledge base not available." };
-    }
+    const { supportArticles } = await import("@/lib/support-knowledge");
+    const articles = supportArticles;
     const terms = query.split(/\s+/).filter(Boolean);
     const scored = articles.map((a) => {
       const text = `${a.title} ${a.summary} ${a.keywords ?? ""}`.toLowerCase();
