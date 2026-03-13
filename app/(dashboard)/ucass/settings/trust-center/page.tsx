@@ -36,11 +36,10 @@ export default function TrustCenterPage() {
   return (
     <div>
       <h1 className="text-2xl font-medium text-gray-900 mb-2">
-        Register your numbers
+        Trust Center
       </h1>
-      <p className="text-gray-600 mb-6">
-        Carriers require that all VoIP numbers are registered before they can
-        send text messages to US and Canadian numbers.
+      <p className="text-gray-600 mb-6 max-w-2xl">
+        Secure your organization and stay compliant with carrier requirements. The Trust Center brings together messaging registration, single sign-on, two-factor authentication, and security settings in one place—so you can protect your business and deliver reliable communications.
       </p>
 
       <div className="flex items-start gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg mb-6">
