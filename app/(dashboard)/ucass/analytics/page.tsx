@@ -18,7 +18,10 @@ import {
   fetchAnalyticsFromCallHistory,
   type DirectionFilter,
 } from "@/lib/api/analytics-from-history";
+import { fetchCallHistory } from "@/lib/api/call-history";
 import { DataTable } from "@/components/tables/DataTable";
+import { AnalyzeModal } from "@/components/calls/AnalyzeModal";
+import type { CallAnalysis } from "@/app/api/analyze-calls/route";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   Phone,
@@ -32,6 +35,7 @@ import {
   ArrowUpFromLine,
   MessageSquare,
   Users,
+  BarChart2,
 } from "lucide-react";
 
 type Preset = "7d" | "30d" | "90d";
@@ -78,8 +82,12 @@ export default function AnalyticsPage() {
   const userId = bootstrap?.user?.userId ?? null;
   const [preset, setPreset] = useState<Preset>("7d");
   const [direction, setDirection] = useState<DirectionFilter>("all");
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<CallAnalysis | null>(null);
 
   const days = PRESETS.find((p) => p.value === preset)?.days ?? 7;
+  const directionNum = direction === "inbound" ? 0 : direction === "outbound" ? 1 : null;
+  const dateLabel = `${days} days · ${direction === "all" ? "All" : direction === "inbound" ? "Inbound" : "Outbound"}`;
 
   const { data: stats, isLoading } = useQuery({
     queryKey: qk.analytics.fromHistory(accountId, preset, direction),
@@ -99,6 +107,35 @@ export default function AnalyticsPage() {
 
   type UserRow = NonNullable<typeof stats>["userRows"][number];
   type DeptRow = NonNullable<typeof stats>["deptRows"][number];
+
+  const handleAnalyze = async () => {
+    setAnalyzing(true);
+    try {
+      const allData = await fetchCallHistory(
+        accountId,
+        userId,
+        { direction: directionNum },
+        500,
+        null
+      );
+      const res = await fetch("/api/analyze-calls", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cdrs: allData.cdrs,
+          scope: "company",
+          dateLabel,
+        }),
+      });
+      if (!res.ok) throw new Error(`Analysis failed: ${res.status}`);
+      const data: CallAnalysis = await res.json();
+      setAnalysisResult(data);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Analysis failed");
+    } finally {
+      setAnalyzing(false);
+    }
+  };
 
   const userColumns: ColumnDef<UserRow>[] = [
     { id: "name", header: "User", accessorFn: (r) => r.name ?? "—" },
@@ -263,6 +300,14 @@ export default function AnalyticsPage() {
             ))}
           </div>
         </div>
+        <button
+          onClick={handleAnalyze}
+          disabled={analyzing || !accountId}
+          className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-[#1a73e8] rounded-lg hover:bg-[#1557b0] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          <BarChart2 className="w-4 h-4" />
+          {analyzing ? "Analyzing…" : "Analyze Calls"}
+        </button>
       </div>
 
       {isLoading ? (
@@ -495,6 +540,14 @@ export default function AnalyticsPage() {
             </div>
           )}
         </>
+      )}
+
+      {analysisResult && (
+        <AnalyzeModal
+          analysis={analysisResult}
+          dateLabel={`${dateLabel} · Company`}
+          onClose={() => setAnalysisResult(null)}
+        />
       )}
     </div>
   );

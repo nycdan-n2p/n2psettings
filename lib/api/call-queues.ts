@@ -1,3 +1,4 @@
+import type { AxiosInstance } from "axios";
 import { getApiClient, getV2ApiClient, getN2pApiClient, type V1Response, type V2PaginatedResponse } from "../api-client";
 import { fetchUsersLight } from "./ring-groups";
 
@@ -323,6 +324,7 @@ export async function setQueueAgents(
 export type ReportIntervalSize = "quarter_of_hour" | "hour" | "day";
 
 export interface AgentActivityReportParams {
+  accountId: number;
   queueId: string;
   startDate: string;  // YYYY-MM-DD
   endDate: string;
@@ -332,6 +334,7 @@ export interface AgentActivityReportParams {
 }
 
 export interface QueueActivityReportParams {
+  accountId: number;
   queueId: string;
   startDate: string;
   endDate: string;
@@ -339,9 +342,42 @@ export interface QueueActivityReportParams {
   ianaTimezoneId?: string;
 }
 
+/** Try multiple API hosts for call queue reports (v1, v2, n2p) */
+async function tryReportApi<T>(
+  accountId: number,
+  queueId: string,
+  pathSuffix: string,
+  body: Record<string, unknown>,
+  pathWithoutAccount: string
+): Promise<T> {
+  const attempts: { api: () => Promise<AxiosInstance>; path: string }[] = [
+    { api: getApiClient, path: `/accounts/${accountId}/callqueues/${queueId}/${pathSuffix}` },
+    { api: getApiClient, path: `/accounts/${accountId}/call-queues/${queueId}/${pathSuffix}` },
+    { api: getV2ApiClient, path: pathWithoutAccount },
+    { api: getN2pApiClient, path: pathWithoutAccount },
+  ];
+
+  let lastErr: unknown = null;
+  for (const { api, path } of attempts) {
+    try {
+      const client = await api();
+      const res = await client.post<T>(path, body);
+      return res.data;
+    } catch (err: unknown) {
+      lastErr = err;
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status !== 404 && status !== 400) throw err;
+    }
+  }
+
+  const data = (lastErr as { response?: { data?: unknown } })?.response?.data;
+  const msg = data != null && typeof data === "object" && "message" in data
+    ? String((data as { message?: unknown }).message)
+    : "Reports are temporarily unavailable for this queue.";
+  throw new Error(msg);
+}
+
 export async function fetchAgentActivityReport(params: AgentActivityReportParams): Promise<unknown> {
-  // agents-report works on app.net2phone.com/api/v2 (api.n2p.io returns 400)
-  const api = await getV2ApiClient();
   const body: Record<string, unknown> = {
     start_date: params.startDate,
     end_date: params.endDate,
@@ -349,18 +385,27 @@ export async function fetchAgentActivityReport(params: AgentActivityReportParams
     timezone: params.timezone ?? "US/Eastern",
   };
   if (params.agentIds?.length) body.agent_ids = params.agentIds;
-  const res = await api.post(`/call-queues/${params.queueId}/agents-report`, body);
-  return res.data;
+  return tryReportApi(
+    params.accountId,
+    params.queueId,
+    "agents-report",
+    body,
+    `/call-queues/${params.queueId}/agents-report`
+  );
 }
 
 export async function fetchQueueActivityReport(params: QueueActivityReportParams): Promise<unknown> {
-  // queue-report lives on api.n2p.io/v2 (app.net2phone.com returns 404)
-  const api = await getN2pApiClient();
-  const res = await api.post(`/call-queues/${params.queueId}/queue-report`, {
+  const body = {
     start_date: params.startDate,
     end_date: params.endDate,
     interval_size: params.intervalSize ?? "hour",
     iana_timezone_id: params.ianaTimezoneId ?? "US/Eastern",
-  });
-  return res.data;
+  };
+  return tryReportApi(
+    params.accountId,
+    params.queueId,
+    "queue-report",
+    body,
+    `/call-queues/${params.queueId}/queue-report`
+  );
 }

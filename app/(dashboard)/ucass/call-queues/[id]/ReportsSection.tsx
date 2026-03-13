@@ -129,6 +129,7 @@ export function ReportsSection({
       const { start, end } = getDateRange(timePreset, customStart || undefined, customEnd || undefined);
       if (reportType === "agent") {
         const result = await fetchAgentActivityReport({
+          accountId,
           queueId,
           startDate: start,
           endDate: end,
@@ -138,6 +139,7 @@ export function ReportsSection({
         setReportData(result);
       } else {
         const result = await fetchQueueActivityReport({
+          accountId,
           queueId,
           startDate: start,
           endDate: end,
