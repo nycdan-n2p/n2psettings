@@ -330,6 +330,7 @@ export interface AgentActivityReportParams {
   endDate: string;
   intervalSize?: ReportIntervalSize;
   timezone?: string;
+  ianaTimezoneId?: string;
   agentIds?: number[];
 }
 
@@ -342,7 +343,7 @@ export interface QueueActivityReportParams {
   ianaTimezoneId?: string;
 }
 
-/** Try multiple API hosts for call queue reports (v1, v2, n2p) */
+/** Try multiple API hosts for call queue reports. HAR shows api.n2p.io works with iana_timezone_id + ISO datetimes. */
 async function tryReportApi<T>(
   accountId: number,
   queueId: string,
@@ -351,10 +352,10 @@ async function tryReportApi<T>(
   pathWithoutAccount: string
 ): Promise<T> {
   const attempts: { api: () => Promise<AxiosInstance>; path: string }[] = [
+    { api: getN2pApiClient, path: pathWithoutAccount },
     { api: getApiClient, path: `/accounts/${accountId}/callqueues/${queueId}/${pathSuffix}` },
     { api: getApiClient, path: `/accounts/${accountId}/call-queues/${queueId}/${pathSuffix}` },
     { api: getV2ApiClient, path: pathWithoutAccount },
-    { api: getN2pApiClient, path: pathWithoutAccount },
   ];
 
   let lastErr: unknown = null;
@@ -377,22 +378,47 @@ async function tryReportApi<T>(
   throw new Error(msg);
 }
 
-/** Format YYYY-MM-DD to ISO 8601 with time for NodaTime.OffsetDateTime parsing */
-function toIsoDateTime(dateStr: string, endOfDay: boolean): string {
+/** Format YYYY-MM-DD to ISO 8601 with timezone offset (matches legacy HAR format) */
+function toIsoDateTime(dateStr: string, endOfDay: boolean, ianaTimezone: string): string {
   const h = endOfDay ? 23 : 0;
   const min = endOfDay ? 59 : 0;
   const sec = endOfDay ? 59 : 0;
-  return `${dateStr}T${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}-05:00`;
+  const date = new Date(`${dateStr}T${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`);
+  const offset = getTimezoneOffset(date, ianaTimezone);
+  return `${dateStr}T${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}${offset}`;
+}
+
+function getTimezoneOffset(date: Date, ianaTimezone: string): string {
+  try {
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: ianaTimezone,
+      timeZoneName: "shortOffset",
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(date);
+    const tz = parts.find((p) => p.type === "timeZoneName")?.value ?? "";
+    const m = tz.match(/GMT([+-])(\d{1,2}):?(\d{2})?/);
+    if (m) {
+      const sign = m[1];
+      const h = m[2].padStart(2, "0");
+      const min = (m[3] ?? "00").padStart(2, "0");
+      return `${sign}${h}:${min}`;
+    }
+  } catch {
+    /* ignore */
+  }
+  return "-05:00";
 }
 
 export async function fetchAgentActivityReport(params: AgentActivityReportParams): Promise<unknown> {
+  const tz = params.timezone ?? params.ianaTimezoneId ?? "US/Eastern";
   const body: Record<string, unknown> = {
-    start_date: toIsoDateTime(params.startDate, false),
-    end_date: toIsoDateTime(params.endDate, true),
+    start_date: toIsoDateTime(params.startDate, false, tz),
+    end_date: toIsoDateTime(params.endDate, true, tz),
     interval_size: params.intervalSize ?? "hour",
-    timezone: params.timezone ?? "US/Eastern",
+    iana_timezone_id: tz,
+    agent_ids: params.agentIds ?? [],
   };
-  if (params.agentIds?.length) body.agent_ids = params.agentIds;
   return tryReportApi(
     params.accountId,
     params.queueId,
@@ -403,11 +429,12 @@ export async function fetchAgentActivityReport(params: AgentActivityReportParams
 }
 
 export async function fetchQueueActivityReport(params: QueueActivityReportParams): Promise<unknown> {
+  const tz = params.ianaTimezoneId ?? "US/Eastern";
   const body = {
-    start_date: toIsoDateTime(params.startDate, false),
-    end_date: toIsoDateTime(params.endDate, true),
+    start_date: toIsoDateTime(params.startDate, false, tz),
+    end_date: toIsoDateTime(params.endDate, true, tz),
     interval_size: params.intervalSize ?? "hour",
-    iana_timezone_id: params.ianaTimezoneId ?? "US/Eastern",
+    iana_timezone_id: tz,
   };
   return tryReportApi(
     params.accountId,
