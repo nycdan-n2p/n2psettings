@@ -63,15 +63,12 @@ function DepartmentDropdown({ departmentsStr }: { departmentsStr?: string | null
     <div ref={ref} className="relative inline-block">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1.5 group"
+        className="flex items-center gap-1.5 group hover:opacity-90"
       >
         <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold ${avatarColor(String(total))}`}>
           {total > 9 ? "9+" : total}
         </div>
-        <span className="text-sm text-[#1a73e8] group-hover:underline font-medium">
-          {total} department{total !== 1 ? "s" : ""}
-        </span>
-        <ChevronDown className={`w-3.5 h-3.5 text-[#1a73e8] transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`w-3.5 h-3.5 text-gray-500 group-hover:text-[#1a73e8] transition-all ${open ? "rotate-180 text-[#1a73e8]" : ""}`} />
       </button>
 
       {open && (

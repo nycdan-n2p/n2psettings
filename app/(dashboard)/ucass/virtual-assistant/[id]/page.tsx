@@ -16,12 +16,15 @@ import {
   fetchRingGroupsForMenu,
   fetchSpecialExtensionsLight,
   uploadMenuGreeting,
+  generateTtsGreeting,
+  fetchMenuGreeting,
+  DEFAULT_TTS_GREETING,
   type WelcomeMenuDetail,
   type MenuOption,
   type MenuOptionDestination,
   type DestinationType,
 } from "@/lib/api/virtual-assistant";
-import { ArrowLeft, Plus, Trash2, Upload } from "lucide-react";
+import { ArrowLeft, Info, Pencil, Play, Plus, Trash2, Upload } from "lucide-react";
 
 const DTMF_KEYS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "#"];
 
@@ -47,6 +50,10 @@ export default function WelcomeMenuEditPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [greetingFile, setGreetingFile] = useState<File | null>(null);
   const [uploadingGreeting, setUploadingGreeting] = useState(false);
+  const [greetingType, setGreetingType] = useState<"record" | "upload" | "tts">("tts");
+  const [ttsText, setTtsText] = useState(DEFAULT_TTS_GREETING);
+  const [placeholderCompany, setPlaceholderCompany] = useState("");
+  const [showPlaceholderEditor, setShowPlaceholderEditor] = useState(false);
 
   // ─── Form state ────────────────────────────────────────────────────────
   const [name, setName] = useState("");
@@ -95,6 +102,12 @@ export default function WelcomeMenuEditPage() {
     enabled: !!accountId,
   });
 
+  const { data: currentGreeting, refetch: refetchGreeting } = useQuery({
+    queryKey: ["welcome-menu-greeting", accountId, id],
+    queryFn: () => fetchMenuGreeting(accountId, id),
+    enabled: !!accountId && !!id,
+  });
+
   // ─── Seed form from fetched data ───────────────────────────────────────
   useEffect(() => {
     if (!menu) return;
@@ -139,12 +152,44 @@ export default function WelcomeMenuEditPage() {
     try {
       await uploadMenuGreeting(accountId, id, file);
       setGreetingFile(file);
+      refetchGreeting();
     } catch (e) {
       setSaveError((e as Error).message ?? "Failed to upload greeting");
     } finally {
       setUploadingGreeting(false);
     }
   };
+
+  const handleTtsApply = async () => {
+    const resolved = ttsText.replace(/\[Company\]/g, placeholderCompany || bootstrap?.account?.company || "our company");
+    setUploadingGreeting(true);
+    try {
+      const { content } = await generateTtsGreeting(resolved, "High");
+      const binary = atob(content);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const blob = new Blob([bytes], { type: "audio/wav" });
+      const file = new File([blob], "tts-greeting.wav", { type: "audio/wav" });
+      await uploadMenuGreeting(accountId, id, file);
+      setGreetingFile(file);
+      refetchGreeting();
+    } catch (e) {
+      setSaveError((e as Error).message ?? "Failed to generate TTS greeting");
+    } finally {
+      setUploadingGreeting(false);
+    }
+  };
+
+  const greetingAudioUrl = (() => {
+    const raw = currentGreeting?.file ?? currentGreeting?.audioContent;
+    if (!raw) return null;
+    return `data:audio/wav;base64,${raw}`;
+  })();
+
+  const menuOptionsChanged =
+    menu &&
+    (JSON.stringify(menuOptions) !== JSON.stringify(menu.menuOptions ?? []) ||
+      JSON.stringify(noSelectionDest) !== JSON.stringify(menu.noSelectionDestination ?? {}));
 
   // ─── Menu option helpers ───────────────────────────────────────────────
   const addOption = () => {
@@ -306,7 +351,7 @@ export default function WelcomeMenuEditPage() {
               disabled={menuOptions.length >= DTMF_KEYS.length}
               className="flex items-center gap-1.5 text-sm text-[#1a73e8] hover:underline disabled:opacity-40"
             >
-              <Plus className="w-4 h-4" /> Add Option
+              <Plus className="w-4 h-4" /> Add Menu Option
             </button>
           </div>
 
@@ -365,32 +410,124 @@ export default function WelcomeMenuEditPage() {
         {/* ── Greeting ── */}
         <section className="p-5 border border-gray-200 rounded-lg">
           <h2 className="text-base font-medium text-gray-900 mb-4">Greeting</h2>
-          <p className="text-sm text-gray-500 mb-4">Upload a custom greeting audio file (.mp3, .m4a, .wav — max 20 MB)</p>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".mp3,.m4a,.wav"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) handleGreetingUpload(f);
-            }}
-          />
-          {greetingFile ? (
-            <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-md">
-              <Upload className="w-4 h-4 text-green-600" />
-              <span className="text-sm text-green-700">{greetingFile.name} — uploaded successfully</span>
+          {menuOptionsChanged && (
+            <div className="flex items-start gap-2 mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
+              <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-sm text-amber-800">Menu options have been updated. Please update your greeting accordingly.</p>
             </div>
-          ) : (
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploadingGreeting}
-              className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-[#1a73e8] hover:bg-blue-50 transition-colors cursor-pointer disabled:opacity-50"
-            >
-              <Upload className="w-6 h-6 text-gray-400 mb-2" />
-              <span className="text-sm text-gray-600">{uploadingGreeting ? "Uploading..." : "Drag & Drop or click to Browse File"}</span>
-              <span className="text-xs text-gray-400 mt-1">Supported: .mp3, .m4a, .wav | Max size: 20 MB</span>
-            </button>
+          )}
+          <p className="text-sm text-gray-500 mb-3">
+            Playing: {greetingFile || currentGreeting ? "Recorded Greeting" : "No greeting"}
+          </p>
+          {(greetingAudioUrl || greetingFile) && (
+            <div className="flex items-center gap-3 mb-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
+              {greetingAudioUrl ? (
+                <audio controls src={greetingAudioUrl} className="flex-1 max-w-full h-9">
+                  Your browser does not support the audio element.
+                </audio>
+              ) : (
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Play className="w-4 h-4" />
+                  <span>{greetingFile?.name ?? "Greeting ready"}</span>
+                </div>
+              )}
+            </div>
+          )}
+          <div className="space-y-3 mb-4">
+            <label className="flex items-center gap-2 cursor-not-allowed opacity-60">
+              <input type="radio" name="greetingType" disabled className="accent-[#1a73e8]" />
+              <span className="text-sm text-gray-500">Record Greeting Via Phone</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="greetingType"
+                checked={greetingType === "upload"}
+                onChange={() => setGreetingType("upload")}
+                className="accent-[#1a73e8]"
+              />
+              <span className="text-sm text-gray-700">Upload Custom Greeting</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="greetingType"
+                checked={greetingType === "tts"}
+                onChange={() => setGreetingType("tts")}
+                className="accent-[#1a73e8]"
+              />
+              <span className="text-sm text-gray-700">Text to speech</span>
+            </label>
+          </div>
+          {greetingType === "tts" && (
+            <div className="space-y-3">
+              <textarea
+                value={ttsText}
+                onChange={(e) => setTtsText(e.target.value)}
+                placeholder={DEFAULT_TTS_GREETING}
+                rows={5}
+                className="w-full px-3 py-2 border border-[#dadce0] rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:border-[#1a73e8]"
+              />
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setShowPlaceholderEditor((s) => !s)}
+                  className="text-sm text-[#1a73e8] hover:underline flex items-center gap-1"
+                >
+                  <Pencil className="w-3.5 h-3.5" /> Add/edit
+                </button>
+                <button
+                  type="button"
+                  onClick={handleTtsApply}
+                  disabled={uploadingGreeting || !ttsText.trim()}
+                  className="px-4 py-2 bg-[#1a73e8] text-white rounded-md text-sm font-medium hover:bg-[#1557b0] disabled:opacity-50"
+                >
+                  {uploadingGreeting ? "Generating..." : "Apply TTS"}
+                </button>
+              </div>
+              {showPlaceholderEditor && (
+                <div className="p-3 bg-gray-50 rounded-md border border-gray-100">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Replace [Company] with</label>
+                  <input
+                    type="text"
+                    value={placeholderCompany}
+                    onChange={(e) => setPlaceholderCompany(e.target.value)}
+                    placeholder={bootstrap?.account?.company ?? "Company name"}
+                    className="w-full px-2 py-1.5 border border-[#dadce0] rounded text-sm"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+          {greetingType === "upload" && (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".mp3,.m4a,.wav"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleGreetingUpload(f);
+                }}
+              />
+              {greetingFile ? (
+                <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-md">
+                  <Upload className="w-4 h-4 text-green-600" />
+                  <span className="text-sm text-green-700">{greetingFile.name} — uploaded successfully</span>
+                </div>
+              ) : (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingGreeting}
+                  className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-[#1a73e8] hover:bg-blue-50 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  <Upload className="w-6 h-6 text-gray-400 mb-2" />
+                  <span className="text-sm text-gray-600">{uploadingGreeting ? "Uploading..." : "Drag & Drop or click to Browse File"}</span>
+                  <span className="text-xs text-gray-400 mt-1">Supported: .mp3, .m4a, .wav | Max size: 20 MB</span>
+                </button>
+              )}
+            </>
           )}
         </section>
 

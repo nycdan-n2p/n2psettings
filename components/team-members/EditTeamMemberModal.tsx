@@ -114,8 +114,8 @@ export function EditTeamMemberModal({
   )?.url;
 
   const headerContent = (
-    <div className="flex items-center justify-between px-6 py-4 border-b border-[#dadce0] bg-white">
-      <div className="flex items-center gap-3 min-w-0">
+    <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-[#dadce0] bg-white min-w-0">
+      <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
         <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#f1f3f4] flex items-center justify-center overflow-hidden">
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- external avatar URL
@@ -126,11 +126,11 @@ export function EditTeamMemberModal({
             </span>
           )}
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1 overflow-hidden">
           <h2 className="text-base font-medium text-gray-900 truncate">
             Edit {displayName}
           </h2>
-          <p className="text-sm text-gray-500 truncate">{user.email}</p>
+          <p className="text-sm text-gray-500 truncate block">{user.email}</p>
         </div>
       </div>
       <button
@@ -151,16 +151,16 @@ export function EditTeamMemberModal({
       size="xl"
       headerContent={headerContent}
     >
-      <div className="flex flex-col -mx-6 -mb-4">
+      <div className="flex flex-col min-h-[320px]">
         {/* Tabs - Google Admin style */}
-        <div className="flex overflow-x-auto border-b border-[#dadce0] bg-[#f8f9fa]">
+        <div className="flex overflow-x-auto border-b border-[#dadce0] bg-[#f8f9fa] -mx-6 px-6">
           {TABS.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               onClick={() => setActiveTab(id)}
               className={`
                 flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap
-                border-b-2 -mb-px transition-colors
+                border-b-2 -mb-px transition-colors shrink-0
                 ${
                   activeTab === id
                     ? "border-[#1a73e8] text-[#1a73e8] bg-white"
@@ -175,7 +175,7 @@ export function EditTeamMemberModal({
         </div>
 
         {/* Tab content */}
-        <div className="px-6 py-6 min-h-[320px] bg-[#fafafa]">
+        <div className="py-6 min-h-[280px] bg-[#fafafa] overflow-hidden">
           {isLoading ? (
             <div className="flex justify-center py-12">
               <Loader variant="inline" label="Loading..." />
@@ -267,42 +267,44 @@ function ProfileTab({
     form.email !== undefined;
 
   return (
-    <div className="border border-[#dadce0] rounded-lg bg-white p-6 space-y-6">
-      <div className="border border-dashed border-[#dadce0] rounded-lg p-6 bg-[#fafafa]">
-        <p className="text-sm text-gray-600">Drag and drop your avatar here, or browse to upload.</p>
-        <p className="text-xs text-gray-500 mt-1">Supported: .png, .jpg, .jpeg · Max size: 4 MB</p>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
+    <div className="border border-[#dadce0] rounded-lg bg-white overflow-hidden">
+      <div className="px-6 py-4 space-y-6">
+        <div className="border border-dashed border-[#dadce0] rounded-lg p-6 bg-[#fafafa]">
+          <p className="text-sm text-gray-600">Drag and drop your avatar here, or browse to upload.</p>
+          <p className="text-xs text-gray-500 mt-1">Supported: .png, .jpg, .jpeg · Max size: 4 MB</p>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <TextInput
+            label="First Name"
+            value={form.firstName ?? user.firstName ?? ""}
+            onChange={(v) => onUpdate({ firstName: v })}
+            placeholder="First name"
+          />
+          <TextInput
+            label="Last Name"
+            value={form.lastName ?? user.lastName ?? ""}
+            onChange={(v) => onUpdate({ lastName: v })}
+            placeholder="Last name"
+          />
+        </div>
         <TextInput
-          label="First Name"
-          value={form.firstName ?? user.firstName ?? ""}
-          onChange={(v) => onUpdate({ firstName: v })}
-          placeholder="First name"
+          label="Email"
+          value={form.email ?? user.email ?? ""}
+          onChange={(v) => onUpdate({ email: v })}
+          type="email"
+          placeholder="user@example.com"
         />
-        <TextInput
-          label="Last Name"
-          value={form.lastName ?? user.lastName ?? ""}
-          onChange={(v) => onUpdate({ lastName: v })}
-          placeholder="Last name"
-        />
+        {hasChanges && (
+          <button
+            onClick={onSave}
+            disabled={isSaving}
+            className="px-4 py-2 bg-[#1a73e8] text-white text-sm font-medium rounded-lg hover:bg-[#1557b0] disabled:opacity-50 flex items-center gap-2"
+          >
+            {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+            Save changes
+          </button>
+        )}
       </div>
-      <TextInput
-        label="Email"
-        value={form.email ?? user.email ?? ""}
-        onChange={(v) => onUpdate({ email: v })}
-        type="email"
-        placeholder="user@example.com"
-      />
-      {hasChanges && (
-        <button
-          onClick={onSave}
-          disabled={isSaving}
-          className="px-4 py-2 bg-[#1a73e8] text-white text-sm font-medium rounded-lg hover:bg-[#1557b0] disabled:opacity-50 flex items-center gap-2"
-        >
-          {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-          Save changes
-        </button>
-      )}
     </div>
   );
 }
@@ -338,13 +340,13 @@ function DepartmentSelect({
   };
 
   return (
-    <div ref={ref} className="relative inline-block">
+    <div ref={ref} className="relative inline-block w-full max-w-full">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 px-3 py-2 text-sm border border-[#dadce0] rounded-lg bg-white hover:bg-[#f8f9fa] text-left min-w-[200px]"
+        className="flex items-center gap-2 px-3 py-2 text-sm border border-[#dadce0] rounded-lg bg-white hover:bg-[#f8f9fa] text-left w-full min-w-0 max-w-full"
       >
-        <span className="flex-1 truncate text-gray-700">
+        <span className="flex-1 truncate text-gray-700 min-w-0">
           {count === 0
             ? "No departments"
             : `${count} department${count !== 1 ? "s" : ""} selected`}
@@ -408,15 +410,16 @@ function CompanyTab({
     user.role?.toLowerCase() === "admin" || roleId === 2;
   const compDirEnabled = form.compDir?.enabled ?? ud.compDir?.enabled ?? false;
 
+  const phoneDisplay = `${ud.lineNumber?.[0] ?? "—"} · Ext ${(user as { extension?: string }).extension ?? "—"}`;
   return (
-    <div className="border border-[#dadce0] rounded-lg bg-white divide-y divide-[#f1f3f4]">
-      <div className="p-4">
+    <div className="border border-[#dadce0] rounded-lg bg-white divide-y divide-[#f1f3f4] overflow-hidden">
+      <div className="px-6 py-4">
         <p className="text-xs font-medium text-gray-500 mb-1">Phone Number</p>
-        <p className="text-sm text-gray-900">
-          {(ud.lineNumber?.[0] ?? "—")} · Ext {(user as { extension?: string }).extension ?? "—"}
+        <p className="text-sm text-gray-900 break-all min-w-0">
+          {phoneDisplay}
         </p>
       </div>
-      <div className="p-4">
+      <div className="px-6 py-4">
         <p className="text-xs font-medium text-gray-500 mb-2">Departments</p>
         <DepartmentSelect
           departments={departments}
@@ -424,7 +427,7 @@ function CompanyTab({
           onSelect={(ids) => onUpdate({ members: ids.map((id) => ({ id })) })}
         />
       </div>
-      <div className="p-4">
+      <div className="px-6 py-4">
         <p className="text-xs font-medium text-gray-500 mb-2">Role</p>
         <div className="flex gap-0.5 p-0.5 bg-[#f1f3f4] rounded-lg w-fit">
           {(["User", "Admin"] as const).map((r) => (
@@ -452,7 +455,7 @@ function CompanyTab({
           onChange={(v) => onUpdate({ compDir: { enabled: v } })}
         />
       </SettingsRow>
-      <div className="p-4">
+      <div className="px-6 py-4">
         <button
           onClick={onSave}
           disabled={isSaving || Object.keys(form).length === 0}
@@ -471,8 +474,8 @@ function LicensesTab({
   licenses: Array<{ code?: string; name?: string }>;
 }) {
   return (
-    <div className="border border-[#dadce0] rounded-lg bg-white">
-      <div className="px-4 py-3 border-b border-[#f1f3f4]">
+    <div className="border border-[#dadce0] rounded-lg bg-white overflow-hidden">
+      <div className="px-6 py-4 border-b border-[#f1f3f4]">
         <p className="text-sm text-gray-600">Licenses granted by your company admins.</p>
       </div>
       <div className="divide-y divide-[#f1f3f4]">
@@ -480,9 +483,9 @@ function LicensesTab({
           <p className="py-8 text-center text-sm text-gray-500">No licenses to display</p>
         ) : (
           licenses.map((l) => (
-            <div key={l.code ?? l.name ?? ""} className="flex items-center gap-3 px-4 py-3">
+            <div key={l.code ?? l.name ?? ""} className="flex items-center gap-3 px-6 py-4">
               <FileBarChart className="w-5 h-5 text-gray-400 shrink-0" />
-              <span className="text-sm text-gray-900">{l.name ?? l.code ?? "License"}</span>
+              <span className="text-sm text-gray-900 min-w-0 truncate">{l.name ?? l.code ?? "License"}</span>
             </div>
           ))
         )}
@@ -493,15 +496,17 @@ function LicensesTab({
 
 function CallForwardingTab() {
   return (
-    <div className="border border-[#dadce0] rounded-lg bg-white p-6">
-      <p className="text-sm text-gray-600 mb-4">
-        Enable call forwarding and choose when and where to forward calls.
-      </p>
-      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-        <p className="text-sm text-amber-800">
-          Call forwarding configuration is managed at the account level. Contact
-          your admin or use the main settings to configure forwarding rules.
+    <div className="border border-[#dadce0] rounded-lg bg-white overflow-hidden">
+      <div className="px-6 py-4">
+        <p className="text-sm text-gray-600 mb-4">
+          Enable call forwarding and choose when and where to forward calls.
         </p>
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <p className="text-sm text-amber-800">
+            Call forwarding configuration is managed at the account level. Contact
+            your admin or use the main settings to configure forwarding rules.
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -525,10 +530,10 @@ function CallOptionsTab({
     form.isRingGroupCallsEnabled ?? ud.isRingGroupCallsEnabled ?? false;
 
   return (
-    <div className="border border-[#dadce0] rounded-lg bg-white divide-y divide-[#f1f3f4]">
-      <div className="p-4">
+    <div className="border border-[#dadce0] rounded-lg bg-white divide-y divide-[#f1f3f4] overflow-hidden">
+      <div className="px-6 py-4">
         <p className="text-xs font-medium text-gray-500 mb-1">Ring Group Status</p>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           <span
             className={`w-2 h-2 rounded-full shrink-0 ${
               ringGroupEnabled ? "bg-green-500" : "bg-gray-300"
@@ -550,7 +555,7 @@ function CallOptionsTab({
           onChange={(v) => onUpdate({ isRingGroupCallsEnabled: v })}
         />
       </SettingsRow>
-      <div className="p-4">
+      <div className="px-6 py-4">
         <button
           onClick={onSave}
           disabled={isSaving || Object.keys(form).length === 0}
@@ -578,24 +583,24 @@ function DevicesTab({
   const ud = user as UserDetail;
 
   return (
-    <div className="border border-[#dadce0] rounded-lg bg-white divide-y divide-[#f1f3f4]">
-      <div className="p-4">
+    <div className="border border-[#dadce0] rounded-lg bg-white divide-y divide-[#f1f3f4] overflow-hidden">
+      <div className="px-6 py-4">
         <p className="text-xs font-medium text-gray-500 mb-1">Caller ID</p>
         <p className="text-sm text-gray-600">
           Your outbound calls will appear from this number.
         </p>
-        <p className="mt-1 text-sm font-medium text-gray-900">
+        <p className="mt-1 text-sm font-medium text-gray-900 break-all min-w-0">
           {ud.callerId ?? ud.lineNumber?.[0] ?? "—"}
         </p>
       </div>
-      <div className="p-4">
+      <div className="px-6 py-4">
         <p className="text-xs font-medium text-gray-500 mb-1">Phone Rings</p>
         <p className="text-sm text-gray-600">All desk phones ring simultaneously.</p>
         <p className="mt-1 text-sm font-medium text-gray-900">
           {ud.sipDeviceRings ?? 3} Rings
         </p>
       </div>
-      <div className="p-4">
+      <div className="px-6 py-4">
         <p className="text-xs font-medium text-gray-500 mb-2">Desk Phones</p>
         {devices.length === 0 ? (
           <p className="text-sm text-gray-500">No desk phones assigned</p>
@@ -604,9 +609,9 @@ function DevicesTab({
             {devices.map((d) => (
               <div
                 key={d.macId}
-                className="flex items-center justify-between rounded-lg border border-[#dadce0] p-3 bg-[#fafafa]"
+                className="flex items-center justify-between gap-4 rounded-lg border border-[#dadce0] p-3 bg-[#fafafa] min-w-0"
               >
-                <span className="text-sm text-gray-900">
+                <span className="text-sm text-gray-900 truncate min-w-0">
                   {d.deviceType?.name ?? d.displayName ?? d.macId}
                 </span>
                 {d.provisioningUrl && (
@@ -614,7 +619,7 @@ function DevicesTab({
                     href={d.provisioningUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-[#1a73e8] hover:underline"
+                    className="text-sm text-[#1a73e8] hover:underline shrink-0"
                   >
                     Config
                   </a>
@@ -659,7 +664,7 @@ function VoicemailTab({
     false;
 
   return (
-    <div className="border border-[#dadce0] rounded-lg bg-white divide-y divide-[#f1f3f4]">
+    <div className="border border-[#dadce0] rounded-lg bg-white divide-y divide-[#f1f3f4] overflow-hidden">
       <SettingsRow
         label="Voicemail"
         description="When off, callers cannot leave voicemail if you miss their call."
@@ -680,7 +685,7 @@ function VoicemailTab({
         />
       </SettingsRow>
       {emailNotify && (
-        <div className="p-4 space-y-3 bg-[#fafafa]">
+        <div className="px-6 py-4 space-y-3 bg-[#fafafa]">
           <p className="text-xs font-medium text-gray-500">Email options</p>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -735,7 +740,7 @@ function VoicemailTab({
           </label>
         </div>
       )}
-      <div className="p-4">
+      <div className="px-6 py-4">
         <button
           onClick={onSave}
           disabled={isSaving || Object.keys(form).length === 0}
@@ -765,8 +770,8 @@ function HoldMusicTab({
   const custom = form.hasCustomMusicOnHold ?? ud.hasCustomMusicOnHold ?? false;
 
   return (
-    <div className="border border-[#dadce0] rounded-lg bg-white divide-y divide-[#f1f3f4]">
-      <div className="p-4">
+    <div className="border border-[#dadce0] rounded-lg bg-white divide-y divide-[#f1f3f4] overflow-hidden">
+      <div className="px-6 py-4">
         <p className="text-sm text-gray-600 mb-4">
           Choose Default to use standard hold music, or Custom to upload your own.
         </p>
@@ -793,7 +798,7 @@ function HoldMusicTab({
           </label>
         </div>
       </div>
-      <div className="p-4">
+      <div className="px-6 py-4">
         <button
           onClick={onSave}
           disabled={isSaving || Object.keys(form).length === 0}

@@ -259,3 +259,60 @@ export async function uploadMenuGreeting(
     { headers: { "Content-Type": "multipart/form-data" } }
   );
 }
+
+// ─── Text-to-Speech greeting ────────────────────────────────────────────────
+
+const DEFAULT_TTS_GREETING =
+  "Hello and thank you for calling [Company]. If you know the extension of the person you wish to reach, please enter it now. Otherwise, please choose from one of the following options:";
+
+export { DEFAULT_TTS_GREETING };
+
+export interface TtsGreetingResponse {
+  content: string; // base64 WAV
+}
+
+/** Generate greeting audio from text via net2phone TTS API. */
+export async function generateTtsGreeting(
+  text: string,
+  quality: "High" | "Standard" = "High"
+): Promise<TtsGreetingResponse> {
+  const api = await getApiClient();
+  const res = await api.post<V1Response<TtsGreetingResponse>>("/text-to-speech", {
+    text: text.trim() || DEFAULT_TTS_GREETING,
+    quality,
+  });
+  const data = res.data.data;
+  if (!data?.content) {
+    throw new Error("TTS API did not return audio content");
+  }
+  return data;
+}
+
+/** Fetch current menu greeting (returns base64 WAV in data[0].file or data.audioContent). */
+export async function fetchMenuGreeting(
+  accountId: number,
+  menuId: number | string
+): Promise<{ audioContent?: string; file?: string } | null> {
+  const api = await getApiClient();
+  try {
+    const res = await api.get<V1Response<unknown>>(
+      `/accounts/${accountId}/multiAttendants/${menuId}/menu/menuGreetingFiles`
+    );
+    const data = res.data.data;
+    if (Array.isArray(data) && data.length > 0) {
+      const first = data[0] as Record<string, unknown>;
+      if (first?.audioContent || first?.file) {
+        return { audioContent: first.audioContent as string, file: first.file as string };
+      }
+    }
+    if (data && typeof data === "object" && !Array.isArray(data)) {
+      const obj = data as Record<string, unknown>;
+      if (obj.audioContent || obj.file) {
+        return { audioContent: obj.audioContent as string, file: obj.file as string };
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}

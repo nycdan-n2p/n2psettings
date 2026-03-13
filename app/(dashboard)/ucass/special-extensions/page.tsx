@@ -14,11 +14,31 @@ import {
   type SpecialExtension,
   type CreateSpecialExtensionPayload,
 } from "@/lib/api/special-extensions";
+import { fetchAccountNumbers, getUnassignedNumbers } from "@/lib/api/onboarding";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Modal } from "@/components/settings/Modal";
 import { TextInput } from "@/components/settings/TextInput";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Phone } from "lucide-react";
+
+const TYPE_OPTIONS = [
+  { value: "Fax", label: "Fax" },
+  { value: "Paging", label: "Pager" },
+  { value: "Ringer", label: "Ringer" },
+  { value: "Intercom", label: "Intercom" },
+  { value: "Park", label: "Park" },
+];
+
+function formatPhone(num: string): string {
+  const d = (num || "").replace(/\D/g, "");
+  if (d.length === 11 && d.startsWith("1")) {
+    return `(${d.slice(1, 4)}) ${d.slice(4, 7)}-${d.slice(7)}`;
+  }
+  if (d.length === 10) {
+    return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+  }
+  return num || "—";
+}
 
 const EMPTY_FORM: CreateSpecialExtensionPayload = { name: "", type: "Fax", extension: "" };
 
@@ -38,6 +58,15 @@ export default function SpecialExtensionsPage() {
     enabled: !!accountId,
   });
 
+  const { data: accountNumbers = [] } = useQuery({
+    queryKey: qk.phoneNumbers.all(accountId),
+    queryFn: () => fetchAccountNumbers(accountId),
+    enabled: !!accountId,
+  });
+
+  const assignableNumbers = getUnassignedNumbers(accountNumbers);
+  const unassignedCount = assignableNumbers.length;
+
   const addMutation = useMutation({
     mutationFn: (payload: CreateSpecialExtensionPayload) => createSpecialExtension(accountId, payload),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: qk.specialExtensions.all(accountId) }); closeModal(); },
@@ -55,28 +84,78 @@ export default function SpecialExtensionsPage() {
   });
 
   const openAddModal = () => { setEditing(null); setForm({ ...EMPTY_FORM }); setModalOpen(true); };
-  const openEditModal = (ext: SpecialExtension) => { setEditing(ext); setForm({ name: ext.name ?? "", type: ext.type ?? "Fax", extension: ext.extension ?? "" }); setModalOpen(true); };
+  const openEditModal = (ext: SpecialExtension) => {
+    setEditing(ext);
+    setForm({
+      name: ext.name ?? "",
+      type: ext.type ?? "Fax",
+      extension: ext.extension ?? "",
+      phoneNumber: (ext.phoneNumber as string) || undefined,
+    });
+    setModalOpen(true);
+  };
   const closeModal = () => { setModalOpen(false); setEditing(null); setForm({ ...EMPTY_FORM }); };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (editing) { updateMutation.mutate({ id: editing.id!, payload: form }); }
-    else { addMutation.mutate(form); }
+    const payload = { ...form, phoneNumber: form.phoneNumber || undefined };
+    if (editing) { updateMutation.mutate({ id: editing.id!, payload }); }
+    else { addMutation.mutate(payload); }
   };
 
   const isMutating = addMutation.isPending || updateMutation.isPending;
 
   const columns: ColumnDef<SpecialExtension>[] = [
-    { id: "name", header: "Name", cell: ({ row }) => row.original.name ?? "—" },
-    { id: "type", header: "Type", cell: ({ row }) => row.original.type ?? "—" },
-    { id: "extension", header: "Extension", cell: ({ row }) => row.original.extension ?? "—" },
-    { id: "phoneNumber", header: "Phone Number", cell: ({ row }) => (row.original.phoneNumber as string | undefined) ?? "Unassigned" },
     {
-      id: "actions", header: "",
+      id: "name",
+      header: "NAME",
+      accessorFn: (r) => r.name ?? "",
+      cell: ({ row }) => {
+        const ext = row.original;
+        const name = ext.name ?? "—";
+        const typeLabel = TYPE_OPTIONS.find((t) => t.value === ext.type)?.label ?? ext.type ?? "";
+        return (
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-[#1a73e8] text-white flex items-center justify-center text-xs font-semibold shrink-0">
+              E
+            </div>
+            <div>
+              <div className="font-medium text-gray-900">{name}</div>
+              {typeLabel && <div className="text-xs text-gray-500">{typeLabel}</div>}
+            </div>
+          </div>
+        );
+      },
+    },
+    { id: "extension", header: "EXT", accessorFn: (r) => r.extension ?? "", cell: ({ row }) => row.original.extension ?? "—" },
+    {
+      id: "phoneNumber",
+      header: "PHONE NUMBERS",
+      accessorFn: (r) => (r.phoneNumber as string) ?? "",
+      cell: ({ row }) => {
+        const ext = row.original;
+        const phone = ext.phoneNumber as string | undefined;
+        if (!phone) return <span className="text-gray-400">Unassigned</span>;
+        return (
+          <div className="flex items-center gap-2">
+            <Phone className="w-4 h-4 text-[#1a73e8] shrink-0" />
+            <div>
+              <span className="text-gray-900">{formatPhone(phone)}</span>
+              <span className="text-xs text-gray-500 ml-1">
+                {ext.name ?? ""}{ext.extension ? ` • ${ext.extension}` : ""}
+              </span>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      id: "actions",
+      header: "",
       cell: ({ row }) => (
         <div className="flex gap-2">
-          <button onClick={() => openEditModal(row.original)} className="p-1.5 rounded hover:bg-gray-100 text-gray-600" title="Edit"><Pencil className="w-4 h-4" /></button>
-          <button onClick={() => setDeleteTarget(row.original)} className="p-1.5 rounded hover:bg-red-50 text-red-600" title="Delete"><Trash2 className="w-4 h-4" /></button>
+          <button onClick={() => openEditModal(row.original)} className="p-1.5 rounded-full border border-gray-200 hover:bg-gray-100 text-gray-600" title="Edit"><Pencil className="w-4 h-4" /></button>
+          <button onClick={() => setDeleteTarget(row.original)} className="p-1.5 rounded-full border border-gray-200 hover:bg-red-50 text-red-600" title="Delete"><Trash2 className="w-4 h-4" /></button>
         </div>
       ),
     },
@@ -84,15 +163,25 @@ export default function SpecialExtensionsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-medium text-gray-900">Special Extensions</h1>
-          <p className="text-sm text-gray-500 mt-1">{extensions.length} extensions</p>
-        </div>
-        <button onClick={openAddModal} className="px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium">Add Special Extension</button>
+      <h1 className="text-2xl font-bold text-gray-900 mb-4">SPECIAL EXTENSIONS</h1>
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+        <span className="text-sm text-gray-600">Total: {extensions.length}</span>
+        <button
+          onClick={openAddModal}
+          className="relative px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium"
+        >
+          Add Special Extension
+          {unassignedCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1.5 flex items-center justify-center bg-red-500 text-white text-xs font-medium rounded-full">
+              {unassignedCount > 99 ? "99+" : unassignedCount}
+            </span>
+          )}
+        </button>
       </div>
-      {isLoading ? <div className="py-12 flex justify-center"><Loader variant="inline" label="Loading special extensions..." /></div> : (
-        <DataTable columns={columns} data={extensions} searchPlaceholder="Search extensions..." />
+      {isLoading ? (
+        <div className="py-12 flex justify-center"><Loader variant="inline" label="Loading special extensions..." /></div>
+      ) : (
+        <DataTable columns={columns} data={extensions} searchPlaceholder="Search" />
       )}
       <Modal isOpen={modalOpen} onClose={closeModal} title={editing ? "Edit Special Extension" : "Add Special Extension"}>
         <form onSubmit={handleSubmit}>
@@ -100,13 +189,28 @@ export default function SpecialExtensionsPage() {
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
             <select value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))} className="w-full px-3 py-2 border border-[#dadce0] rounded-md text-sm">
-              <option value="Fax">Fax</option>
-              <option value="Paging">Paging</option>
-              <option value="Ringer">Ringer</option>
-              <option value="Park">Park</option>
+              {TYPE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
             </select>
           </div>
           <TextInput label="Extension" value={form.extension ?? ""} onChange={(v) => setForm((f) => ({ ...f, extension: v }))} placeholder="e.g. 701" />
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+            <select
+              value={form.phoneNumber ?? ""}
+              onChange={(e) => setForm((f) => ({ ...f, phoneNumber: e.target.value || undefined }))}
+              className="w-full px-3 py-2 border border-[#dadce0] rounded-md text-sm"
+            >
+              <option value="">Unassigned</option>
+              {editing && form.phoneNumber && !assignableNumbers.some((n) => n.phoneNumber === form.phoneNumber) && (
+                <option value={form.phoneNumber}>{formatPhone(form.phoneNumber)} (current)</option>
+              )}
+              {assignableNumbers.map((n) => (
+                <option key={n.phoneNumber} value={n.phoneNumber}>{formatPhone(n.phoneNumber)}</option>
+              ))}
+            </select>
+          </div>
           {(addMutation.isError || updateMutation.isError) && (
             <p className="text-sm text-red-600 mb-2">{((addMutation.error || updateMutation.error) as Error)?.message ?? "Failed to save"}</p>
           )}

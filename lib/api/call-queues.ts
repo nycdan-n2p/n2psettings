@@ -1,4 +1,4 @@
-import { getApiClient, getV2ApiClient, type V1Response, type V2PaginatedResponse } from "../api-client";
+import { getApiClient, getV2ApiClient, getN2pApiClient, type V1Response, type V2PaginatedResponse } from "../api-client";
 
 // ── List item (from v2 paginated list) ───────────────────────────────────────
 export interface CallQueue {
@@ -259,4 +259,49 @@ export async function setQueueAgents(
     `/accounts/${accountId}/callqueues/${queueId}/agents`,
     { agents: userIds.map((id) => ({ userId: id })) }
   );
+}
+
+// ─── Call Queue Reports (api.n2p.io/v2) ─────────────────────────────────────
+
+export type ReportIntervalSize = "quarter_of_hour" | "hour" | "day";
+
+export interface AgentActivityReportParams {
+  queueId: string;
+  startDate: string;  // YYYY-MM-DD
+  endDate: string;
+  intervalSize?: ReportIntervalSize;
+  timezone?: string;
+  agentIds?: number[];
+}
+
+export interface QueueActivityReportParams {
+  queueId: string;
+  startDate: string;
+  endDate: string;
+  intervalSize?: ReportIntervalSize;
+  ianaTimezoneId?: string;
+}
+
+export async function fetchAgentActivityReport(params: AgentActivityReportParams): Promise<unknown> {
+  const api = await getN2pApiClient();
+  const body: Record<string, unknown> = {
+    start_date: params.startDate,
+    end_date: params.endDate,
+    interval_size: params.intervalSize ?? "hour",
+    timezone: params.timezone ?? "US/Eastern",
+  };
+  if (params.agentIds?.length) body.agent_ids = params.agentIds;
+  const res = await api.post(`/call-queues/${params.queueId}/agents-report`, body);
+  return res.data;
+}
+
+export async function fetchQueueActivityReport(params: QueueActivityReportParams): Promise<unknown> {
+  const api = await getN2pApiClient();
+  const res = await api.post(`/call-queues/${params.queueId}/queue-report`, {
+    start_date: params.startDate,
+    end_date: params.endDate,
+    interval_size: params.intervalSize ?? "hour",
+    iana_timezone_id: params.ianaTimezoneId ?? "US/Eastern",
+  });
+  return res.data;
 }

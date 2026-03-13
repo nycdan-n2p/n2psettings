@@ -82,6 +82,16 @@ export async function fetchDepartments(accountId: number): Promise<Department[]>
   return Array.isArray(data) ? data.map(mapDepartment) : [];
 }
 
+export async function fetchDepartment(accountId: number, deptId: number): Promise<Department | null> {
+  const api = await getApiClient();
+  const res = await api.get<V1Response<RawDept>>(
+    `/accounts/${accountId}/departments/${deptId}`,
+    { params: { includeLineNumbersFlag: "Y" } }
+  );
+  const raw = res.data?.data;
+  return raw ? mapDepartment(raw) : null;
+}
+
 export async function createDepartment(
   accountId: number,
   payload: CreateDepartmentPayload

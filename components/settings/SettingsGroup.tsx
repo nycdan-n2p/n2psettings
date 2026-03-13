@@ -30,7 +30,7 @@ interface SettingsRowProps {
 
 export function SettingsRow({ label, description, children }: SettingsRowProps) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 py-3 border-b border-gray-100 last:border-0">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 py-4 px-4 sm:px-6 border-b border-[#f1f3f4] last:border-0">
       <div>
         <p className="font-medium text-gray-900">{label}</p>
         {description && (
