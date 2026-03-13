@@ -16,7 +16,7 @@ export default function OnboardingPage() {
         The assistant helps you add users, assign phone numbers, manage ring groups, call queues, departments, and pull call stats.
       </p>
       <p className="text-sm text-gray-500 mb-6">
-        Open the assistant from the header icon or under <strong>Help → N2P Assistant</strong> in the sidebar.
+        Open the assistant from the header icon or under <strong>Help</strong> in your profile dropdown.
       </p>
       <button
         onClick={open}

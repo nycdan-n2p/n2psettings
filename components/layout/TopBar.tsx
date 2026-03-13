@@ -8,6 +8,8 @@ import {
   User,
   LogOut,
   MessageCircle,
+  Bot,
+  HelpCircle,
 } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import { useAssistant } from "@/contexts/AssistantContext";
@@ -110,6 +112,27 @@ export function TopBar() {
                   );
                 })}
               </div>
+            </div>
+            <div className="border-b border-gray-100 px-3 py-2 space-y-1">
+              <p className="px-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">
+                Help
+              </p>
+              <button
+                onClick={() => { openAssistant(); (document.activeElement as HTMLElement)?.blur(); }}
+                className="w-full flex items-center gap-2 text-sm text-gray-700 hover:bg-gray-50 -mx-2 px-2 py-1.5 rounded text-left"
+              >
+                <Bot className="w-4 h-4 shrink-0" />
+                N2P Assistant
+              </button>
+              <a
+                href="https://support.net2phone.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-sm text-gray-700 hover:bg-gray-50 -mx-2 px-2 py-1.5 rounded"
+              >
+                <HelpCircle className="w-4 h-4 shrink-0" />
+                Help and support
+              </a>
             </div>
             <div className="border-b border-gray-100 px-3 py-2 space-y-1">
               <a

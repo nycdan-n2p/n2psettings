@@ -94,11 +94,12 @@ Add to your `claude_desktop_config.json`:
 ### Delegates (3 tools)
 - `list_delegates`, `add_delegate`, `delete_delegate`
 
-### Kari's Law / E911 (3 tools)
-- `list_911_contacts`, `add_911_contact`, `delete_911_contact`
+### Kari's Law / E911 (4 tools)
+- `list_911_contacts`, `add_911_contact`, `update_911_contact`, `delete_911_contact`
 
-### 10DLC / Messaging (2 tools)
-- `list_10dlc_brands`, `list_10dlc_campaigns`
+### 10DLC / Campaign Registry (8 tools)
+- `list_10dlc_brands`, `list_10dlc_campaigns`, `list_10dlc_verticals`, `list_10dlc_opt_out`
+- `create_10dlc_brand`, `update_10dlc_brand`, `delete_10dlc_brand`
 
 ### Webhooks (2 tools)
 - `list_webhooks`, `list_webhook_event_types`
@@ -120,7 +121,7 @@ Add to your `claude_desktop_config.json`:
 | Client | Base URL | Used for |
 |---|---|---|
 | V1 | `https://app.net2phone.com/api` | Most resources |
-| V2 | `https://app.net2phone.com/api/v2` | Call queues CRUD, 10DLC |
-| N2P | `https://api.n2p.io/v2` | SIP trunking, call queue reports |
+| V2 | `https://app.net2phone.com/api/v2` | Call queues CRUD |
+| N2P | `https://api.n2p.io/v2` | SIP trunking, 10DLC campaign registry, call queue reports |
 
 Override with env vars: `N2P_API_V1_URL`, `N2P_API_V2_URL`, `N2P_API_N2P_URL`

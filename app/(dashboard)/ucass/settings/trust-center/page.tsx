@@ -103,8 +103,9 @@ export default function TrustCenterPage() {
       </TrustCard>
 
       <TrustCard
-        title="Single Sign-On"
-        description="Configure SAML-based SSO for your account"
+        id="sso"
+        title="SINGLE SIGN ON"
+        description="Allow team members to sign into net2phone using their corporate credentials. Enable single sign on for your organization by adding your identity provider below."
       >
         <SsoSection />
       </TrustCard>

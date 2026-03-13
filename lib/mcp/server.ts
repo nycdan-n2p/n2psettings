@@ -188,13 +188,19 @@ export const N2P_TOOLS: Tool[] = [
   { name: "delete_delegate", description: "Remove a delegate", inputSchema: { type: "object", required: ["delegate_id"], properties: { account_id: { type: "number" }, delegate_id: { type: "number" } } } },
 
   // KARI'S LAW
-  { name: "list_911_contacts", description: "List E911 / Kari's Law contacts", inputSchema: { type: "object", properties: { account_id: { type: "number" } } } },
-  { name: "add_911_contact", description: "Add an E911 contact", inputSchema: { type: "object", required: ["name","phone_number"], properties: { account_id: { type: "number" }, name: { type: "string" }, phone_number: { type: "string" }, email: { type: "string" } } } },
-  { name: "delete_911_contact", description: "Delete an E911 contact", inputSchema: { type: "object", required: ["contact_id"], properties: { account_id: { type: "number" }, contact_id: { type: "string" } } } },
+  { name: "list_911_contacts", description: "List Kari's Law / E911 notification contacts", inputSchema: { type: "object", properties: { account_id: { type: "number" } } } },
+  { name: "add_911_contact", description: "Add a Kari's Law / E911 contact", inputSchema: { type: "object", required: ["phone_number"], properties: { account_id: { type: "number" }, phone_number: { type: "string" }, owner_name: { type: "string" } } } },
+  { name: "update_911_contact", description: "Update a Kari's Law / E911 contact", inputSchema: { type: "object", required: ["contact_id"], properties: { account_id: { type: "number" }, contact_id: { type: "number" }, phone_number: { type: "string" }, owner_name: { type: "string" } } } },
+  { name: "delete_911_contact", description: "Delete a Kari's Law / E911 contact", inputSchema: { type: "object", required: ["contact_id"], properties: { account_id: { type: "number" }, contact_id: { type: "number" } } } },
 
-  // 10DLC
-  { name: "list_10dlc_brands", description: "List 10DLC SMS brands", inputSchema: { type: "object", properties: {} } },
-  { name: "list_10dlc_campaigns", description: "List 10DLC SMS campaigns", inputSchema: { type: "object", properties: {} } },
+  // 10DLC (campaign registry)
+  { name: "list_10dlc_brands", description: "List 10DLC registered brands", inputSchema: { type: "object", properties: { page_index: { type: "number" }, page_size: { type: "number" } } } },
+  { name: "list_10dlc_campaigns", description: "List 10DLC SMS campaigns", inputSchema: { type: "object", properties: { page_index: { type: "number" }, page_size: { type: "number" } } } },
+  { name: "list_10dlc_verticals", description: "List 10DLC vertical/industry options for brand registration", inputSchema: { type: "object", properties: {} } },
+  { name: "list_10dlc_opt_out", description: "List 10DLC opt-out entries", inputSchema: { type: "object", properties: { page_index: { type: "number" }, page_size: { type: "number" } } } },
+  { name: "create_10dlc_brand", description: "Create a 10DLC brand", inputSchema: { type: "object", required: ["ein", "company_name", "display_name", "type", "vertical_id"], properties: { ein: { type: "string" }, company_name: { type: "string" }, display_name: { type: "string" }, type: { type: "string" }, vertical_id: { type: "string" }, country_code: { type: "string" }, email: { type: "string" }, phone_number: { type: "string" }, street: { type: "string" }, city: { type: "string" }, state: { type: "string" }, postal_code: { type: "string" }, website: { type: "string" } } } },
+  { name: "update_10dlc_brand", description: "Update a 10DLC brand", inputSchema: { type: "object", required: ["brand_id"], properties: { brand_id: { type: "string" }, ein: { type: "string" }, company_name: { type: "string" }, display_name: { type: "string" }, type: { type: "string" }, vertical_id: { type: "string" }, email: { type: "string" }, phone_number: { type: "string" }, street: { type: "string" }, city: { type: "string" }, state: { type: "string" }, postal_code: { type: "string" }, website: { type: "string" } } } },
+  { name: "delete_10dlc_brand", description: "Delete a 10DLC brand", inputSchema: { type: "object", required: ["brand_id"], properties: { brand_id: { type: "string" } } } },
 
   // WEBHOOKS
   { name: "list_webhooks", description: "List webhook subscriptions", inputSchema: { type: "object", required: ["user_id"], properties: { account_id: { type: "number" }, user_id: { type: "number" } } } },
@@ -741,31 +747,94 @@ export async function executeN2PTool(
     return { success: true };
   }
 
-  // KARI'S LAW
+  // KARI'S LAW (karisLawSettings)
   if (name === "list_911_contacts") {
     const id = resolveAccountId(args, ctx);
-    const res = await v1.get(`/accounts/${id}/karisLaw`);
-    return unwrap(res.data);
+    const res = await v1.get(`/accounts/${id}/karisLawSettings`);
+    const data = unwrap(res.data);
+    return Array.isArray(data) ? data : [];
   }
   if (name === "add_911_contact") {
     const id = resolveAccountId(args, ctx);
-    const res = await v1.post(`/accounts/${id}/karisLaw`, { name: args.name, phoneNumber: args.phone_number, email: args.email });
+    const payload: Record<string, unknown> = { number: str(args, "phone_number") };
+    const owner = strOpt(args, "owner_name");
+    if (owner) payload.ownerName = owner;
+    const res = await v1.post(`/accounts/${id}/karisLawSettings`, payload);
+    return unwrap(res.data);
+  }
+  if (name === "update_911_contact") {
+    const id = resolveAccountId(args, ctx);
+    const contactId = num(args, "contact_id");
+    const payload: Record<string, unknown> = {};
+    const phone = strOpt(args, "phone_number");
+    if (phone) payload.number = phone;
+    const owner = strOpt(args, "owner_name");
+    if (owner) payload.ownerName = owner;
+    const res = await v1.patch(`/accounts/${id}/karisLawSettings/${contactId}`, payload);
     return unwrap(res.data);
   }
   if (name === "delete_911_contact") {
     const id = resolveAccountId(args, ctx);
-    await v1.delete(`/accounts/${id}/karisLaw/${str(args, "contact_id")}`);
+    await v1.delete(`/accounts/${id}/karisLawSettings/${num(args, "contact_id")}`);
     return { success: true };
   }
 
-  // 10DLC
+  // 10DLC (api.n2p.io campaign-registry)
   if (name === "list_10dlc_brands") {
-    const res = await v2.get("/messaging/brands");
-    return res.data?.data ?? res.data?.items ?? res.data;
+    const pi = numOpt(args, "page_index") ?? 0;
+    const ps = numOpt(args, "page_size") ?? 100;
+    const res = await n2p.get("/campaign-registry-brands", { params: { page_index: pi, page_size: ps } });
+    return res.data?.items ?? res.data ?? [];
   }
   if (name === "list_10dlc_campaigns") {
-    const res = await v2.get("/messaging/campaigns");
-    return res.data?.data ?? res.data?.items ?? res.data;
+    const pi = numOpt(args, "page_index") ?? 0;
+    const ps = numOpt(args, "page_size") ?? 100;
+    const res = await n2p.get("/campaign-registry-campaigns", { params: { page_index: pi, page_size: ps } });
+    return res.data?.items ?? res.data ?? [];
+  }
+  if (name === "list_10dlc_verticals") {
+    const res = await n2p.get("/campaign-registry-verticals");
+    const data = res.data;
+    return Array.isArray(data) ? data : (data?.items ?? []);
+  }
+  if (name === "list_10dlc_opt_out") {
+    const pi = numOpt(args, "page_index") ?? 0;
+    const ps = numOpt(args, "page_size") ?? 100;
+    const res = await n2p.get("/campaign-registry-campaigns/-/opt-out-entries", {
+      params: { page_index: pi, page_size: ps, opt_out_status: "active" },
+    });
+    return res.data?.items ?? res.data ?? [];
+  }
+  if (name === "create_10dlc_brand") {
+    const payload: Record<string, unknown> = {
+      ein: str(args, "ein"),
+      company_name: str(args, "company_name"),
+      display_name: str(args, "display_name"),
+      type: str(args, "type"),
+      vertical_id: str(args, "vertical_id"),
+      country_code: strOpt(args, "country_code") ?? "US",
+    };
+    ["email", "phone_number", "street", "city", "state", "postal_code", "website"].forEach((k) => {
+      const v = strOpt(args, k);
+      if (v) payload[k] = v;
+    });
+    const res = await n2p.post("/campaign-registry-brands", payload);
+    return res.data;
+  }
+  if (name === "update_10dlc_brand") {
+    const brandId = str(args, "brand_id");
+    const payload: Record<string, unknown> = {};
+    ["ein", "company_name", "display_name", "type", "vertical_id", "country_code", "email", "phone_number", "street", "city", "state", "postal_code", "website"].forEach((k) => {
+      const v = strOpt(args, k);
+      if (v !== undefined) payload[k] = v;
+    });
+    const res = await n2p.patch(`/campaign-registry-brands/${brandId}`, payload);
+    return res.data;
+  }
+  if (name === "delete_10dlc_brand") {
+    const brandId = str(args, "brand_id");
+    await n2p.delete(`/campaign-registry-brands/${brandId}`);
+    return { success: true };
   }
 
   // WEBHOOKS
