@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useApp } from "@/contexts/AppContext";
 import { qk } from "@/lib/query-keys";
 import { Loader } from "@/components/ui/Loader";
 import {
@@ -29,12 +30,43 @@ const INTERVAL_OPTIONS: { value: ReportIntervalSize; label: string }[] = [
   { value: "day", label: "1 Day" },
 ];
 
-function getDateRange(preset: TimePreset, customStart?: string, customEnd?: string): { start: string; end: string } {
-  const now = new Date();
-  const tz = "America/New_York";
-  const fmt = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: tz });
+function normalizeReportTimezone(value?: string | null): string {
+  if (!value) return "US/Eastern";
+  if (value.includes("/")) return value;
 
-  const today = new Date(now.toLocaleString("en-US", { timeZone: tz }));
+  const normalized = value.trim().toLowerCase();
+  const aliases: Record<string, string> = {
+    est: "US/Eastern",
+    edt: "US/Eastern",
+    "eastern standard time": "US/Eastern",
+    "eastern time": "US/Eastern",
+    cst: "US/Central",
+    cdt: "US/Central",
+    "central standard time": "US/Central",
+    "central time": "US/Central",
+    mst: "US/Mountain",
+    mdt: "US/Mountain",
+    "mountain standard time": "US/Mountain",
+    "mountain time": "US/Mountain",
+    pst: "US/Pacific",
+    pdt: "US/Pacific",
+    "pacific standard time": "US/Pacific",
+    "pacific time": "US/Pacific",
+  };
+
+  return aliases[normalized] ?? "US/Eastern";
+}
+
+function getDateRange(
+  preset: TimePreset,
+  timezone: string,
+  customStart?: string,
+  customEnd?: string
+): { start: string; end: string } {
+  const now = new Date();
+  const fmt = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: timezone });
+
+  const today = new Date(now.toLocaleString("en-US", { timeZone: timezone }));
   today.setHours(0, 0, 0, 0);
 
   const yesterday = new Date(today);
@@ -103,6 +135,7 @@ export function ReportsSection({
   queueId: string;
   accountId: number;
 }) {
+  const { bootstrap } = useApp();
   const { data: queueDetail } = useQuery({
     queryKey: qk.callQueues.detail(accountId, queueId),
     queryFn: () => fetchCallQueueDetail(queueId, accountId),
@@ -121,12 +154,20 @@ export function ReportsSection({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showEmptySlots, setShowEmptySlots] = useState(false);
+  const reportTimezone = normalizeReportTimezone(
+    bootstrap?.user?.timeZone || bootstrap?.account?.timeZone
+  );
 
   const handleGenerate = async () => {
     setLoading(true);
     setError(null);
     try {
-      const { start, end } = getDateRange(timePreset, customStart || undefined, customEnd || undefined);
+      const { start, end } = getDateRange(
+        timePreset,
+        reportTimezone,
+        customStart || undefined,
+        customEnd || undefined
+      );
       if (reportType === "agent") {
         const result = await fetchAgentActivityReport({
           accountId,
@@ -134,6 +175,7 @@ export function ReportsSection({
           startDate: start,
           endDate: end,
           intervalSize,
+          ianaTimezoneId: reportTimezone,
           agentIds: agentId === "all" ? undefined : [parseInt(agentId, 10)],
         });
         setReportData(result);
@@ -144,6 +186,7 @@ export function ReportsSection({
           startDate: start,
           endDate: end,
           intervalSize,
+          ianaTimezoneId: reportTimezone,
         });
         setReportData(result);
       }
