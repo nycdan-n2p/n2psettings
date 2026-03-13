@@ -64,13 +64,36 @@ function avatarColor(seed: string): string {
   return AVATAR_COLORS[h % AVATAR_COLORS.length];
 }
 
+function formatTimeLabel(time?: string): string {
+  if (!time) return "—";
+  const [clock, meridiem] = time.split(" ");
+  const [hourRaw, minute] = clock.split(":");
+  const hour = String(Number(hourRaw));
+  if (minute === "00") return `${hour} ${meridiem}`;
+  return `${hour}:${minute} ${meridiem}`;
+}
+
 function formatWeekdays(days: number[]): string {
   if (!days.length) return "—";
   const sorted = [...days].sort((a, b) => a - b);
-  if (sorted.join() === "2,3,4,5,6") return "Mon – Fri";
+  if (sorted.join() === "2,3,4,5,6") return "Weekdays";
   if (sorted.join() === "1,2,3,4,5,6,7") return "Every Day";
   if (sorted.join() === "1,7") return "Weekends";
-  return WEEKDAYS.filter((d) => sorted.includes(d.value)).map((d) => d.label).join(", ");
+
+  const selected = WEEKDAYS.filter((d) => sorted.includes(d.value)).map((d) => d.label);
+  if (selected.length === 1) {
+    const labelMap: Record<string, string> = {
+      Su: "Sunday",
+      Mo: "Monday",
+      Tu: "Tuesday",
+      We: "Wednesday",
+      Th: "Thursday",
+      Fr: "Friday",
+      Sa: "Saturday",
+    };
+    return labelMap[selected[0]] ?? selected[0];
+  }
+  return selected.join(" / ");
 }
 
 function formatDateRange(dates: string[]): string {
@@ -86,6 +109,21 @@ function usedByTotal(s: Schedule): number {
   return (u.users?.length ?? 0) + (u.departments?.length ?? 0) +
     (u.welcomeMenus?.length ?? 0) + (u.ringGroups?.length ?? 0) +
     (u.callQueues?.length ?? 0);
+}
+
+function formatRuleSummary(rule: ScheduleRule): { label: string; detail: string } {
+  const label = rule.days.weekDays?.length
+    ? formatWeekdays(rule.days.weekDays)
+    : rule.days.dates?.length
+    ? formatDateRange(rule.days.dates)
+    : "—";
+
+  const allDay = rule.time.start === "12:00 AM" && rule.time.end === "11:59 PM";
+  const detail = allDay
+    ? "All day"
+    : `${formatTimeLabel(rule.time.start)} - ${formatTimeLabel(rule.time.end)}`;
+
+  return { label, detail };
 }
 
 // ── Used By popover ───────────────────────────────────────────────────────────
@@ -122,7 +160,6 @@ function UsedByBadge({ schedule }: { schedule: Schedule }) {
         <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold ${avatarColor(String(schedule.id))}`}>
           {total > 9 ? "9+" : total}
         </div>
-        <span className="text-sm text-[#1a73e8] group-hover:underline font-medium">{total}</span>
         <ChevronDown className={`w-3.5 h-3.5 text-[#1a73e8] transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
@@ -156,6 +193,36 @@ function UsedByBadge({ schedule }: { schedule: Schedule }) {
         </div>
       )}
     </div>
+  );
+}
+
+function CreatorAvatar({
+  name,
+  avatarUrl,
+}: {
+  name: string;
+  avatarUrl?: string;
+}) {
+  const [failed, setFailed] = useState(false);
+
+  if (!avatarUrl || failed) {
+    return (
+      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${avatarColor(name)}`}>
+        {getInitials(name)}
+      </div>
+    );
+  }
+
+  return (
+    <Image
+      src={avatarUrl}
+      alt={name}
+      width={28}
+      height={28}
+      className="rounded-full object-cover shrink-0"
+      onError={() => setFailed(true)}
+      unoptimized
+    />
   );
 }
 
@@ -573,7 +640,7 @@ export default function SchedulesPage() {
 
       {/* Table */}
       <div className="border border-[#dadce0] rounded-lg overflow-hidden">
-        <div className="grid grid-cols-[2fr_3fr_100px_160px_120px_80px] gap-4 px-5 py-2.5 bg-[#f8f9fa] border-b border-[#dadce0] text-xs font-semibold text-gray-400 uppercase tracking-wide">
+        <div className="grid grid-cols-[2fr_3fr_100px_160px_88px_80px] gap-4 px-5 py-2.5 bg-[#f8f9fa] border-b border-[#dadce0] text-xs font-semibold text-gray-400 uppercase tracking-wide">
           <span>Name</span>
           <span>Days / Time</span>
           <span>Timezone</span>
@@ -604,7 +671,7 @@ export default function SchedulesPage() {
               return (
                 <div
                   key={s.id}
-                  className="group grid grid-cols-[2fr_3fr_100px_160px_120px_80px] gap-4 items-center px-5 py-3.5 hover:bg-[#f8f9fa] transition-colors"
+                  className="group grid grid-cols-[2fr_3fr_100px_160px_88px_80px] gap-4 items-center px-5 py-3.5 hover:bg-[#f8f9fa] transition-colors"
                 >
                   {/* Name */}
                   <div className="flex items-center gap-2.5 min-w-0">
@@ -626,21 +693,14 @@ export default function SchedulesPage() {
                     ) : rules.length === 0 ? (
                       <span className="text-sm text-gray-400">—</span>
                     ) : (
-                      <div className="space-y-0.5">
+                      <div className="space-y-2">
                         {rules.slice(0, 2).map((r, i) => {
-                          const dayPart = r.days.weekDays?.length
-                            ? formatWeekdays(r.days.weekDays)
-                            : r.days.dates?.length
-                            ? formatDateRange(r.days.dates)
-                            : "—";
-                          const allDay = r.time.start === "12:00 AM" && r.time.end === "11:59 PM";
-                          const timePart = allDay ? "All Day" : `${r.time.start} – ${r.time.end}`;
+                          const summary = formatRuleSummary(r);
                           return (
-                            <p key={i} className="text-sm text-gray-700 truncate">
-                              <span className="font-medium">{dayPart}</span>
-                              <span className="text-gray-400 mx-1">·</span>
-                              {timePart}
-                            </p>
+                            <div key={i} className="rounded-lg bg-[#f8f9fa] px-3 py-2 border border-[#eef1f4]">
+                              <p className="text-sm font-medium text-gray-800 truncate">{summary.label}</p>
+                              <p className="text-xs text-gray-500 mt-0.5 truncate">{summary.detail}</p>
+                            </div>
                           );
                         })}
                         {rules.length > 2 && (
@@ -655,13 +715,7 @@ export default function SchedulesPage() {
 
                   {/* Added By */}
                   <div className="flex items-center gap-2 min-w-0">
-                    {avatarUrl ? (
-                      <Image src={avatarUrl} alt={creatorName} width={28} height={28} className="rounded-full object-cover shrink-0" />
-                    ) : (
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${avatarColor(creatorName)}`}>
-                        {getInitials(creatorName)}
-                      </div>
-                    )}
+                    <CreatorAvatar name={creatorName} avatarUrl={avatarUrl} />
                     <span className="text-sm text-gray-700 truncate">{creatorName}</span>
                   </div>
 
