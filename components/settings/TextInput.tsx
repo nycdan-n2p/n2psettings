@@ -9,6 +9,8 @@ interface TextInputProps {
   disabled?: boolean;
   required?: boolean;
   error?: string;
+  /** Grey hint text below the input */
+  hint?: string;
 }
 
 export function TextInput({
@@ -20,6 +22,7 @@ export function TextInput({
   disabled,
   required,
   error,
+  hint,
 }: TextInputProps) {
   return (
     <div className="mb-4">
@@ -37,6 +40,7 @@ export function TextInput({
           error ? "border-red-500" : "border-[#dadce0]"
         }`}
       />
+      {hint && !error && <p className="mt-1 text-sm text-gray-500">{hint}</p>}
       {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
     </div>
   );

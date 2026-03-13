@@ -96,8 +96,8 @@ export default function TrustCenterPage() {
 
       <TrustCard
         id="messaging-10dlc"
-        title="Messaging (10DLC)"
-        description="Campaign registry for SMS (brands and campaigns)"
+        title="MESSAGING REGISTRATION CENTER"
+        description="Here's where you can manage your 10DLC Brand, Campaign, and phone number registrations."
       >
         <TenDlcSection />
       </TrustCard>
