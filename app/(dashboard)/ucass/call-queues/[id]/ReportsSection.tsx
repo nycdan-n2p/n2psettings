@@ -171,13 +171,14 @@ export function ReportsSection({
     URL.revokeObjectURL(url);
   };
 
-  const reportRows = Array.isArray(reportData)
-    ? reportData
-    : (reportData as Record<string, unknown>)?.data != null
-      ? ((reportData as Record<string, unknown>).data as unknown[])
-      : reportData != null
-        ? [reportData]
-        : [];
+  const reportRows = (() => {
+    if (!reportData) return [];
+    const d = reportData as Record<string, unknown>;
+    if (Array.isArray(d)) return d;
+    if (Array.isArray(d.items)) return d.items as Record<string, unknown>[];
+    if (Array.isArray(d.data)) return d.data as Record<string, unknown>[];
+    return d.data != null ? [d.data] as Record<string, unknown>[] : [d];
+  })();
 
   return (
     <div className="space-y-8">
@@ -331,11 +332,23 @@ export function ReportsSection({
                   <tbody>
                     {reportRows.map((row, i) => (
                       <tr key={i} className="border-t border-gray-100 hover:bg-gray-50">
-                        {Object.values(row as Record<string, unknown>).map((v, j) => (
-                          <td key={j} className="px-4 py-3 text-gray-700">
-                            {v != null ? String(v) : "—"}
-                          </td>
-                        ))}
+                        {Object.values(row as Record<string, unknown>).map((v, j) => {
+                          const display =
+                            v == null
+                              ? "—"
+                              : typeof v === "object"
+                                ? (v as Record<string, unknown>).id != null
+                                  ? String((v as Record<string, unknown>).id)
+                                  : (v as Record<string, unknown>).name != null
+                                    ? String((v as Record<string, unknown>).name)
+                                    : JSON.stringify(v)
+                                : String(v);
+                          return (
+                            <td key={j} className="px-4 py-3 text-gray-700">
+                              {display}
+                            </td>
+                          );
+                        })}
                       </tr>
                     ))}
                   </tbody>
