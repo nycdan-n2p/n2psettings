@@ -377,10 +377,18 @@ async function tryReportApi<T>(
   throw new Error(msg);
 }
 
+/** Format YYYY-MM-DD to ISO 8601 with time for NodaTime.OffsetDateTime parsing */
+function toIsoDateTime(dateStr: string, endOfDay: boolean): string {
+  const h = endOfDay ? 23 : 0;
+  const min = endOfDay ? 59 : 0;
+  const sec = endOfDay ? 59 : 0;
+  return `${dateStr}T${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}-05:00`;
+}
+
 export async function fetchAgentActivityReport(params: AgentActivityReportParams): Promise<unknown> {
   const body: Record<string, unknown> = {
-    start_date: params.startDate,
-    end_date: params.endDate,
+    start_date: toIsoDateTime(params.startDate, false),
+    end_date: toIsoDateTime(params.endDate, true),
     interval_size: params.intervalSize ?? "hour",
     timezone: params.timezone ?? "US/Eastern",
   };
@@ -396,8 +404,8 @@ export async function fetchAgentActivityReport(params: AgentActivityReportParams
 
 export async function fetchQueueActivityReport(params: QueueActivityReportParams): Promise<unknown> {
   const body = {
-    start_date: params.startDate,
-    end_date: params.endDate,
+    start_date: toIsoDateTime(params.startDate, false),
+    end_date: toIsoDateTime(params.endDate, true),
     interval_size: params.intervalSize ?? "hour",
     iana_timezone_id: params.ianaTimezoneId ?? "US/Eastern",
   };
