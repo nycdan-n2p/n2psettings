@@ -101,11 +101,19 @@ export async function fetchCallHistory(
     cursor,
   };
 
-  const res = await api.post<V1Response<CallHistoryResponse>>(
-    `/account/${accountId}/callhistorysummaryv2`,
-    body
-  );
-  return res.data.data ?? { cdrs: [] };
+  try {
+    const res = await api.post<V1Response<CallHistoryResponse>>(
+      `/account/${accountId}/callhistorysummaryv2`,
+      body
+    );
+    return res.data.data ?? { cdrs: [] };
+  } catch (err: unknown) {
+    const status = (err as { response?: { status?: number } })?.response?.status;
+    if (status === 500 || status === 502 || status === 503) {
+      return { cdrs: [] };
+    }
+    throw err;
+  }
 }
 
 export async function exportCallHistoryCsv(

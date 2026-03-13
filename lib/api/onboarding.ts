@@ -19,6 +19,8 @@ export interface AccountPhoneNumber {
   deptId?: number | null;
   deptName?: string | null;
   routeType?: string | null;
+  routeToId?: number | null;
+  routesTo?: string | null;
   [key: string]: unknown;
 }
 

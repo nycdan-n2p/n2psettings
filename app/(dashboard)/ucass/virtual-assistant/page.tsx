@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DataTable } from "@/components/tables/DataTable";
@@ -14,11 +14,23 @@ import {
   type WelcomeMenu,
   type CreateWelcomeMenuPayload,
 } from "@/lib/api/virtual-assistant";
+import { fetchAccountNumbers } from "@/lib/api/onboarding";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Modal } from "@/components/settings/Modal";
 import { TextInput } from "@/components/settings/TextInput";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Phone, Play, Trash2 } from "lucide-react";
+
+function formatPhone(num: string): string {
+  const d = (num || "").replace(/\D/g, "");
+  if (d.length === 11 && d.startsWith("1")) {
+    return `(${d.slice(1, 4)}) ${d.slice(4, 7)}-${d.slice(7)}`;
+  }
+  if (d.length === 10) {
+    return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+  }
+  return num || "—";
+}
 
 const EMPTY_FORM: CreateWelcomeMenuPayload = { name: "", extension: "", languageCode: "en" };
 
@@ -45,6 +57,32 @@ export default function VirtualAssistantPage() {
     enabled: !!accountId,
   });
 
+  const { data: accountNumbers = [] } = useQuery({
+    queryKey: qk.phoneNumbers.all(accountId),
+    queryFn: () => fetchAccountNumbers(accountId),
+    enabled: !!accountId,
+  });
+
+  const numbersByMenuId = useMemo(() => {
+    const map = new Map<number, { phoneNumber: string; routesTo?: string }[]>();
+    for (const n of accountNumbers) {
+      const rt = String(n.routeType ?? "").toLowerCase();
+      const isWelcomeMenu = rt === "welcomemenu" || rt === "welcome_menu" || rt.includes("welcome");
+      if (!isWelcomeMenu) continue;
+      const menuId = n.routeToId;
+      if (menuId == null) continue;
+      const id = typeof menuId === "number" ? menuId : parseInt(String(menuId), 10);
+      if (isNaN(id)) continue;
+      const arr = map.get(id) ?? [];
+      arr.push({
+        phoneNumber: n.phoneNumber ?? "",
+        routesTo: n.routesTo ?? undefined,
+      });
+      map.set(id, arr);
+    }
+    return map;
+  }, [accountNumbers]);
+
   const addMutation = useMutation({
     mutationFn: (payload: CreateWelcomeMenuPayload) => createVirtualAssistant(accountId, payload),
     onSuccess: () => {
@@ -70,26 +108,73 @@ export default function VirtualAssistantPage() {
   };
 
   const columns: ColumnDef<WelcomeMenu>[] = [
-    { accessorKey: "name", header: "Name" },
-    { accessorKey: "extension", header: "Extension", cell: ({ row }) => row.original.extension ?? "—" },
     {
-      id: "language", header: "Language",
-      cell: ({ row }) => LANGUAGES.find((l) => l.value === row.original.languageCode)?.label ?? row.original.languageCode ?? "—",
+      id: "name",
+      header: "NAME",
+      accessorFn: (r) => r.name ?? "",
+      cell: ({ row }) => {
+        const m = row.original;
+        return (
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-[#1a73e8] text-white flex items-center justify-center text-xs font-semibold shrink-0">
+              W
+            </div>
+            <span className="font-medium text-gray-900">{m.name ?? "—"}</span>
+          </div>
+        );
+      },
+    },
+    { accessorKey: "extension", header: "EXT", cell: ({ row }) => row.original.extension ?? "—" },
+    {
+      id: "numbersAssigned",
+      header: "NUMBERS ASSIGNED",
+      cell: ({ row }) => {
+        const m = row.original;
+        const numbers = numbersByMenuId.get(m.id) ?? [];
+        if (numbers.length === 0) {
+          return <span className="text-gray-400">Unassigned</span>;
+        }
+        const first = numbers[0];
+        return (
+          <div className="flex items-center gap-2">
+            <Phone className="w-4 h-4 text-[#1a73e8] shrink-0" />
+            <div className="min-w-0">
+              <span className="text-gray-900">{formatPhone(first.phoneNumber)}</span>
+              <span className="text-xs text-gray-500 ml-1 truncate block">
+                {first.routesTo ?? m.name ?? ""}{m.extension ? ` • ${m.extension}` : ""}
+              </span>
+            </div>
+            {numbers.length > 1 && (
+              <span className="shrink-0 px-1.5 py-0.5 text-xs font-medium bg-gray-200 text-gray-600 rounded-full">
+                {numbers.length}+
+              </span>
+            )}
+          </div>
+        );
+      },
     },
     {
-      id: "actions", header: "",
+      id: "actions",
+      header: "",
       cell: ({ row }) => (
         <div className="flex gap-2">
           <button
             onClick={() => router.push(`/ucass/virtual-assistant/${row.original.id}`)}
-            className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
+            className="p-1.5 rounded-full border border-gray-200 hover:bg-gray-100 text-gray-600"
+            title="Play"
+          >
+            <Play className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => router.push(`/ucass/virtual-assistant/${row.original.id}`)}
+            className="p-1.5 rounded-full border border-gray-200 hover:bg-gray-100 text-gray-600"
             title="Edit"
           >
             <Pencil className="w-4 h-4" />
           </button>
           <button
             onClick={() => setDeleteTarget(row.original)}
-            className="p-1.5 rounded hover:bg-red-50 text-red-600"
+            className="p-1.5 rounded-full border border-gray-200 hover:bg-red-50 text-red-600"
             title="Delete"
           >
             <Trash2 className="w-4 h-4" />
@@ -101,23 +186,21 @@ export default function VirtualAssistantPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-medium text-gray-900">Virtual Assistant</h1>
-          <p className="text-sm text-gray-500 mt-1">{menus.length} welcome menus</p>
-        </div>
+      <h1 className="text-2xl font-bold text-gray-900 mb-4">WELCOME MENUS</h1>
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+        <span className="text-sm text-gray-600">Total: {menus.length}</span>
         <button
           onClick={openAddModal}
           className="px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium"
         >
-          Add Welcome Menu
+          ADD WELCOME MENU
         </button>
       </div>
 
       {isLoading ? (
         <div className="py-12 flex justify-center"><Loader variant="inline" label="Loading welcome menus..." /></div>
       ) : (
-        <DataTable columns={columns} data={menus} searchPlaceholder="Search welcome menus..." />
+        <DataTable columns={columns} data={menus} searchPlaceholder="Search" />
       )}
 
       <Modal isOpen={modalOpen} onClose={closeModal} title="Add Welcome Menu">

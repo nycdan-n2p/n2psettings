@@ -99,7 +99,16 @@ function CallQueueAgentsPopover({
     return a.extension ? `${name} · ${a.extension}` : name;
   };
 
-  if (count === 0) return <span className="text-sm text-gray-400">0 agents</span>;
+  if (count === 0) {
+    return (
+      <div className="flex items-center gap-1.5">
+        <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold bg-gray-100 text-gray-500">
+          0
+        </div>
+        <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+      </div>
+    );
+  }
 
   return (
     <div ref={ref} className="relative inline-block">

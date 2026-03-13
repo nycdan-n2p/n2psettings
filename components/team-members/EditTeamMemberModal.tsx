@@ -148,30 +148,32 @@ export function EditTeamMemberModal({
       isOpen={isOpen}
       onClose={onClose}
       title=""
-      size="xl"
+      size="2xl"
       headerContent={headerContent}
     >
       <div className="flex flex-col min-h-[320px]">
-        {/* Tabs - Google Admin style */}
-        <div className="flex overflow-x-auto border-b border-[#dadce0] bg-[#f8f9fa] -mx-6 px-6">
-          {TABS.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => setActiveTab(id)}
-              className={`
-                flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap
-                border-b-2 -mb-px transition-colors shrink-0
-                ${
-                  activeTab === id
-                    ? "border-[#1a73e8] text-[#1a73e8] bg-white"
-                    : "border-transparent text-gray-600 hover:text-gray-900 hover:bg-[#f1f3f4]"
-                }
-              `}
-            >
-              <Icon className="w-4 h-4 flex-shrink-0 opacity-70" />
-              {label}
-            </button>
-          ))}
+        {/* Tabs - scrollable when needed, visible scrollbar */}
+        <div className="flex overflow-x-auto overflow-y-hidden border-b border-[#dadce0] bg-[#f8f9fa] -mx-6 px-6 min-w-0">
+          <div className="flex min-w-max">
+            {TABS.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id)}
+                className={`
+                  flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap
+                  border-b-2 -mb-px transition-colors shrink-0
+                  ${
+                    activeTab === id
+                      ? "border-[#1a73e8] text-[#1a73e8] bg-white"
+                      : "border-transparent text-gray-600 hover:text-gray-900 hover:bg-[#f1f3f4]"
+                  }
+                `}
+              >
+                <Icon className="w-4 h-4 flex-shrink-0 opacity-70" />
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Tab content */}

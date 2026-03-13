@@ -68,7 +68,12 @@ export default function DashboardPage() {
       } catch {
         /* analytics API may 404 */
       }
-      return fetchCallStatsFromHistory(account!.accountId, user?.userId ?? null);
+      try {
+        return await fetchCallStatsFromHistory(account!.accountId, user?.userId ?? null);
+      } catch {
+        /* callhistorysummaryv2 may 500 — return empty stats */
+        return { totalCalls: 0, answeredCalls: 0, missedCalls: 0 };
+      }
     },
     enabled: !!account?.accountId,
     staleTime: 5 * 60 * 1000,

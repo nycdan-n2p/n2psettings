@@ -1,4 +1,5 @@
-import { getApiClient, getV2ApiClient, getN2pApiClient, type V1Response, type V2PaginatedResponse } from "../api-client";
+import { getApiClient, getV2ApiClient, type V1Response, type V2PaginatedResponse } from "../api-client";
+import { fetchUsersLight } from "./ring-groups";
 
 // ── List item (from v2 paginated list) ───────────────────────────────────────
 export interface CallQueue {
@@ -167,14 +168,70 @@ function detailFromListQueue(q: CallQueue): CallQueueDetail {
   };
 }
 
+/** Normalize raw API agent (handles camelCase, nested user object) */
+function normalizeQueueAgent(raw: Record<string, unknown>): QueueAgent {
+  const user = raw.user as Record<string, unknown> | undefined;
+  const displayName =
+    (raw.display_name as string) ??
+    (raw.displayName as string) ??
+    (user?.display_name as string) ??
+    (user?.displayName as string);
+  const firstName = (raw.first_name as string) ?? (raw.firstName as string) ?? (user?.first_name as string) ?? (user?.firstName as string);
+  const lastName = (raw.last_name as string) ?? (raw.lastName as string) ?? (user?.last_name as string) ?? (user?.lastName as string);
+  const combinedName = [firstName, lastName].filter(Boolean).join(" ").trim() || displayName;
+  const rawUserId = raw.user_id ?? raw.userId ?? user?.id ?? user?.user_id;
+  const userId = typeof rawUserId === "number" ? rawUserId : typeof rawUserId === "string" && /^\d+$/.test(rawUserId) ? parseInt(rawUserId, 10) : undefined;
+  const id = raw.id ?? user?.id;
+  const ext = raw.extension ?? raw.Extension ?? user?.extension ?? user?.Extension;
+  return {
+    id: typeof id === "number" ? id : typeof id === "string" ? id : undefined,
+    user_id: typeof userId === "number" ? userId : undefined,
+    display_name: (combinedName || displayName || undefined)?.trim() || undefined,
+    extension: typeof ext === "string" ? ext : typeof ext === "number" ? String(ext) : undefined,
+    status: (raw.status as string) ?? (user?.status as string),
+  };
+}
+
+/** Enrich agents missing display_name by fetching users from account */
+async function enrichAgentsWithUserNames(
+  agents: QueueAgent[],
+  accountId: number
+): Promise<QueueAgent[]> {
+  const needEnrich = agents.some((a) => !a.display_name?.trim() && (a.user_id != null || a.id != null));
+  if (!needEnrich) return agents;
+  const users = await fetchUsersLight(accountId);
+  return agents.map((a) => {
+    if (a.display_name?.trim()) return a;
+    const uid = a.user_id ?? (typeof a.id === "number" ? a.id : undefined);
+    const u = users.find((u) => String(u.userId) === String(uid));
+    const name = u ? `${u.firstName} ${u.lastName}`.trim() : undefined;
+    return { ...a, display_name: name || a.display_name };
+  });
+}
+
 export async function fetchCallQueueDetail(
   queueId: string,
   accountId?: number
 ): Promise<CallQueueDetail> {
   const api = await getV2ApiClient();
   try {
-    const res = await api.get<CallQueueDetail>(`/call-queues/${queueId}`);
-    return res.data;
+    const res = await api.get<Record<string, unknown>>(`/call-queues/${queueId}`);
+    const data = res.data;
+    const rawAgents = (data.agents ?? []) as Record<string, unknown>[];
+    const rawSupervisors = (data.supervisors ?? []) as Record<string, unknown>[];
+    const agents = rawAgents.map((a) => normalizeQueueAgent(a));
+    const supervisors = rawSupervisors.map((a) => normalizeQueueAgent(a));
+    let enrichedAgents = agents;
+    let enrichedSupervisors = supervisors;
+    if (accountId) {
+      enrichedAgents = await enrichAgentsWithUserNames(agents, accountId);
+      enrichedSupervisors = await enrichAgentsWithUserNames(supervisors, accountId);
+    }
+    return {
+      ...data,
+      agents: enrichedAgents,
+      supervisors: enrichedSupervisors,
+    } as CallQueueDetail;
   } catch (err: unknown) {
     if (isAxios404(err)) {
       if (accountId) {
@@ -283,7 +340,8 @@ export interface QueueActivityReportParams {
 }
 
 export async function fetchAgentActivityReport(params: AgentActivityReportParams): Promise<unknown> {
-  const api = await getN2pApiClient();
+  // Use app.net2phone.com/api/v2 (same as queue list/detail) — api.n2p.io returns 400
+  const api = await getV2ApiClient();
   const body: Record<string, unknown> = {
     start_date: params.startDate,
     end_date: params.endDate,
@@ -296,7 +354,8 @@ export async function fetchAgentActivityReport(params: AgentActivityReportParams
 }
 
 export async function fetchQueueActivityReport(params: QueueActivityReportParams): Promise<unknown> {
-  const api = await getN2pApiClient();
+  // Use app.net2phone.com/api/v2 (same as queue list/detail)
+  const api = await getV2ApiClient();
   const res = await api.post(`/call-queues/${params.queueId}/queue-report`, {
     start_date: params.startDate,
     end_date: params.endDate,

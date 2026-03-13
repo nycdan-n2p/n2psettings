@@ -8,8 +8,8 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
-  /** "md" (default), "lg", or "xl" for wider modal */
-  size?: "md" | "lg" | "xl";
+  /** "md" (default), "lg", "xl", or "2xl" for wider modal */
+  size?: "md" | "lg" | "xl" | "2xl";
   /** Custom header content; when provided, replaces default title + close */
   headerContent?: React.ReactNode;
 }
@@ -40,11 +40,13 @@ export function Modal({ isOpen, onClose, title, children, size = "md", headerCon
       />
       <div
         className={`relative z-10 w-full bg-white mx-4 max-h-[90vh] overflow-hidden flex flex-col ${
-          size === "xl"
-            ? "max-w-2xl rounded-xl shadow-2xl"
-            : size === "lg"
-              ? "max-w-[560px] rounded-xl shadow-2xl"
-              : "max-w-md rounded-lg shadow-xl"
+          size === "2xl"
+            ? "max-w-4xl rounded-xl shadow-2xl"
+            : size === "xl"
+              ? "max-w-2xl rounded-xl shadow-2xl"
+              : size === "lg"
+                ? "max-w-[560px] rounded-xl shadow-2xl"
+                : "max-w-md rounded-lg shadow-xl"
         }`}
         role="dialog"
         aria-modal="true"
