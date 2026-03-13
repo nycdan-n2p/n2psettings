@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useApp } from "@/contexts/AppContext";
 import { qk } from "@/lib/query-keys";
 import { Loader } from "@/components/ui/Loader";
 import {
-  fetchCallQueues,
+  fetchCallQueueDetail,
+  fetchAgentActivityReport,
   fetchQueueActivityReport,
-  type CallQueue,
   type ReportIntervalSize,
+  type QueueAgent,
 } from "@/lib/api/call-queues";
 import { FileDown } from "lucide-react";
 
@@ -85,58 +85,66 @@ function getDateRange(preset: TimePreset, customStart?: string, customEnd?: stri
   }
 }
 
-function formatIntervalLabel(preset: TimePreset, customStart?: string, customEnd?: string): string {
-  if (preset === "custom" && customStart && customEnd) {
-    return `Custom Date Range (${customStart} – ${customEnd})`;
-  }
-  const labels: Record<TimePreset, string> = {
-    today: "Today",
-    yesterday: "Yesterday",
-    last7: "Last 7 days",
-    weekToDate: "Week to date",
-    lastWeek: "Last week",
-    monthToDate: "Month to date",
-    lastMonth: "Last month",
-    custom: "Custom Date Range",
-  };
-  return labels[preset];
-}
+const TIME_PRESETS: { value: TimePreset; label: string }[] = [
+  { value: "today", label: "Today" },
+  { value: "yesterday", label: "Yesterday" },
+  { value: "last7", label: "Last 7 days" },
+  { value: "weekToDate", label: "Week to date" },
+  { value: "lastWeek", label: "Last week" },
+  { value: "monthToDate", label: "Month to date" },
+  { value: "lastMonth", label: "Last month" },
+  { value: "custom", label: "Custom Date Range" },
+];
 
-export default function QueueActivityReportPage() {
-  const { bootstrap } = useApp();
-  const accountId = bootstrap?.account?.accountId ?? 0;
+export function ReportsSection({
+  queueId,
+  accountId,
+}: {
+  queueId: string;
+  accountId: number;
+}) {
+  const { data: queueDetail } = useQuery({
+    queryKey: qk.callQueues.detail(accountId, queueId),
+    queryFn: () => fetchCallQueueDetail(queueId, accountId),
+    enabled: !!queueId && !!accountId,
+  });
 
-  const [queueId, setQueueId] = useState("");
-  const [intervalSize, setIntervalSize] = useState<ReportIntervalSize>("quarter_of_hour");
+  const agents: QueueAgent[] = queueDetail?.agents ?? [];
+
+  const [reportType, setReportType] = useState<"agent" | "queue">("agent");
+  const [agentId, setAgentId] = useState<string>("all");
+  const [intervalSize, setIntervalSize] = useState<ReportIntervalSize>("hour");
   const [timePreset, setTimePreset] = useState<TimePreset>("last7");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
-  const [showEmptySlots, setShowEmptySlots] = useState(false);
   const [reportData, setReportData] = useState<unknown>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const { data: queues = [] } = useQuery({
-    queryKey: qk.callQueues.list(accountId),
-    queryFn: fetchCallQueues,
-    enabled: !!accountId,
-  });
-
-  const canGenerate = !!queueId;
+  const [showEmptySlots, setShowEmptySlots] = useState(false);
 
   const handleGenerate = async () => {
-    if (!queueId) return;
     setLoading(true);
     setError(null);
     try {
       const { start, end } = getDateRange(timePreset, customStart || undefined, customEnd || undefined);
-      const result = await fetchQueueActivityReport({
-        queueId,
-        startDate: start,
-        endDate: end,
-        intervalSize,
-      });
-      setReportData(result);
+      if (reportType === "agent") {
+        const result = await fetchAgentActivityReport({
+          queueId,
+          startDate: start,
+          endDate: end,
+          intervalSize,
+          agentIds: agentId === "all" ? undefined : [parseInt(agentId, 10)],
+        });
+        setReportData(result);
+      } else {
+        const result = await fetchQueueActivityReport({
+          queueId,
+          startDate: start,
+          endDate: end,
+          intervalSize,
+        });
+        setReportData(result);
+      }
     } catch (e) {
       setError((e as Error)?.message ?? "Failed to generate report");
       setReportData(null);
@@ -156,58 +164,70 @@ export default function QueueActivityReportPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `queue-activity-${queueId}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `${reportType}-activity-${queueId}-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
-  const timePresets: { value: TimePreset; label: string }[] = [
-    { value: "today", label: "Today" },
-    { value: "yesterday", label: "Yesterday" },
-    { value: "last7", label: "Last 7 days" },
-    { value: "weekToDate", label: "Week to date" },
-    { value: "lastWeek", label: "Last week" },
-    { value: "monthToDate", label: "Month to date" },
-    { value: "lastMonth", label: "Last month" },
-    { value: "custom", label: "Custom Date Range" },
-  ];
-
-  const reportRows = Array.isArray(reportData) ? reportData : (reportData as Record<string, unknown>)?.data != null
-    ? ((reportData as Record<string, unknown>).data as unknown[])
-    : reportData != null
-      ? [reportData]
-      : [];
-
-  const intervalLabel = INTERVAL_OPTIONS.find((o) => o.value === intervalSize)?.label ?? intervalSize;
+  const reportRows = Array.isArray(reportData)
+    ? reportData
+    : (reportData as Record<string, unknown>)?.data != null
+      ? ((reportData as Record<string, unknown>).data as unknown[])
+      : reportData != null
+        ? [reportData]
+        : [];
 
   return (
-    <div>
-      <div className="flex items-center gap-2 mb-6">
-        <h1 className="text-2xl font-medium text-gray-900">Queue Activity Report</h1>
-        <span className="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded">beta</span>
-      </div>
+    <div className="space-y-8">
+      <div>
+        <h3 className="text-base font-semibold text-gray-900 mb-4">Call Queue Reports</h3>
+        <p className="text-sm text-gray-500 mb-4">
+          Generate agent or queue activity reports for this call queue. Reports are available for calls from June 1, 2025 onward.
+        </p>
 
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Call Queue</label>
-            <select
-              value={queueId}
-              onChange={(e) => setQueueId(e.target.value)}
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:border-[#1a73e8]"
-            >
-              <option value="">Select Queue</option>
-              {queues.map((q: CallQueue) => (
-                <option key={q.id} value={q.id}>{q.name}{q.extension ? ` (${q.extension})` : ""}</option>
-              ))}
-            </select>
-          </div>
+        <div className="flex gap-4 mb-4">
+          <button
+            onClick={() => { setReportType("agent"); setReportData(null); setError(null); }}
+            className={`px-4 py-2 rounded-lg text-sm font-medium ${
+              reportType === "agent" ? "bg-[#1a73e8] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            Agent Activity Report
+          </button>
+          <button
+            onClick={() => { setReportType("queue"); setReportData(null); setError(null); }}
+            className={`px-4 py-2 rounded-lg text-sm font-medium ${
+              reportType === "queue" ? "bg-[#1a73e8] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            Queue Activity Report
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          {reportType === "agent" && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Agent</label>
+              <select
+                value={agentId}
+                onChange={(e) => setAgentId(e.target.value)}
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1a73e8]"
+              >
+                <option value="all">All Agents</option>
+                {agents.map((a) => (
+                  <option key={a.user_id ?? a.id} value={String(a.user_id ?? a.id)}>
+                    {a.display_name ?? `Agent ${a.user_id ?? a.id}`}{a.extension ? ` · ${a.extension}` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Interval</label>
             <select
               value={intervalSize}
               onChange={(e) => setIntervalSize(e.target.value as ReportIntervalSize)}
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:border-[#1a73e8]"
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1a73e8]"
             >
               {INTERVAL_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
@@ -216,17 +236,15 @@ export default function QueueActivityReportPage() {
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Choose a Time Period</label>
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Time Period</label>
           <div className="flex flex-wrap gap-2">
-            {timePresets.map((p) => (
+            {TIME_PRESETS.map((p) => (
               <button
                 key={p.value}
                 onClick={() => setTimePreset(p.value)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  timePreset === p.value
-                    ? "bg-[#1a73e8] text-white"
-                    : "bg-[#e8f0fe] text-[#1a73e8] hover:bg-[#d2e3fc]"
+                className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                  timePreset === p.value ? "bg-[#1a73e8] text-white" : "bg-[#e8f0fe] text-[#1a73e8] hover:bg-[#d2e3fc]"
                 }`}
               >
                 {p.label}
@@ -236,7 +254,7 @@ export default function QueueActivityReportPage() {
         </div>
 
         {timePreset === "custom" && (
-          <div className="flex gap-4 items-end">
+          <div className="flex gap-4 items-end mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Start Date</label>
               <input
@@ -258,32 +276,23 @@ export default function QueueActivityReportPage() {
           </div>
         )}
 
-        <p className="text-xs text-gray-500">Reports are only available for calls from June 1, 2025, onward.</p>
-
         <button
           onClick={handleGenerate}
-          disabled={!canGenerate || loading}
-          className={`px-6 py-3 rounded-lg text-sm font-medium ${
-            canGenerate && !loading
-              ? "bg-[#1a73e8] text-white hover:bg-[#1557b0]"
-              : "bg-gray-200 text-gray-500 cursor-not-allowed"
-          }`}
+          disabled={loading}
+          className="px-6 py-3 rounded-lg text-sm font-medium bg-[#1a73e8] text-white hover:bg-[#1557b0] disabled:opacity-50"
         >
           {loading ? <Loader variant="button" /> : "Generate Report"}
         </button>
       </div>
 
       {error && (
-        <div className="mt-6 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+        <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
           {error}
         </div>
       )}
 
       {reportData != null && !error && (
-        <div className="mt-8">
-          <p className="text-sm text-gray-600 mb-2">
-            Showing: {intervalLabel} intervals for {formatIntervalLabel(timePreset, customStart || undefined, customEnd || undefined)}
-          </p>
+        <div>
           <div className="flex items-center gap-4 mb-4">
             <label className="flex items-center gap-2 text-sm text-gray-700">
               <input
@@ -297,10 +306,10 @@ export default function QueueActivityReportPage() {
             <button
               onClick={handleExportCsv}
               disabled={!Array.isArray(reportRows) || reportRows.length === 0}
-              className="flex items-center gap-1.5 text-sm text-[#1a73e8] hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 text-sm text-[#1a73e8] hover:underline disabled:opacity-50"
             >
               <FileDown className="w-4 h-4" />
-              Generate CSV
+              Export CSV
             </button>
           </div>
 

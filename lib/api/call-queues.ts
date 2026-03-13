@@ -1,4 +1,4 @@
-import { getApiClient, getV2ApiClient, type V1Response, type V2PaginatedResponse } from "../api-client";
+import { getApiClient, getV2ApiClient, getN2pApiClient, type V1Response, type V2PaginatedResponse } from "../api-client";
 import { fetchUsersLight } from "./ring-groups";
 
 // ── List item (from v2 paginated list) ───────────────────────────────────────
@@ -340,7 +340,7 @@ export interface QueueActivityReportParams {
 }
 
 export async function fetchAgentActivityReport(params: AgentActivityReportParams): Promise<unknown> {
-  // Use app.net2phone.com/api/v2 (same as queue list/detail) — api.n2p.io returns 400
+  // agents-report works on app.net2phone.com/api/v2 (api.n2p.io returns 400)
   const api = await getV2ApiClient();
   const body: Record<string, unknown> = {
     start_date: params.startDate,
@@ -354,8 +354,8 @@ export async function fetchAgentActivityReport(params: AgentActivityReportParams
 }
 
 export async function fetchQueueActivityReport(params: QueueActivityReportParams): Promise<unknown> {
-  // Use app.net2phone.com/api/v2 (same as queue list/detail)
-  const api = await getV2ApiClient();
+  // queue-report lives on api.n2p.io/v2 (app.net2phone.com returns 404)
+  const api = await getN2pApiClient();
   const res = await api.post(`/call-queues/${params.queueId}/queue-report`, {
     start_date: params.startDate,
     end_date: params.endDate,

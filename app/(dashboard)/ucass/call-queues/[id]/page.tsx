@@ -7,7 +7,7 @@ import { useApp } from "@/contexts/AppContext";
 import { qk, lightKeys } from "@/lib/query-keys";
 import { Loader } from "@/components/ui/Loader";
 import {
-  ArrowLeft, Save, Users, PhoneCall, Clock, Hash, Music2,
+  ArrowLeft, Save, Users, PhoneCall, Clock, Hash, Music2, BarChart2,
   CheckCircle2, AlertTriangle, Sparkles, Play, Pause, X,
 } from "lucide-react";
 import {
@@ -23,9 +23,10 @@ import {
   type QueueAnnouncementSettings,
 } from "@/lib/api/call-queues";
 import { fetchMenusLight, type MenuLightItem } from "@/lib/api/virtual-assistant";
+import { ReportsSection } from "./ReportsSection";
 
 // ── Types ────────────────────────────────────────────────────────────────────
-type Tab = "basics" | "overflow" | "ringing" | "ivr" | "announcements";
+type Tab = "basics" | "overflow" | "ringing" | "ivr" | "announcements" | "reports";
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: "basics",        label: "Queue Basics",    icon: Users     },
@@ -33,6 +34,7 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: "ringing",       label: "Ringing Rules",   icon: Clock     },
   { id: "ivr",           label: "IVR Settings",    icon: Hash      },
   { id: "announcements", label: "Announcements",   icon: Music2    },
+  { id: "reports",       label: "Reports",         icon: BarChart2 },
 ];
 
 const RING_STRATEGIES = [
@@ -992,6 +994,9 @@ export default function CallQueueEditPage() {
               onSave={(p) => saveMutation.mutate(p)}
               saving={saveMutation.isPending}
             />
+          )}
+          {activeTab === "reports" && (
+            <ReportsSection queueId={id} accountId={accountId} />
           )}
         </div>
       </div>
