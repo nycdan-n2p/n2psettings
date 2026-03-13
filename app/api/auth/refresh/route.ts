@@ -1,20 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const AUTH_URL = "https://auth.net2phone.com";
+const CLIENT_ID = process.env.N2P_OAUTH_CLIENT_ID ?? "unite.webapp";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { refresh_token } = body;
+    const raw = (body as { refresh_token?: string }).refresh_token;
+    const refresh_token = typeof raw === "string" ? raw.trim() : "";
     if (!refresh_token) {
       return NextResponse.json(
-        { error: "refresh_token required" },
+        { error: "Refresh token is required" },
         { status: 400 }
       );
     }
 
     const params = new URLSearchParams();
-    params.append("client_id", "unite.webapp");
+    params.append("client_id", CLIENT_ID);
     params.append("grant_type", "refresh_token");
     params.append("refresh_token", refresh_token);
 
@@ -24,9 +26,23 @@ export async function POST(request: NextRequest) {
       body: params.toString(),
     });
 
-    const data = await res.json();
+    const data = (await res.json()) as {
+      error?: string;
+      error_description?: string;
+      access_token?: string;
+      [key: string]: unknown;
+    };
+
     if (!res.ok) {
-      return NextResponse.json(data, { status: res.status });
+      const errCode = data.error;
+      let message = data.error_description ?? "Authentication failed";
+      if (errCode === "invalid_grant") {
+        message =
+          "Refresh token is invalid or expired. Get a fresh token from app.net2phone.com: DevTools → Application → Local Storage → n2p_refresh_token";
+      } else if (errCode === "invalid_client") {
+        message = "OAuth client configuration error";
+      }
+      return NextResponse.json({ error: message }, { status: res.status });
     }
     return NextResponse.json(data);
   } catch (e) {

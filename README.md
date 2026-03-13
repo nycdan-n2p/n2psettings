@@ -134,7 +134,9 @@ npm run dev
 
 3. Open [http://localhost:3000](http://localhost:3000).
 
-4. **Login:** Paste your OAuth2 refresh token on the login page. Obtain it via the net2phone OAuth2 flow (`client_id=unite.webapp`, `grant_type=refresh_token`).
+4. **Login:** Paste your OAuth2 refresh token on the login page. Obtain it from [app.net2phone.com](https://app.net2phone.com): DevTools → Application → Local Storage → `n2p_refresh_token`.
+
+**If you get `invalid_grant`:** The token may be expired or revoked. Log in again at app.net2phone.com, then copy a fresh `n2p_refresh_token` from Local Storage. Avoid extra spaces or line breaks when pasting.
 
 ## Environment
 
