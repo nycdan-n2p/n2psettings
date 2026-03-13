@@ -29,9 +29,6 @@ import {
   Phone as PhoneIcon,
   Music,
   KeyRound,
-  LockKeyhole,
-  ShieldCheck,
-  MessageSquare,
   HelpCircle,
 } from "lucide-react";
 
@@ -118,10 +115,7 @@ function ucassNav(base: string): NavGroup[] {
         { href: `${base}/settings/company-directory`, label: "Company Directory", icon: FolderOpen, feature: "CompanyDirectory" },
         { href: `${base}/settings/911-contacts`, label: "911 Contacts", icon: AlertTriangle },
         { href: `${base}/settings/licenses`, label: "Licenses", icon: FileBarChart },
-        { href: `${base}/settings/sso`, label: "Single Sign-On", icon: LockKeyhole },
-        { href: `${base}/settings/2fa`, label: "Two-Factor Auth", icon: ShieldCheck },
-        { href: `${base}/settings/10dlc`, label: "Messaging (10DLC)", icon: MessageSquare },
-        { href: `${base}/settings/security`, label: "Security", icon: Shield },
+        { href: `${base}/settings/trust-center`, label: "Trust Center", icon: Shield },
         { href: `${base}/settings/karis-law`, label: "Kari's Law", icon: AlertTriangle, feature: "EmergencyCallNotification" },
         { href: `${base}/settings/delegates`, label: "Delegates", icon: UserPlus },
         { href: `${base}/settings/number-porting`, label: "Number Porting", icon: Truck },

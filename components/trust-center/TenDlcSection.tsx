@@ -22,7 +22,7 @@ interface Campaign {
   [key: string]: unknown;
 }
 
-export default function TenDlcPage() {
+export function TenDlcSection() {
   const [tab, setTab] = useState<"brands" | "campaigns">("brands");
   const [modalOpen, setModalOpen] = useState(false);
   const [formName, setFormName] = useState("");
@@ -53,10 +53,6 @@ export default function TenDlcPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-medium text-gray-900 mb-6">10DLC</h1>
-      <p className="text-gray-600 mb-6">
-        Campaign registry for SMS (brands and campaigns).
-      </p>
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <div className="flex gap-2">
           <button

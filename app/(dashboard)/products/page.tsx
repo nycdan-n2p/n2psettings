@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { PRODUCTS } from "@/lib/config/products";
-import { INTEGRATIONS } from "@/lib/config/integrations";
 
 export default function ProductsPage() {
   return (
@@ -12,7 +11,7 @@ export default function ProductsPage() {
         Select a product to manage its settings.
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {PRODUCTS.map((product) => {
           const Icon = product.icon;
           const href =
@@ -44,33 +43,6 @@ export default function ProductsPage() {
           );
         })}
       </div>
-
-      <section>
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-4">
-          Apps & Integrations
-        </p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {INTEGRATIONS.map((integration) => {
-            const Logo = integration.Logo;
-            return (
-              <a
-                key={integration.id}
-                href={integration.href}
-                target="_blank"
-                rel="noreferrer"
-                className="flex flex-col items-center gap-3 p-4 bg-white rounded-lg border border-[#dadce0] hover:border-[#1a73e8] hover:shadow-md transition-all group"
-              >
-                <span className="w-9 h-9 flex items-center justify-center [&>svg]:w-9 [&>svg]:h-9">
-                  <Logo />
-                </span>
-                <span className="text-sm font-medium text-gray-700 group-hover:text-[#1a73e8] transition-colors text-center">
-                  {integration.name}
-                </span>
-              </a>
-            );
-          })}
-        </div>
-      </section>
     </div>
   );
 }

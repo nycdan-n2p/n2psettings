@@ -12,6 +12,7 @@ import {
 import { useApp } from "@/contexts/AppContext";
 import { useAssistant } from "@/contexts/AssistantContext";
 import { clearTokens } from "@/lib/auth";
+import { INTEGRATIONS } from "@/lib/config/integrations";
 
 export function TopBar() {
   const { bootstrap } = useApp();
@@ -77,12 +78,56 @@ export function TopBar() {
             </div>
             <ChevronDown className="w-4 h-4" />
           </button>
-          <div className="absolute right-0 top-full mt-1 py-1 w-48 bg-white rounded-md shadow-lg text-gray-900 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+          <div className="absolute right-0 top-full mt-1 py-1 w-56 bg-white rounded-md shadow-lg text-gray-900 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
             <div className="px-3 py-2 border-b border-gray-100">
               <p className="text-sm font-medium truncate">{userName}</p>
               <p className="text-xs text-gray-500 truncate">
                 {bootstrap?.user?.email}
               </p>
+            </div>
+            <div className="border-b border-gray-100">
+              <p className="px-3 pt-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">
+                Apps & Integrations
+              </p>
+              <div className="grid grid-cols-3 gap-1 px-2 pb-2">
+                {INTEGRATIONS.map((integration) => {
+                  const Logo = integration.Logo;
+                  return (
+                    <a
+                      key={integration.id}
+                      href={integration.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex flex-col items-center gap-1.5 p-2 rounded-md hover:bg-gray-50 transition-colors"
+                    >
+                      <span className="w-8 h-8 flex items-center justify-center [&>svg]:w-8 [&>svg]:h-8 shrink-0">
+                        <Logo />
+                      </span>
+                      <span className="text-xs font-medium text-gray-700 truncate w-full text-center">
+                        {integration.name}
+                      </span>
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="border-b border-gray-100 px-3 py-2 space-y-1">
+              <a
+                href="https://www.net2phone.com/terms-of-service"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-sm text-gray-700 hover:bg-gray-50 -mx-2 px-2 py-1 rounded"
+              >
+                Terms of Service
+              </a>
+              <a
+                href="https://www.net2phone.com/privacy-policy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-sm text-gray-700 hover:bg-gray-50 -mx-2 px-2 py-1 rounded"
+              >
+                Privacy Policy
+              </a>
             </div>
             <button
               onClick={handleLogout}
