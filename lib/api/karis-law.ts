@@ -6,6 +6,8 @@ export interface KariLawEntry {
   ownerName?: string;
   ownerId?: number;
   createdAt?: string;
+  /** User who added the number (legacy "ADDED BY") */
+  addedBy?: string;
 }
 
 export async function fetchKarisLaw(accountId: number): Promise<KariLawEntry[]> {
