@@ -16,11 +16,14 @@ import {
   type ScheduleRule,
   type CreateSchedulePayload,
 } from "@/lib/api/schedules";
+import { fetchPublicHolidays, type PublicHoliday } from "@/lib/api/holidays";
+import { HOLIDAY_REGIONS, REGION_GROUPS, type HolidayRegion } from "@/data/holiday-regions";
 import { Modal } from "@/components/settings/Modal";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import {
   Plus, Pencil, Trash2, Search, Calendar, Clock,
-  ChevronDown, X,
+  ChevronDown, X, Globe, ChevronRight, ChevronLeft,
+  CheckSquare, Square, AlertCircle,
 } from "lucide-react";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -553,6 +556,440 @@ function ScheduleModal({
   );
 }
 
+// ── Holiday Modal ─────────────────────────────────────────────────────────────
+
+type HolidayStatus = "closed" | "open_custom";
+
+interface HolidayDraft {
+  holiday: PublicHoliday;
+  enabled: boolean;
+  status: HolidayStatus;
+  timeStart: string;
+  timeEnd: string;
+}
+
+type HolidayStep = "region" | "holidays" | "confirm";
+
+function holidayDraftToApiRule(d: HolidayDraft): ScheduleRule {
+  return {
+    name: d.holiday.name,
+    days: {
+      weekDays: null,
+      dates: [`${d.holiday.date}T00:00:00`],
+      isRange: false,
+    },
+    time:
+      d.status === "closed"
+        ? { start: "12:00 AM", end: "11:59 PM" }
+        : { start: d.timeStart, end: d.timeEnd },
+  };
+}
+
+function formatHolidayDate(dateStr: string): string {
+  const d = new Date(`${dateStr}T12:00:00`);
+  return d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
+}
+
+function HolidayModal({
+  isOpen,
+  onClose,
+  onSubmit,
+  isPending,
+  timezones,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (p: CreateSchedulePayload) => void;
+  isPending: boolean;
+  timezones: { abbreviation: string; name: string }[];
+}) {
+  const currentYear = new Date().getFullYear();
+  const [step, setStep] = useState<HolidayStep>("region");
+  const [selectedRegion, setSelectedRegion] = useState<HolidayRegion | null>(null);
+  const [year, setYear] = useState(currentYear);
+  const [drafts, setDrafts] = useState<HolidayDraft[]>([]);
+  const [scheduleName, setScheduleName] = useState("");
+  const [timezone, setTimezone] = useState("EST");
+
+  const { data: holidays = [], isFetching } = useQuery({
+    queryKey: ["holidays", selectedRegion?.code, year],
+    queryFn: () => fetchPublicHolidays(selectedRegion!.code, year),
+    enabled: !!selectedRegion && step !== "region",
+    staleTime: 24 * 60 * 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (!isOpen) {
+      setStep("region");
+      setSelectedRegion(null);
+      setDrafts([]);
+      setScheduleName("");
+      setTimezone("EST");
+      setYear(currentYear);
+    }
+  }, [isOpen, currentYear]);
+
+  useEffect(() => {
+    if (holidays.length > 0 && step === "holidays") {
+      setDrafts(
+        holidays.map((h) => ({
+          holiday: h,
+          enabled: true,
+          status: "closed",
+          timeStart: "09:00 AM",
+          timeEnd: "05:00 PM",
+        }))
+      );
+    }
+  }, [holidays, step]);
+
+  useEffect(() => {
+    if (selectedRegion && step === "holidays") {
+      const suggestedName = `${selectedRegion.label} Holidays ${year}`;
+      setScheduleName(suggestedName);
+      setTimezone(
+        selectedRegion.code === "US"
+          ? "EST"
+          : selectedRegion.code === "CA"
+          ? "EST"
+          : "EST"
+      );
+    }
+  }, [selectedRegion, year, step]);
+
+  const enabledCount = drafts.filter((d) => d.enabled).length;
+
+  function toggleAll(val: boolean) {
+    setDrafts((prev) => prev.map((d) => ({ ...d, enabled: val })));
+  }
+
+  function updateDraft(idx: number, patch: Partial<HolidayDraft>) {
+    setDrafts((prev) => prev.map((d, i) => (i === idx ? { ...d, ...patch } : d)));
+  }
+
+  function handleSubmit() {
+    const rules = drafts.filter((d) => d.enabled).map(holidayDraftToApiRule);
+    onSubmit({ name: scheduleName.trim(), timezone, rules });
+  }
+
+  const stepTitles: Record<HolidayStep, string> = {
+    region: "Add Holiday Schedule",
+    holidays: `${selectedRegion?.flag ?? ""} ${selectedRegion?.label ?? ""} — ${year}`,
+    confirm: "Review & Create",
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={stepTitles[step]} size="xl">
+      {/* Step indicator */}
+      <div className="flex items-center gap-2 mb-5">
+        {(["region", "holidays", "confirm"] as HolidayStep[]).map((s, i) => (
+          <div key={s} className="flex items-center gap-2">
+            {i > 0 && <div className="w-8 h-px bg-[#dadce0]" />}
+            <div className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full transition-all ${
+              step === s
+                ? "bg-[#1a73e8] text-white"
+                : i < ["region", "holidays", "confirm"].indexOf(step)
+                ? "bg-[#e8f0fe] text-[#1a73e8]"
+                : "bg-[#f1f3f4] text-gray-400"
+            }`}>
+              <span className="font-bold">{i + 1}</span>
+              <span className="hidden sm:inline capitalize">{s === "confirm" ? "Review" : s}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Step 1: Region ── */}
+      {step === "region" && (
+        <div className="space-y-5">
+          <p className="text-sm text-gray-500">
+            Choose a country to automatically import its national holidays. You can set each holiday as Closed or assign custom hours.
+          </p>
+
+          <div>
+            <div className="mb-2 flex items-center gap-2">
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Year</span>
+              <div className="flex items-center gap-1 ml-2">
+                <button
+                  type="button"
+                  onClick={() => setYear((y) => y - 1)}
+                  className="p-1 rounded hover:bg-[#f1f3f4] text-gray-500"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="text-sm font-semibold text-gray-800 w-12 text-center">{year}</span>
+                <button
+                  type="button"
+                  onClick={() => setYear((y) => y + 1)}
+                  disabled={year >= currentYear + 2}
+                  className="p-1 rounded hover:bg-[#f1f3f4] text-gray-500 disabled:opacity-30"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {REGION_GROUPS.map((group) => (
+              <div key={group} className="mb-4">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{group}</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {HOLIDAY_REGIONS.filter((r) => r.group === group).map((region) => (
+                    <button
+                      key={region.code}
+                      type="button"
+                      onClick={() => {
+                        setSelectedRegion(region);
+                        setStep("holidays");
+                      }}
+                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border text-left transition-all hover:border-[#1a73e8] hover:bg-[#f8f9fa] ${
+                        selectedRegion?.code === region.code
+                          ? "border-[#1a73e8] bg-[#e8f0fe]"
+                          : "border-[#dadce0] bg-white"
+                      }`}
+                    >
+                      <span className="text-xl leading-none">{region.flag}</span>
+                      <span className="text-sm font-medium text-gray-800 truncate">{region.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Step 2: Holidays ── */}
+      {step === "holidays" && (
+        <div className="space-y-4">
+          {isFetching ? (
+            <div className="py-16 flex justify-center">
+              <Loader variant="inline" label="Loading holidays…" />
+            </div>
+          ) : holidays.length === 0 ? (
+            <div className="py-12 flex flex-col items-center gap-3 text-gray-400">
+              <AlertCircle className="w-8 h-8 text-gray-300" />
+              <p className="text-sm">No holidays found for this country/year.</p>
+              <button
+                type="button"
+                onClick={() => setStep("region")}
+                className="text-sm text-[#1a73e8] hover:underline"
+              >
+                Choose a different region
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-gray-600">
+                  <strong className="text-gray-900">{holidays.length}</strong> public holidays found.
+                  Select the ones to include and set open or closed.
+                </p>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => toggleAll(true)}
+                    className="text-xs text-[#1a73e8] hover:underline font-medium"
+                  >
+                    Select all
+                  </button>
+                  <span className="text-gray-300">|</span>
+                  <button
+                    type="button"
+                    onClick={() => toggleAll(false)}
+                    className="text-xs text-gray-500 hover:underline"
+                  >
+                    Deselect all
+                  </button>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-[#dadce0] overflow-hidden">
+                <div className="grid grid-cols-[auto_1fr_auto] gap-3 px-4 py-2 bg-[#f8f9fa] border-b border-[#dadce0] text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                  <span />
+                  <span>Holiday</span>
+                  <span className="text-right pr-1">Status / Hours</span>
+                </div>
+                <div className="divide-y divide-[#f1f3f4] max-h-[380px] overflow-y-auto">
+                  {drafts.map((d, i) => (
+                    <div
+                      key={d.holiday.date}
+                      className={`grid grid-cols-[auto_1fr_auto] gap-3 items-start px-4 py-3 transition-colors ${
+                        d.enabled ? "bg-white" : "bg-[#fafafa] opacity-60"
+                      }`}
+                    >
+                      {/* Checkbox */}
+                      <button
+                        type="button"
+                        onClick={() => updateDraft(i, { enabled: !d.enabled })}
+                        className="mt-0.5 text-[#1a73e8]"
+                      >
+                        {d.enabled
+                          ? <CheckSquare className="w-4.5 h-4.5 w-[18px] h-[18px]" />
+                          : <Square className="w-[18px] h-[18px] text-gray-300" />}
+                      </button>
+
+                      {/* Name + date */}
+                      <div>
+                        <p className="text-sm font-medium text-gray-800">{d.holiday.localName}</p>
+                        {d.holiday.localName !== d.holiday.name && (
+                          <p className="text-xs text-gray-400">{d.holiday.name}</p>
+                        )}
+                        <p className="text-xs text-gray-400 mt-0.5">{formatHolidayDate(d.holiday.date)}</p>
+                      </div>
+
+                      {/* Status controls */}
+                      {d.enabled && (
+                        <div className="flex flex-col items-end gap-1.5 min-w-[180px]">
+                          <div className="flex items-center gap-1 p-0.5 bg-[#f1f3f4] rounded-lg">
+                            <button
+                              type="button"
+                              onClick={() => updateDraft(i, { status: "closed" })}
+                              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
+                                d.status === "closed"
+                                  ? "bg-white text-red-600 shadow-sm"
+                                  : "text-gray-500 hover:text-gray-700"
+                              }`}
+                            >
+                              Closed
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => updateDraft(i, { status: "open_custom" })}
+                              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
+                                d.status === "open_custom"
+                                  ? "bg-white text-[#1a73e8] shadow-sm"
+                                  : "text-gray-500 hover:text-gray-700"
+                              }`}
+                            >
+                              Open
+                            </button>
+                          </div>
+                          {d.status === "open_custom" && (
+                            <div className="flex items-center gap-1">
+                              <select
+                                value={d.timeStart}
+                                onChange={(e) => updateDraft(i, { timeStart: e.target.value })}
+                                className="text-xs border border-[#dadce0] rounded px-1.5 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                              >
+                                {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
+                              </select>
+                              <span className="text-xs text-gray-400">–</span>
+                              <select
+                                value={d.timeEnd}
+                                onChange={(e) => updateDraft(i, { timeEnd: e.target.value })}
+                                className="text-xs border border-[#dadce0] rounded px-1.5 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                              >
+                                {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
+                              </select>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-2 border-t border-[#f1f3f4]">
+                <button
+                  type="button"
+                  onClick={() => setStep("region")}
+                  className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800"
+                >
+                  <ChevronLeft className="w-4 h-4" /> Back
+                </button>
+                <button
+                  type="button"
+                  disabled={enabledCount === 0}
+                  onClick={() => setStep("confirm")}
+                  className="flex items-center gap-2 px-4 py-2 bg-[#1a73e8] text-white text-sm font-medium rounded-md hover:bg-[#1557b0] disabled:opacity-40 transition-colors"
+                >
+                  Continue with {enabledCount} holiday{enabledCount !== 1 ? "s" : ""}
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── Step 3: Confirm ── */}
+      {step === "confirm" && (
+        <div className="space-y-4">
+          <div className="rounded-lg bg-[#f8f9fa] border border-[#dadce0] p-4 space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Schedule Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={scheduleName}
+                onChange={(e) => setScheduleName(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-[#dadce0] rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a73e8] bg-white"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Timezone</label>
+              <select
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-[#dadce0] rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a73e8] bg-white"
+              >
+                {timezones.map((tz) => (
+                  <option key={tz.abbreviation} value={tz.abbreviation}>
+                    {tz.abbreviation} – {tz.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              {enabledCount} holiday{enabledCount !== 1 ? "s" : ""} will be added
+            </p>
+            <div className="rounded-lg border border-[#dadce0] overflow-hidden max-h-64 overflow-y-auto">
+              {drafts.filter((d) => d.enabled).map((d) => (
+                <div key={d.holiday.date} className="flex items-center justify-between px-4 py-2.5 border-b border-[#f1f3f4] last:border-0">
+                  <div>
+                    <span className="text-sm font-medium text-gray-800">{d.holiday.localName}</span>
+                    <span className="text-xs text-gray-400 ml-2">{formatHolidayDate(d.holiday.date)}</span>
+                  </div>
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                    d.status === "closed"
+                      ? "bg-red-50 text-red-600"
+                      : "bg-blue-50 text-[#1a73e8]"
+                  }`}>
+                    {d.status === "closed" ? "Closed" : `${d.timeStart} – ${d.timeEnd}`}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-2 border-t border-[#f1f3f4]">
+            <button
+              type="button"
+              onClick={() => setStep("holidays")}
+              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800"
+            >
+              <ChevronLeft className="w-4 h-4" /> Back
+            </button>
+            <button
+              type="button"
+              disabled={isPending || !scheduleName.trim()}
+              onClick={handleSubmit}
+              className="flex items-center gap-2 px-4 py-2 bg-[#1a73e8] text-white text-sm font-medium rounded-md hover:bg-[#1557b0] disabled:opacity-50 transition-colors"
+            >
+              {isPending ? "Creating…" : "Create Holiday Schedule"}
+            </button>
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function SchedulesPage() {
   const { bootstrap } = useApp();
@@ -561,6 +998,7 @@ export default function SchedulesPage() {
 
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
+  const [holidayModalOpen, setHolidayModalOpen] = useState(false);
   const [editing, setEditing] = useState<Schedule | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Schedule | null>(null);
 
@@ -579,7 +1017,11 @@ export default function SchedulesPage() {
 
   const addMutation = useMutation({
     mutationFn: (p: CreateSchedulePayload) => createSchedule(accountId, p),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: qk.schedules.all(accountId) }); setModalOpen(false); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: qk.schedules.all(accountId) });
+      setModalOpen(false);
+      setHolidayModalOpen(false);
+    },
   });
 
   const updateMutation = useMutation({
@@ -613,12 +1055,20 @@ export default function SchedulesPage() {
             Define time-based rules for call routing across your account.
           </p>
         </div>
-        <button
-          onClick={() => { setEditing(null); setModalOpen(true); }}
-          className="flex items-center gap-2 px-4 py-2 bg-[#1a73e8] text-white text-sm font-medium rounded-md hover:bg-[#1557b0] transition-colors"
-        >
-          <Plus className="w-4 h-4" /> Add Schedule
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setHolidayModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 border border-[#1a73e8] text-[#1a73e8] text-sm font-medium rounded-md hover:bg-[#e8f0fe] transition-colors"
+          >
+            <Globe className="w-4 h-4" /> Add Holiday Schedule
+          </button>
+          <button
+            onClick={() => { setEditing(null); setModalOpen(true); }}
+            className="flex items-center gap-2 px-4 py-2 bg-[#1a73e8] text-white text-sm font-medium rounded-md hover:bg-[#1557b0] transition-colors"
+          >
+            <Plus className="w-4 h-4" /> Add Schedule
+          </button>
+        </div>
       </div>
 
       {/* Search + count */}
@@ -752,6 +1202,14 @@ export default function SchedulesPage() {
         onClose={() => { setModalOpen(false); setEditing(null); }}
         onSubmit={(p) => editing ? updateMutation.mutate({ id: editing.id, payload: p }) : addMutation.mutate(p)}
         isPending={addMutation.isPending || updateMutation.isPending}
+        timezones={timezones}
+      />
+
+      <HolidayModal
+        isOpen={holidayModalOpen}
+        onClose={() => setHolidayModalOpen(false)}
+        onSubmit={(p) => addMutation.mutate(p)}
+        isPending={addMutation.isPending}
         timezones={timezones}
       />
 

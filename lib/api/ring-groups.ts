@@ -30,6 +30,7 @@ export interface RingGroupTier {
   id: number;
   orderBy: number;
   status: string;
+  rings?: number;           // how many rings before escalating to next tier
   members: RingGroupMember[];
 }
 

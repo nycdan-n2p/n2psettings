@@ -21,7 +21,7 @@ import {
 import { fetchPhoneNumbers, type PhoneNumber } from "@/lib/api/phone-numbers";
 import {
   ArrowLeft, Save, Users, Route, PhoneIncoming, Plus, Trash2,
-  CheckCircle2, AlertTriangle, Info, Clock, Phone,
+  CheckCircle2, AlertTriangle, Info, Clock, Phone, Bell,
 } from "lucide-react";
 
 type Tab = "settings" | "routing" | "callerid";
@@ -229,10 +229,18 @@ function RoutingSection({
     setTimeBlocks((prev) => { const b = structuredClone(prev); b[blockIdx].tier[tierIdx].members.splice(mIdx, 1); return b; });
   };
 
+  const updateTierRings = (blockIdx: number, tierIdx: number, rings: number) => {
+    setTimeBlocks((prev) => {
+      const b = structuredClone(prev);
+      b[blockIdx].tier[tierIdx].rings = rings;
+      return b;
+    });
+  };
+
   const addTier = (blockIdx: number) => {
     setTimeBlocks((prev) => {
       const b = structuredClone(prev);
-      b[blockIdx].tier.push({ id: b[blockIdx].tier.length * -1 - 1, orderBy: b[blockIdx].tier.length + 1, status: "A", members: [] });
+      b[blockIdx].tier.push({ id: b[blockIdx].tier.length * -1 - 1, orderBy: b[blockIdx].tier.length + 1, status: "A", rings: 5, members: [] });
       return b;
     });
   };
@@ -282,7 +290,26 @@ function RoutingSection({
               {block.tier.map((tier, tierIdx) => (
                 <div key={tier.id} className="bg-gray-50/60 rounded-lg p-4 border border-gray-100">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Tier {tierIdx + 1}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Tier {tierIdx + 1}</span>
+                      {/* Rings before escalating */}
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white border border-[#dadce0] rounded-full shadow-sm">
+                        <Bell className="w-3 h-3 text-[#1a73e8] shrink-0" />
+                        <select
+                          value={tier.rings ?? 5}
+                          onChange={(e) => updateTierRings(blockIdx, tierIdx, Number(e.target.value))}
+                          className="text-xs font-medium text-gray-700 bg-transparent border-none outline-none cursor-pointer pr-1"
+                          title="Rings before moving to next tier"
+                        >
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+                            <option key={n} value={n}>{n} ring{n !== 1 ? "s" : ""}</option>
+                          ))}
+                        </select>
+                        {tierIdx < block.tier.length - 1 && (
+                          <span className="text-[10px] text-gray-400 font-medium">then next tier</span>
+                        )}
+                      </div>
+                    </div>
                     {block.tier.length > 1 && (
                       <button onClick={() => removeTier(blockIdx, tierIdx)} className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50">
                         <Trash2 className="w-3.5 h-3.5" />
