@@ -776,10 +776,13 @@ ${usersRows || "| — | — | — |"}
 interface StageWidgetsProps {
   onUserMessages: (msgs: string[]) => void;
   onApply: () => void;
+  /** Explicit stage to render — defaults to context stage if omitted. */
+  currentStage?: string;
 }
 
-export function StageWidget({ onUserMessages, onApply }: StageWidgetsProps) {
-  const { stage } = useConcierge();
+export function StageWidget({ onUserMessages, onApply, currentStage }: StageWidgetsProps) {
+  const { stage: contextStage } = useConcierge();
+  const stage = currentStage ?? contextStage;
 
   switch (stage) {
     case "welcome_scrape":

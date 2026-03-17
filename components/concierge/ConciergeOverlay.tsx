@@ -61,9 +61,12 @@ export function ConciergeOverlay() {
   // API message history sent to Claude
   const [apiMessages, setApiMessages] = useState<ApiMessage[]>([]);
 
-  const [input, setInput]         = useState("");
-  const [isRunning, setIsRunning] = useState(false);
-  const [lastStage, setLastStage] = useState<ConciergeStage | null>(null);
+  const [input, setInput]           = useState("");
+  const [isRunning, setIsRunning]   = useState(false);
+  const [lastStage, setLastStage]   = useState<ConciergeStage | null>(null);
+  // widgetStage only advances once the AI has finished responding,
+  // so the widget never swaps in while the AI is mid-sentence.
+  const [widgetStage, setWidgetStage] = useState<ConciergeStage>(stage);
 
   const bottomRef   = useRef<HTMLDivElement>(null);
   const inputRef    = useRef<HTMLInputElement>(null);
@@ -324,6 +327,8 @@ export function ConciergeOverlay() {
       const finalMessages = await driveLoop(nextMessages, bubbleId, usedStage, config);
       setApiMessages(finalMessages);
       setIsRunning(false);
+      // Now that the AI is done, let the widget catch up to the current stage
+      setWidgetStage(stage);
       setTimeout(() => inputRef.current?.focus(), 50);
     },
     [isRunning, apiMessages, stage, config, driveLoop]
@@ -446,12 +451,12 @@ export function ConciergeOverlay() {
                 return <MessageBubble key={msg.id} message={msg} />;
               })}
 
-              {/* Stage widget — visible alongside the conversation */}
-              {!isDone && (
+              {/* Stage widget — only shown after the AI finishes its current response */}
+              {!isDone && !isRunning && (
                 <div className="mt-1">
                   <StageWidget
+                    currentStage={widgetStage}
                     onUserMessages={(msgs) => {
-                      // When a widget submits data, inject it as a user message into the AI
                       const text = Array.isArray(msgs) ? msgs.join(" · ") : String(msgs);
                       sendMessage(text);
                     }}
