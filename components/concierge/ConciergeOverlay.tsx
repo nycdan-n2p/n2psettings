@@ -155,6 +155,16 @@ export function ConciergeOverlay() {
     [advance, updateConfig]
   );
 
+  // ── handleApplySuccess — defined before driveLoop so it can be referenced ───
+  const handleApplySuccess = useCallback(() => {
+    setTransitioning(true);
+    setTimeout(() => {
+      setTransitioning(false);
+      close();
+      openAssistant();
+    }, 700);
+  }, [setTransitioning, close, openAssistant]);
+
   // ── Agentic loop ─────────────────────────────────────────────────────────────
   const driveLoop = useCallback(
     async (
@@ -295,18 +305,8 @@ export function ConciergeOverlay() {
       }
       return messages;
     },
-    [executeTool]
+    [executeTool, handleApplySuccess]
   );
-
-  // ── handleApplySuccess — defined before sendMessage to avoid reference issues
-  const handleApplySuccess = useCallback(() => {
-    setTransitioning(true);
-    setTimeout(() => {
-      setTransitioning(false);
-      close();
-      openAssistant();
-    }, 700);
-  }, [setTransitioning, close, openAssistant]);
 
   // ── Core send — uses refs for guard so there is NEVER a stale-closure race ──
   const sendMessage = useCallback(

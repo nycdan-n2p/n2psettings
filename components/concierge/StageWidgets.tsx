@@ -281,7 +281,7 @@ function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => void })
 // ── 4. User Ingestion ─────────────────────────────────────────────────────────
 
 function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[]) => void }) {
-  const { config, updateConfig, advance } = useConcierge();
+  const { config, updateConfig } = useConcierge();
   const [mode, setMode]             = useState<"choose" | "manual" | "csv" | "confirm">("choose");
   const [users, setUsers]           = useState<OnboardingUser[]>(config.users.length ? config.users : []);
   const [newFirst, setNewFirst]     = useState("");
