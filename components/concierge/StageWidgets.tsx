@@ -240,7 +240,11 @@ function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => void })
   const [selected, setSelected] = useState<Set<string>>(new Set(phones));
 
   const toggle = (p: string) =>
-    setSelected((s) => { const n = new Set(s); n.has(p) ? n.delete(p) : n.add(p); return n; });
+    setSelected((s) => {
+      const n = new Set(s);
+      if (n.has(p)) { n.delete(p); } else { n.add(p); }
+      return n;
+    });
 
   const handleContinue = () => {
     const numbers = Array.from(selected);

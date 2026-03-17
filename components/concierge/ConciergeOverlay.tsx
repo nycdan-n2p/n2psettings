@@ -12,7 +12,7 @@ import {
   applyConfiguration,
 } from "@/lib/api/concierge-backend";
 import { ProgressBar } from "./ProgressBar";
-import { MessageList, type Message } from "./MessageBubble";
+import { MessageBubble, type Message } from "./MessageBubble";
 import { StageWidget } from "./StageWidgets";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -52,7 +52,7 @@ function newId() { return `msg-${++msgCounter}-${Date.now()}`; }
 export function ConciergeOverlay() {
   const {
     isOpen, isTransitioning, stage, config,
-    close, reset, setTransitioning, advance, updateConfig, setStage,
+    close, reset, setTransitioning, advance, updateConfig,
   } = useConcierge();
   const { open: openAssistant } = useAssistant();
 
@@ -287,6 +287,7 @@ export function ConciergeOverlay() {
       }
       return messages;
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [executeTool]
   );
 
@@ -442,7 +443,6 @@ export function ConciergeOverlay() {
                   );
                 }
                 // Regular bubble
-                const { MessageBubble } = require("./MessageBubble");
                 return <MessageBubble key={msg.id} message={msg} />;
               })}
 
