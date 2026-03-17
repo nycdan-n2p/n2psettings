@@ -12,7 +12,7 @@ export interface ScrapedWebsiteData {
   companyName?: string;
 }
 
-// ── Mock delay helper ─────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function delay(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -20,53 +20,26 @@ function delay(ms: number) {
 
 // ── researchWebsite ──────────────────────────────────────────────────────────
 //
-// Attempts a real fetch to /api/research-website (stub). Falls back to a
-// realistic mock so the UI is always exercisable during development.
+// Calls the real /api/research-website route which fetches the site and uses
+// Claude to extract location, timezone, hours, phones, and address.
+// Throws on failure so the caller (the Concierge AI) can surface the error.
 
 export async function researchWebsite(url: string): Promise<ScrapedWebsiteData> {
-  try {
-    const res = await fetch("/api/research-website", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url }),
-      signal: AbortSignal.timeout(8000),
-    });
-    if (res.ok) {
-      return (await res.json()) as ScrapedWebsiteData;
-    }
-  } catch {
-    // fall through to mock
+  const res = await fetch("/api/research-website", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url }),
+    // Allow up to 25s — site fetch + Claude extraction
+    signal: AbortSignal.timeout(25_000),
+  });
+
+  const json = await res.json();
+
+  if (!res.ok) {
+    throw new Error(json.error ?? `research-website failed with HTTP ${res.status}`);
   }
 
-  // Deterministic mock — derive plausible data from the URL so each call
-  // feels contextual rather than identical.
-  await delay(1800);
-
-  const domain = (() => {
-    try { return new URL(url.startsWith("http") ? url : `https://${url}`).hostname.replace("www.", ""); }
-    catch { return "company.com"; }
-  })();
-
-  const [namePart] = domain.split(".");
-  const companyName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
-
-  return {
-    location:    "New York, NY",
-    timezone:    "EST",
-    timezoneIana:"America/New_York",
-    hours: {
-      Monday:    "9:00 AM – 5:00 PM",
-      Tuesday:   "9:00 AM – 5:00 PM",
-      Wednesday: "9:00 AM – 5:00 PM",
-      Thursday:  "9:00 AM – 5:00 PM",
-      Friday:    "9:00 AM – 5:00 PM",
-      Saturday:  "Closed",
-      Sunday:    "Closed",
-    },
-    phones:      ["+12125550100", "+12125550101"],
-    address:     "350 Fifth Ave, New York, NY 10118",
-    companyName,
-  };
+  return json as ScrapedWebsiteData;
 }
 
 // ── parseCSV ─────────────────────────────────────────────────────────────────
