@@ -14,11 +14,9 @@ import {
   type ConciergeStage,
 } from "@/contexts/ConciergeContext";
 import {
-  researchWebsite,
   parseCSV,
   checkLicensing,
   applyConfiguration,
-  type ScrapedWebsiteData,
 } from "@/lib/api/concierge-backend";
 
 // ── Shared ────────────────────────────────────────────────────────────────────
@@ -46,37 +44,17 @@ function CardShell({ children, className = "" }: { children: React.ReactNode; cl
 // ── 1. Welcome / Scrape ───────────────────────────────────────────────────────
 
 function WelcomeScrapeWidget({ onMessages }: { onMessages: (msgs: string[]) => void }) {
-  const { updateConfig, advance, config } = useConcierge();
-  const [name, setName]         = useState(config.name);
-  const [url, setUrl]           = useState(config.websiteUrl);
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState("");
+  const { config } = useConcierge();
+  const [name, setName] = useState(config.name);
+  const [url, setUrl]   = useState(config.websiteUrl);
+  const [error, setError] = useState("");
 
-  const handleSubmit = async () => {
+  // Widget is just a structured input helper.
+  // The AI handles research_website → update_config → advance_stage.
+  const handleSubmit = () => {
     if (!name.trim() || !url.trim()) { setError("Please enter both your name and website."); return; }
     setError("");
-    setLoading(true);
     onMessages([`${name.trim()} · ${url.trim()}`]);
-    try {
-      const data: ScrapedWebsiteData = await researchWebsite(url.trim());
-      updateConfig({
-        name: name.trim(),
-        companyName: data.companyName ?? name.trim(),
-        websiteUrl: url.trim(),
-        scraped: {
-          location:  data.location,
-          timezone:  data.timezone,
-          hours:     data.hours,
-          phones:    data.phones,
-          address:   data.address,
-        },
-      });
-      advance();
-    } catch {
-      setError("Couldn't reach that website. Please try again.");
-    } finally {
-      setLoading(false);
-    }
   };
 
   return (
@@ -113,11 +91,11 @@ function WelcomeScrapeWidget({ onMessages }: { onMessages: (msgs: string[]) => v
         )}
         <button
           onClick={handleSubmit}
-          disabled={loading || !name.trim() || !url.trim()}
+          disabled={!name.trim() || !url.trim()}
           className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#1a73e8] text-white text-sm font-medium rounded-lg hover:bg-[#1557b0] disabled:opacity-50 transition-colors"
         >
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
-          {loading ? "Researching your website…" : "Let's Go"}
+          <ArrowRight className="w-4 h-4" />
+          Let&apos;s Go
         </button>
       </div>
     </CardShell>
@@ -326,13 +304,16 @@ function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[]) => v
     setUsers(parsed);
     setCsvLoading(false);
     setMode("confirm");
-    onMessages([`Uploaded CSV: ${parsed.length} users`]);
   };
 
   const handleConfirm = () => {
+    // Persist locally so the AI receives the latest users in its config snapshot
     updateConfig({ users });
-    onMessages([`${users.length} user${users.length !== 1 ? "s" : ""} added`]);
-    advance();
+    // Send rich message so AI can save + advance without asking again
+    const list = users.map((u) =>
+      `${u.firstName} ${u.lastName} <${u.email}>${u.department ? ` [${u.department}]` : ""}`
+    ).join("; ");
+    onMessages([`[form] ${users.length} user${users.length !== 1 ? "s" : ""} confirmed: ${list}. Please call update_config with these users then advance_stage.`]);
   };
 
   if (mode === "choose") {

@@ -150,15 +150,18 @@ function buildSystemPrompt(
     welcome_scrape: `You are at the WELCOME stage. Your goal: learn the admin's name and company website URL.
 - Greet warmly and introduce yourself briefly.
 - Ask for their name AND company website in the same message.
-- As SOON as you have the URL, call research_website(url) immediately — do not ask for timezone, location, or hours; scrape them.
-- After research_website returns, call update_config with the scraped data, then call advance_stage.`,
+- The user may type "Name · URL" or just a URL — extract the URL from whatever they send.
+- As SOON as you have the URL, call research_website(url) immediately. Do NOT ask about timezone, location, or hours — scrape them.
+- If config already has scraped data (scraped.timezone or scraped.phones populated), skip scraping — just call advance_stage.
+- After research_website returns, call update_config({ name, websiteUrl, companyName, scraped: {location,timezone,hours,phones,address} }), then call advance_stage.`,
 
     verification_holidays: `You are at the VERIFY & HOLIDAYS stage. You have already scraped the website.
+- IMPORTANT: If config.name is already set, do NOT ask for the name again. You already have it.
 - Proactively present what you found (location, timezone, hours, phones) in a markdown table.
-- Frame it as "I found X — does this look right?" rather than asking open questions.
-- Allow the user to correct any field inline.
-- Ask ONE question: "Should I load standard public holidays into the schedule?"
-- Once confirmed (or declined), call update_config with any edits + holidays intent, then call advance_stage.`,
+- Frame it as "Here's what I found for [company] — does everything look right?" rather than asking open questions.
+- Allow the user to correct any field inline. Call update_config with any corrections.
+- Ask ONE question: "Should I load standard US public holidays into the schedule?"
+- Once confirmed (or declined), call update_config with holidays intent, then call advance_stage.`,
 
     porting: `You are at the PORTING stage. Phone numbers found: ${JSON.stringify((config as { scraped?: { phones?: unknown[] } })?.scraped?.phones ?? [])}.
 - List the discovered phone numbers and ask which ones to port.
@@ -166,10 +169,11 @@ function buildSystemPrompt(
 - Once the user selects numbers (or skips), call update_config with portingQueue, then call advance_stage.`,
 
     user_ingestion: `You are at the USER INGESTION stage.
-- Explain the two options: type names in chat one by one, or use the CSV upload button.
-- If the user types names/emails, collect them and call update_config with users array incrementally.
-- When the user says they're done adding users (or confirms a CSV), call advance_stage.
-- The UI also has a manual form widget — mention it as an option.`,
+- Introduce the step: users can type names/emails in chat OR use the form widget below.
+- If the user types a name/email pair, call update_config({ users: [...existing, newUser] }) immediately.
+- IMPORTANT: If you receive a message starting with "[form]", the widget has ALREADY saved the data.
+  Extract the user list from the message text, call update_config({ users: [...] }) with that exact data, then call advance_stage immediately. Do NOT ask for details again.
+- When the user says they're done (or after processing a [form] message), call advance_stage.`,
 
     architecture_hardware: `You are at the ARCHITECTURE stage. Users collected: ${JSON.stringify((config as { users?: unknown[] })?.users ?? [])}.
 - Ask what departments the company has (Sales, Support, etc.).
