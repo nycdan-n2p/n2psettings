@@ -295,11 +295,15 @@ export function useConciergeAgent() {
         let response: ApiResponse;
         try {
           const truncated = truncateMessages(msgs);
+          const agentToken = getAccessToken();
           const res = await withRetry(
             () =>
               fetch("/api/concierge-agent", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                  "Content-Type": "application/json",
+                  ...(agentToken ? { Authorization: `Bearer ${agentToken}` } : {}),
+                },
                 body: JSON.stringify({
                   messages: truncated,
                   stage: loopState.stage,
