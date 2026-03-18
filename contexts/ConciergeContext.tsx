@@ -89,6 +89,7 @@ export interface WelcomeMenuConfig {
   enabled: boolean;
   greetingText: string;
   menuOptions: MenuOption[];
+  configured?: boolean;
 }
 
 export interface AfterHoursConfig {

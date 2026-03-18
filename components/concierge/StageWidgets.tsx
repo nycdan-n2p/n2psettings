@@ -913,10 +913,16 @@ const STRATEGY_OPTIONS: { value: QueueStrategy; label: string }[] = [
 
 const DEST_TYPES = ["department", "ring_group", "voicemail", "directory", "user"] as const;
 
+function deriveRoutingStep(config: { welcomeMenu: { configured?: boolean }; routingConfig: { groupName: string } }): RoutingStep {
+  if (config.routingConfig.groupName) return "after_hours";
+  if (config.welcomeMenu.configured) return "routing_type";
+  return "welcome_menu";
+}
+
 function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[]) => void }) {
   const { config, updateConfig } = useConcierge();
 
-  const [step, setStep] = useState<RoutingStep>("welcome_menu");
+  const [step, setStep] = useState<RoutingStep>(() => deriveRoutingStep(config));
 
   // Welcome menu state
   const [menuEnabled, setMenuEnabled] = useState(config.welcomeMenu.enabled);
@@ -987,6 +993,7 @@ function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[]) => voi
       enabled: menuEnabled,
       greetingText: menuEnabled ? greetingText : "",
       menuOptions: menuEnabled ? menuOptions.filter((o) => o.destinationName.trim()) : [],
+      configured: true,
     };
     updateConfig({ welcomeMenu: menu });
     const summary = menuEnabled
