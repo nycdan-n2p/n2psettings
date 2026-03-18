@@ -191,25 +191,40 @@ function getPrimaryWorkHours(
 //
 // Submits the complete onboarding payload to the backend via real API calls.
 // Operations in order:
+//   0. Auth preflight — fail fast if the token is invalid
 //   1. Create each user (auto-assign extension)
 //   2. Create each department
 //   3. Assign users to their departments
 //   4a. ring_groups: create ring group + set members + build call flow
 //   4b. call_queues: create call queue + set agents
-//
-// Returns { success, steps, error? } — individual step failures are soft errors
-// so we report them without aborting the whole process.
 
 export async function applyConfiguration(
   payload: OnboardingData,
-  token: string
-): Promise<{ success: boolean; error?: string; steps: ApplyStep[] }> {
+  token: string,
+  onStep?: (step: ApplyStep) => void   // live progress callback for the UI
+): Promise<{ success: boolean; error?: string; steps: ApplyStep[]; okCount: number; warnCount: number }> {
   const steps: ApplyStep[] = [];
+  let okCount = 0;
+  let warnCount = 0;
+
+  function push(step: ApplyStep) {
+    steps.push(step);
+    if (step.status === "ok")   okCount++;
+    if (step.status === "warn") warnCount++;
+    onStep?.(step);
+    // Always log to console so Vercel logs capture every outcome
+    if (step.status === "ok") {
+      console.info(`[Concierge apply] ✓ ${step.label}`);
+    } else if (step.status === "warn") {
+      console.error(`[Concierge apply] ✗ ${step.label}: ${step.detail ?? "(no detail)"}`);
+    }
+  }
 
   async function n2p(
     tool: string,
     input: Record<string, unknown>
   ): Promise<Record<string, unknown>> {
+    console.info(`[Concierge apply] → ${tool}`, JSON.stringify(input).slice(0, 200));
     const res = await fetch("/api/n2p-tools", {
       method: "POST",
       headers: {
@@ -219,26 +234,40 @@ export async function applyConfiguration(
       body: JSON.stringify({ tool, input }),
     });
     const json = await res.json();
-    if (!res.ok) throw new Error(json.error ?? `${tool} failed (${res.status})`);
+    if (!res.ok) {
+      const errMsg = json.error ?? `${tool} failed (HTTP ${res.status})`;
+      console.error(`[Concierge apply] ✗ ${tool} HTTP ${res.status}:`, JSON.stringify(json).slice(0, 300));
+      throw new Error(errMsg);
+    }
+    console.info(`[Concierge apply] ← ${tool} ok:`, JSON.stringify(json.data ?? json).slice(0, 200));
     return (json.data ?? json) as Record<string, unknown>;
   }
 
   try {
+    // ── 0. Auth preflight ─────────────────────────────────────────────────────
+    // This call will fail with a 401 if the token is invalid or missing account_id.
+    // We let the error propagate so the outer catch returns success: false.
+    console.info("[Concierge apply] Starting — preflight account check");
+    await n2p("get_account_summary", {});
+    push({ label: "Account connection verified", status: "ok" });
+
     // ── 1. Create users ───────────────────────────────────────────────────────
     const userIds: number[] = [];
     const emailToUserId = new Map<string, number>();
 
     if (payload.users.length === 0) {
-      steps.push({ label: "Users", status: "skip", detail: "No users were added during onboarding" });
+      push({ label: "Users", status: "skip", detail: "No users were added during onboarding" });
     } else {
-      // Fetch starting extension once
-      let nextExt = 100;
+      let nextExt = 200;
       try {
         const extData = await n2p("get_next_extension", {});
-        const parsed = parseInt(String(extData.nextExtension ?? "100"), 10);
-        if (!isNaN(parsed)) nextExt = parsed;
-      } catch { /* use default 100 */ }
+        const parsed = parseInt(String(extData.nextExtension ?? "200"), 10);
+        if (!isNaN(parsed) && parsed > 0) nextExt = parsed;
+      } catch (e) {
+        console.warn("[Concierge apply] get_next_extension failed, using 200:", e);
+      }
 
+      let allUsersFailed = true;
       for (const user of payload.users) {
         try {
           const created = await n2p("create_user", {
@@ -251,13 +280,20 @@ export async function applyConfiguration(
           if (userId) {
             userIds.push(userId);
             emailToUserId.set(user.email, userId);
-            steps.push({ label: `User: ${user.firstName} ${user.lastName}`, status: "ok" });
+            push({ label: `Created user: ${user.firstName} ${user.lastName} (ext ${nextExt - 1})`, status: "ok" });
+            allUsersFailed = false;
           } else {
-            steps.push({ label: `User: ${user.firstName} ${user.lastName}`, status: "warn", detail: "Created but no ID returned" });
+            push({ label: `User: ${user.firstName} ${user.lastName}`, status: "warn", detail: "API returned no user ID — user may already exist" });
           }
         } catch (e) {
-          steps.push({ label: `User: ${user.firstName} ${user.lastName}`, status: "warn", detail: e instanceof Error ? e.message : String(e) });
+          push({ label: `User: ${user.firstName} ${user.lastName}`, status: "warn", detail: e instanceof Error ? e.message : String(e) });
         }
+      }
+
+      // If every single user creation failed, something is fundamentally wrong
+      if (allUsersFailed && payload.users.length > 0) {
+        const lastErr = steps.filter((s) => s.status === "warn").pop()?.detail ?? "Unknown error";
+        return { success: false, error: `Could not create any users. Last error: ${lastErr}`, steps, okCount, warnCount };
       }
     }
 
@@ -270,10 +306,12 @@ export async function applyConfiguration(
         const deptId = Number(created.deptId ?? created.dept_id ?? created.id ?? 0);
         if (deptId) {
           deptNameToId.set(deptName, deptId);
-          steps.push({ label: `Department: ${deptName}`, status: "ok" });
+          push({ label: `Created department: ${deptName}`, status: "ok" });
+        } else {
+          push({ label: `Department: ${deptName}`, status: "warn", detail: "No dept ID returned" });
         }
       } catch (e) {
-        steps.push({ label: `Department: ${deptName}`, status: "warn", detail: e instanceof Error ? e.message : String(e) });
+        push({ label: `Department: ${deptName}`, status: "warn", detail: e instanceof Error ? e.message : String(e) });
       }
     }
 
@@ -282,40 +320,40 @@ export async function applyConfiguration(
       if (!user.department) continue;
       const userId = emailToUserId.get(user.email);
       const deptId = deptNameToId.get(user.department);
-      if (!userId || !deptId) continue;
+      if (!userId || !deptId) {
+        push({ label: `Assign ${user.firstName} → ${user.department}`, status: "warn", detail: "Missing userId or deptId" });
+        continue;
+      }
       try {
         await n2p("assign_user_to_department", { userId, deptId });
-        steps.push({ label: `${user.firstName} ${user.lastName} → ${user.department}`, status: "ok" });
+        push({ label: `${user.firstName} ${user.lastName} → ${user.department}`, status: "ok" });
       } catch (e) {
-        steps.push({ label: `Assign ${user.firstName} → ${user.department}`, status: "warn", detail: e instanceof Error ? e.message : String(e) });
+        push({ label: `Assign ${user.firstName} → ${user.department}`, status: "warn", detail: e instanceof Error ? e.message : String(e) });
       }
     }
 
     // ── 4. Ring group or call queue + call flow ───────────────────────────────
-    const groupName = `${payload.companyName || "Main"} Team`;
+    const groupName = `${(payload.companyName || "Main").trim()} Team`;
 
     if (payload.routingType === "ring_groups") {
-      // Create ring group
       let rgId = "";
       try {
         const rg = await n2p("create_ring_group", { name: groupName });
         rgId = String(rg.id ?? rg.ringGroupId ?? "");
-        steps.push({ label: `Ring Group: ${groupName}`, status: "ok" });
+        push({ label: `Created ring group: ${groupName}`, status: "ok", detail: `ID: ${rgId}` });
       } catch (e) {
-        steps.push({ label: `Ring Group: ${groupName}`, status: "warn", detail: e instanceof Error ? e.message : String(e) });
+        push({ label: `Ring Group: ${groupName}`, status: "warn", detail: e instanceof Error ? e.message : String(e) });
       }
 
-      // Add all users
       if (rgId && userIds.length > 0) {
         try {
           await n2p("set_ring_group_members", { ringGroupId: rgId, userIds });
-          steps.push({ label: `${userIds.length} member(s) added to ring group`, status: "ok" });
+          push({ label: `Added ${userIds.length} member(s) to ring group`, status: "ok" });
         } catch (e) {
-          steps.push({ label: "Set ring group members", status: "warn", detail: e instanceof Error ? e.message : String(e) });
+          push({ label: "Set ring group members", status: "warn", detail: e instanceof Error ? e.message : String(e) });
         }
       }
 
-      // Build call flow (schedule + time-based routing)
       if (rgId) {
         const workHrs = getPrimaryWorkHours(payload.scraped.hours);
         const mainNumber = payload.portingQueue.numbers[0] ?? payload.scraped.phones[0];
@@ -331,37 +369,39 @@ export async function applyConfiguration(
             },
             noAnswer: { type: "voicemail" },
           });
-          const msg = String(cf.message ?? "");
-          steps.push({ label: "Call flow routing", status: "ok", detail: msg || undefined });
+          const msg = String((cf as { message?: string }).message ?? "");
+          push({ label: "Built call flow routing", status: "ok", detail: msg || undefined });
         } catch (e) {
-          steps.push({ label: "Call flow routing", status: "warn", detail: e instanceof Error ? e.message : String(e) });
+          push({ label: "Call flow routing", status: "warn", detail: e instanceof Error ? e.message : String(e) });
         }
       }
     } else {
-      // Call queue path
       let queueId = "";
       try {
         const q = await n2p("create_call_queue", { name: groupName });
         queueId = String(q.id ?? q.queueId ?? "");
-        steps.push({ label: `Call Queue: ${groupName}`, status: "ok" });
+        push({ label: `Created call queue: ${groupName}`, status: "ok", detail: `ID: ${queueId}` });
       } catch (e) {
-        steps.push({ label: `Call Queue: ${groupName}`, status: "warn", detail: e instanceof Error ? e.message : String(e) });
+        push({ label: `Call Queue: ${groupName}`, status: "warn", detail: e instanceof Error ? e.message : String(e) });
       }
 
       if (queueId && userIds.length > 0) {
         try {
           await n2p("set_call_queue_agents", { queueId, userIds });
-          steps.push({ label: `${userIds.length} agent(s) added to call queue`, status: "ok" });
+          push({ label: `Added ${userIds.length} agent(s) to call queue`, status: "ok" });
         } catch (e) {
-          steps.push({ label: "Set call queue agents", status: "warn", detail: e instanceof Error ? e.message : String(e) });
+          push({ label: "Set call queue agents", status: "warn", detail: e instanceof Error ? e.message : String(e) });
         }
       }
     }
 
-    return { success: true, steps };
+    console.info(`[Concierge apply] Done — ${okCount} ok, ${warnCount} warnings`);
+    return { success: true, steps, okCount, warnCount };
+
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Configuration failed";
-    return { success: false, error: msg, steps };
+    console.error("[Concierge apply] Fatal error:", msg);
+    return { success: false, error: msg, steps, okCount, warnCount };
   }
 }
 

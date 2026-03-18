@@ -219,14 +219,15 @@ BEFORE presenting the blueprint, check the config for completeness:
 - If config.routingType is missing: ask which routing type to use before proceeding.
 
 If everything looks reasonable:
-- Present a comprehensive markdown summary table of everything that will be created (users, departments, ring group/call queue, schedule, call flow).
+- Present a concise markdown summary table of what will be created.
 - Ask: "Ready for me to build this out?"
 - When they confirm, call apply_configuration({ confirm: true }).
-- After apply_configuration returns, report what was created (the steps array in the result).
-  - For each step with status "ok": mention it was created.
-  - For each step with status "warn": mention it needs attention.
-- After reporting, call advance_stage.
-- If anything looks wrong to the user BEFORE confirming, help them navigate back to fix it.`,
+- After apply_configuration returns:
+  - The UI already showed a live build log — do NOT repeat all the individual steps.
+  - If result.success is true: congratulate them briefly. Mention okCount items created and warnCount warnings if any.
+  - If result.success is false: explain the error (result.error) clearly and suggest they check their account connection.
+  - Then call advance_stage.
+- If anything looks wrong BEFORE confirming, help them navigate back to fix it.`,
 
     done: `Onboarding is complete. Congratulate the user warmly.
 - Give a short summary of what was built.

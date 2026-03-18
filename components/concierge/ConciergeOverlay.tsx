@@ -136,7 +136,41 @@ export function ConciergeOverlay() {
         if (!toolInput.confirm) return { result: { success: false, error: "User did not confirm." }, loopState };
         const applyToken = getAccessToken();
         if (!applyToken) return { result: { success: false, error: "Not authenticated — please log in again." }, loopState };
-        const result = await applyConfiguration(configRef.current, applyToken);
+
+        // Show a live build-log bubble that updates as each step completes
+        const buildBubbleId = newId();
+        const buildLines: string[] = [];
+        setDisplayMessages((prev) => [
+          ...prev,
+          { id: buildBubbleId, role: "concierge" as const, text: "🔧 **Building your system…**\n\n", isTyping: false },
+        ]);
+
+        const result = await applyConfiguration(configRef.current, applyToken, (step) => {
+          const icon = step.status === "ok" ? "✅" : step.status === "warn" ? "⚠️" : "⏭️";
+          const line = `${icon} ${step.label}${step.detail ? ` — *${step.detail}*` : ""}`;
+          buildLines.push(line);
+          const body = buildLines.join("\n");
+          setDisplayMessages((prev) =>
+            prev.map((m) =>
+              m.id === buildBubbleId
+                ? { ...m, text: `🔧 **Building your system…**\n\n${body}` }
+                : m
+            )
+          );
+        });
+
+        // Finalize the bubble with a summary
+        const summary = result.success
+          ? `✅ **Done!** ${result.okCount} item${result.okCount !== 1 ? "s" : ""} created${result.warnCount ? `, ${result.warnCount} warning${result.warnCount !== 1 ? "s" : ""}` : ""}.`
+          : `❌ **Build failed:** ${result.error ?? "Unknown error"}`;
+        setDisplayMessages((prev) =>
+          prev.map((m) =>
+            m.id === buildBubbleId
+              ? { ...m, text: `🔧 **Build results**\n\n${buildLines.join("\n")}\n\n${summary}` }
+              : m
+          )
+        );
+
         return { result, loopState };
       }
 
