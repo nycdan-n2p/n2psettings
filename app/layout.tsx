@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
-import { NextIntlClientProvider } from "next-intl";
-import { getLocale, getMessages } from "next-intl/server";
-import { LocaleProvider } from "@/contexts/LocaleContext";
-import { localeLangTags, type Locale } from "@/i18n/config";
+import { IntlProvider } from "@/components/providers/IntlProvider";
 
 export const metadata: Metadata = {
   title: "net2phone Settings",
@@ -16,22 +13,19 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const locale = (await getLocale()) as Locale;
-  const messages = await getMessages();
-
   return (
-    <html lang={localeLangTags[locale] ?? "en"}>
+    // lang defaults to "en" on the server; IntlProvider updates it client-side
+    // once it reads the NEXT_LOCALE cookie.
+    <html lang="en">
       <body className="antialiased">
-        <NextIntlClientProvider locale={locale} messages={messages}>
-          <LocaleProvider locale={locale}>
-            <Providers>{children}</Providers>
-          </LocaleProvider>
-        </NextIntlClientProvider>
+        <IntlProvider>
+          <Providers>{children}</Providers>
+        </IntlProvider>
       </body>
     </html>
   );

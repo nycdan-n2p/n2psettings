@@ -28,10 +28,9 @@ export function LocaleProvider({
 
   const setLocale = useCallback((newLocale: Locale) => {
     setLocaleState(newLocale);
-    // Persist to cookie so next-intl picks it up on the next server render.
+    // Persist to cookie so IntlProvider reads it on next render/reload.
     document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
-    // Full reload so the root layout (app/layout.tsx) re-fetches with the new cookie.
-    // router.refresh() does not reliably cause shared layout segments to re-render.
+    // Full reload so IntlProvider re-reads the cookie and switches message bundle.
     window.location.reload();
   }, []);
 
