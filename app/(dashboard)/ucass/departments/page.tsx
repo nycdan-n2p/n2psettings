@@ -511,7 +511,7 @@ function DepartmentEditModal({
       (pn.routeType === "department" || pn.routeType === "Department")
   );
   const lineNumbers = deptNumbers.length > 0
-    ? deptNumbers.map((pn) => pn.phoneNumber)
+    ? deptNumbers.map((pn) => pn.phoneNumber ?? pn.number ?? "").filter(Boolean)
     : (department.lineNumber ?? []);
 
   const handleSaveName = () => {

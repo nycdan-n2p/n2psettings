@@ -109,7 +109,9 @@ export const qk = {
 
   // Phone Numbers
   phoneNumbers: {
-    all:  (accountId: number)                           => ["phone-numbers", accountId]          as const,
+    all:    (accountId: number)              => ["phone-numbers", accountId]                       as const,
+    stats:  (accountId: number)              => ["phone-numbers", accountId, "stats"]              as const,
+    callerId: (accountId: number, num: string) => ["phone-numbers", accountId, "caller-id", num]  as const,
   },
 
   // Call Blocking
