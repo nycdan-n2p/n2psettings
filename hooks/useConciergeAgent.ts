@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import type Anthropic from "@anthropic-ai/sdk";
+import { useLocale as useNextIntlLocale } from "next-intl";
 import {
   useConcierge,
   STAGE_ORDER,
@@ -105,6 +106,7 @@ async function consumeStream(
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
 export function useConciergeAgent() {
+  const locale = useNextIntlLocale();
   const {
     isOpen, stage, config,
     close, reset: contextReset, setTransitioning,
@@ -302,6 +304,7 @@ export function useConciergeAgent() {
                   messages: truncated,
                   stage: loopState.stage,
                   config: loopState.config,
+                  locale,
                 }),
               }),
             { maxRetries: 2, shouldRetry: isRetryableNetworkError }

@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { setTokens } from "@/lib/auth";
 import { Loader } from "@/components/ui/Loader";
 
 type Mode = "password" | "token";
 
 export default function LoginPage() {
+  const t = useTranslations("login");
   const [mode, setMode] = useState<Mode>("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -41,16 +43,15 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        // If password grant isn't supported, suggest refresh token fallback
         if (
           mode === "password" &&
           typeof data.error === "string" &&
           data.error.includes("not supported")
         ) {
           setMode("token");
-          setError("Password login is not enabled — paste a refresh token below.");
+          setError(t("invalidGrant"));
         } else {
-          setError(data.error ?? "Authentication failed");
+          setError(data.error ?? t("authFailed"));
         }
         return;
       }
@@ -59,7 +60,7 @@ export default function LoginPage() {
       router.push("/");
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Request failed");
+      setError(e instanceof Error ? e.message : t("authFailed"));
     } finally {
       setLoading(false);
     }
@@ -68,13 +69,11 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f8f9fa]">
       <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-sm border border-[#dadce0]">
-        {/* Logo / title */}
         <div className="mb-6">
-          <h1 className="text-2xl font-medium text-gray-900">net2phone Settings</h1>
-          <p className="text-sm text-gray-500 mt-1">Sign in to manage your account</p>
+          <h1 className="text-2xl font-medium text-gray-900">{t("title")}</h1>
+          <p className="text-sm text-gray-500 mt-1">{t("subtitle")}</p>
         </div>
 
-        {/* Mode tabs */}
         <div className="flex border border-[#dadce0] rounded-lg p-0.5 mb-6 bg-gray-50">
           {(["password", "token"] as Mode[]).map((m) => (
             <button
@@ -87,7 +86,7 @@ export default function LoginPage() {
                   : "text-gray-500 hover:text-gray-700"
               }`}
             >
-              {m === "password" ? "Email & Password" : "Refresh Token"}
+              {m === "password" ? t("modePassword") : t("modeToken")}
             </button>
           ))}
         </div>
@@ -97,14 +96,14 @@ export default function LoginPage() {
             <>
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
+                  {t("emailLabel")}
                 </label>
                 <input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@company.com"
+                  placeholder={t("emailPlaceholder")}
                   autoComplete="email"
                   required
                   className="w-full px-3 py-2 border border-[#dadce0] rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:border-transparent"
@@ -112,7 +111,7 @@ export default function LoginPage() {
               </div>
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                  Password
+                  {t("passwordLabel")}
                 </label>
                 <input
                   id="password"
@@ -129,20 +128,18 @@ export default function LoginPage() {
           ) : (
             <div>
               <label htmlFor="token" className="block text-sm font-medium text-gray-700 mb-1">
-                Refresh Token
+                {t("tokenLabel")}
               </label>
               <textarea
                 id="token"
                 value={refreshToken}
                 onChange={(e) => setRefreshToken(e.target.value)}
-                placeholder="Paste your OAuth2 refresh token"
+                placeholder={t("tokenPlaceholder")}
                 rows={4}
                 required
                 className="w-full px-3 py-2 border border-[#dadce0] rounded-md text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:border-transparent"
               />
-              <p className="text-xs text-gray-400 mt-1">
-                Get this from your browser DevTools → Application → Local Storage → n2p_refresh_token
-              </p>
+              <p className="text-xs text-gray-400 mt-1">{t("tokenHint")}</p>
             </div>
           )}
 
@@ -160,10 +157,10 @@ export default function LoginPage() {
             {loading ? (
               <>
                 <Loader variant="button" />
-                <span>Signing in...</span>
+                <span>{t("signingIn")}</span>
               </>
             ) : (
-              "Sign in"
+              t("signInButton")
             )}
           </button>
         </form>

@@ -11,12 +11,15 @@ import {
   Bot,
   HelpCircle,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useApp } from "@/contexts/AppContext";
 import { useAssistant } from "@/contexts/AssistantContext";
 import { clearTokens } from "@/lib/auth";
 import { INTEGRATIONS } from "@/lib/config/integrations";
+import { LocaleSelector } from "@/components/ui/LocaleSelector";
 
 export function TopBar() {
+  const t = useTranslations("topbar");
   const { bootstrap } = useApp();
   const { open: openAssistant } = useAssistant();
 
@@ -28,7 +31,7 @@ export function TopBar() {
   const userName =
     bootstrap?.user?.firstName && bootstrap?.user?.lastName
       ? `${bootstrap.user.firstName} ${bootstrap.user.lastName}`
-      : bootstrap?.user?.email ?? "User";
+      : bootstrap?.user?.email ?? t("account");
 
   const unreadCount = bootstrap?.unreadVoicemailCount ?? 0;
 
@@ -37,26 +40,27 @@ export function TopBar() {
       <div className="flex items-center gap-6">
         <Link href="/products" prefetch={false} className="flex items-center gap-2 font-medium">
           <span className="text-lg font-semibold">net2phone</span>
-          <span className="text-white/80 text-sm">Settings</span>
+          <span className="text-white/80 text-sm">{t("products")}</span>
         </Link>
         <div className="hidden md:flex items-center gap-2 bg-white/20 rounded-md px-3 py-1.5 w-64">
           <Search className="w-4 h-4 text-white/80" />
           <input
             type="search"
-            placeholder="Search..."
+            placeholder={t("searchPlaceholder")}
             className="bg-transparent border-none outline-none text-sm placeholder:text-white/70 w-full"
           />
         </div>
       </div>
       <div className="flex items-center gap-2">
         <span className="text-sm text-white/90 hidden sm:block">
-          {bootstrap?.account?.company ?? "Account"}
+          {bootstrap?.account?.company ?? t("account")}
         </span>
+        <LocaleSelector />
         <button
           onClick={openAssistant}
           className="p-2 rounded-full hover:bg-white/20 transition-colors"
-          title="N2P Assistant"
-          aria-label="Open assistant"
+          title={t("assistantTitle")}
+          aria-label={t("openAssistant")}
         >
           <MessageCircle className="w-5 h-5" />
         </button>
@@ -64,7 +68,7 @@ export function TopBar() {
           href="/ucass/voicemail"
           prefetch={false}
           className="relative p-2 rounded-full hover:bg-white/20 transition-colors"
-          title="Voicemail"
+          title={t("notifications")}
         >
           <Bell className="w-5 h-5" />
           {unreadCount > 0 && (
@@ -89,7 +93,7 @@ export function TopBar() {
             </div>
             <div className="border-b border-gray-100">
               <p className="px-3 pt-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">
-                Apps & Integrations
+                Apps &amp; Integrations
               </p>
               <div className="grid grid-cols-3 gap-1 px-2 pb-2">
                 {INTEGRATIONS.map((integration) => {
@@ -122,7 +126,7 @@ export function TopBar() {
                 className="w-full flex items-center gap-2 text-sm text-gray-700 hover:bg-gray-50 -mx-2 px-2 py-1.5 rounded text-left"
               >
                 <Bot className="w-4 h-4 shrink-0" />
-                N2P Assistant
+                {t("assistantTitle")}
               </button>
               <a
                 href="https://support.net2phone.com"
@@ -131,7 +135,7 @@ export function TopBar() {
                 className="flex items-center gap-2 text-sm text-gray-700 hover:bg-gray-50 -mx-2 px-2 py-1.5 rounded"
               >
                 <HelpCircle className="w-4 h-4 shrink-0" />
-                Help and support
+                {t("helpSupport")}
               </a>
             </div>
             <div className="border-b border-gray-100 px-3 py-2 space-y-1">
@@ -157,7 +161,7 @@ export function TopBar() {
               className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100"
             >
               <LogOut className="w-4 h-4" />
-              Sign out
+              {t("logOut")}
             </button>
           </div>
         </div>

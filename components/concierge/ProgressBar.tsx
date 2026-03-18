@@ -1,7 +1,8 @@
 "use client";
 
 import { Check } from "lucide-react";
-import { STAGE_ORDER, STAGE_LABELS, type ConciergeStage } from "@/contexts/ConciergeContext";
+import { useTranslations } from "next-intl";
+import { STAGE_ORDER, type ConciergeStage } from "@/contexts/ConciergeContext";
 
 interface ProgressBarProps {
   currentStage: ConciergeStage;
@@ -10,6 +11,7 @@ interface ProgressBarProps {
 const VISIBLE_STAGES = STAGE_ORDER.filter((s) => s !== "done");
 
 export function ProgressBar({ currentStage }: ProgressBarProps) {
+  const t = useTranslations("concierge");
   const currentIdx = STAGE_ORDER.indexOf(currentStage);
 
   return (
@@ -19,7 +21,7 @@ export function ProgressBar({ currentStage }: ProgressBarProps) {
       aria-valuenow={currentIdx + 1}
       aria-valuemin={1}
       aria-valuemax={VISIBLE_STAGES.length}
-      aria-label={`Onboarding progress: step ${currentIdx + 1} of ${VISIBLE_STAGES.length}, ${STAGE_LABELS[currentStage]}`}
+      aria-label={`${t("progressLabel")}: ${currentIdx + 1} / ${VISIBLE_STAGES.length}`}
     >
       {VISIBLE_STAGES.map((stage, i) => {
         const stageIdx = STAGE_ORDER.indexOf(stage);
@@ -47,7 +49,7 @@ export function ProgressBar({ currentStage }: ProgressBarProps) {
                   isActive ? "text-[#1a73e8]" : isFuture ? "text-gray-400" : "text-gray-600"
                 }`}
               >
-                {STAGE_LABELS[stage]}
+                {t(`stages.${stage}`)}
               </span>
             </div>
 

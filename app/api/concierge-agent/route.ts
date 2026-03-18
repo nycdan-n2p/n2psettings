@@ -131,9 +131,17 @@ const TOOLS: Anthropic.Tool[] = [
 
 // ── Dynamic system prompt ─────────────────────────────────────────────────────
 
+const LOCALE_LANG: Record<string, string> = {
+  en: "English",
+  es: "Spanish",
+  "fr-CA": "French (Canadian)",
+  "pt-BR": "Portuguese (Brazilian)",
+};
+
 function buildSystemPrompt(
   stage: string,
-  config: Record<string, unknown>
+  config: Record<string, unknown>,
+  locale = "en"
 ): string {
   const stageGuide: Record<string, string> = {
     welcome_scrape: `You are at the WELCOME stage. Your goal: learn the admin's name and company website URL.
@@ -255,7 +263,12 @@ If everything looks reasonable:
 
   const currentGuide = stageGuide[stage] ?? "Continue guiding the user through the onboarding flow.";
 
+  const lang = LOCALE_LANG[locale] ?? "English";
+
   return `You are the **net2phone Setup Concierge** — an AI assistant that guides account administrators through a complete CCaaS configuration. You are conversational, concise, and proactive.
+
+## Language
+Respond ONLY in **${lang}**. All messages, tables, confirmations, and errors must be in ${lang}.
 
 ## Your mission
 Walk the admin through 8 stages of onboarding in order:
@@ -348,6 +361,7 @@ export async function POST(req: NextRequest) {
     messages: Anthropic.MessageParam[];
     stage: string;
     config: Record<string, unknown>;
+    locale?: string;
   };
 
   try {
@@ -370,7 +384,7 @@ export async function POST(req: NextRequest) {
     const stream = client.messages.stream({
       model: "claude-sonnet-4-6",
       max_tokens: 8192,
-      system: buildSystemPrompt(body.stage ?? "welcome_scrape", body.config ?? {}),
+      system: buildSystemPrompt(body.stage ?? "welcome_scrape", body.config ?? {}, body.locale ?? "en"),
       tools: TOOLS,
       messages: body.messages,
     });

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { X, Sparkles, RotateCcw, Send, Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useConcierge, STAGE_ORDER } from "@/contexts/ConciergeContext";
 import { useConciergeAgent } from "@/hooks/useConciergeAgent";
 import { ProgressBar } from "./ProgressBar";
@@ -52,6 +53,9 @@ function useFocusTrap(containerRef: React.RefObject<HTMLDivElement | null>, acti
 // ── Main overlay ──────────────────────────────────────────────────────────────
 
 export function ConciergeOverlay() {
+  const t = useTranslations("concierge");
+  const tCommon = useTranslations("common");
+
   const {
     isOpen, isTransitioning, stage, config, close,
   } = useConcierge();
@@ -117,7 +121,7 @@ export function ConciergeOverlay() {
         className="fixed z-50 inset-0 flex items-center justify-center pointer-events-none"
         role="dialog"
         aria-modal="true"
-        aria-label="Setup Concierge"
+        aria-label={t("title")}
       >
         <div
           ref={dialogRef}
@@ -142,9 +146,9 @@ export function ConciergeOverlay() {
                 <Sparkles className="w-4 h-4 text-white" />
               </div>
               <div>
-                <h2 className="text-sm font-semibold text-gray-900">Setup Concierge</h2>
+                <h2 className="text-sm font-semibold text-gray-900">{t("title")}</h2>
                 <p className="text-xs text-gray-400">
-                  Step {Math.min(stageIdx + 1, 7)} of 7
+                  {t.rich("progressLabel")} {Math.min(stageIdx + 1, 7)} / 7
                   {config.companyName ? ` \u00b7 ${config.companyName}` : ""}
                 </p>
               </div>
@@ -153,15 +157,15 @@ export function ConciergeOverlay() {
               <button
                 onClick={handleReset}
                 className="p-1.5 rounded-full hover:bg-[#f1f3f4] text-gray-400 transition-colors"
-                title="Start over"
-                aria-label="Start over"
+                title={t("reset")}
+                aria-label={t("reset")}
               >
                 <RotateCcw className="w-4 h-4" />
               </button>
               <button
                 onClick={close}
                 className="p-1.5 rounded-full hover:bg-[#f1f3f4] text-gray-400 transition-colors"
-                aria-label="Close"
+                aria-label={tCommon("close")}
               >
                 <X className="w-[18px] h-[18px]" />
               </button>
@@ -222,7 +226,7 @@ export function ConciergeOverlay() {
           {!isDone && (
             <div className="px-4 py-3 border-t border-[#e8eaed] bg-white rounded-b-2xl shrink-0 flex items-center gap-2">
               <label htmlFor="concierge-input" className="sr-only">
-                Message
+                {t("inputPlaceholder")}
               </label>
               <input
                 id="concierge-input"
@@ -235,7 +239,7 @@ export function ConciergeOverlay() {
                     handleSend();
                   }
                 }}
-                placeholder={isRunning ? "Concierge is thinking\u2026" : "Ask a question or type your answer\u2026"}
+                placeholder={isRunning ? t("thinking") : t("inputPlaceholder")}
                 disabled={isRunning}
                 className="flex-1 text-sm text-gray-900 placeholder-gray-400 bg-transparent focus:outline-none disabled:opacity-50"
                 autoFocus
@@ -243,14 +247,14 @@ export function ConciergeOverlay() {
               />
               {isRunning && (
                 <span id="concierge-status" className="sr-only">
-                  Concierge is processing your message
+                  {t("thinking")}
                 </span>
               )}
               <button
                 onClick={handleSend}
                 disabled={!input.trim() || isRunning}
                 className="w-8 h-8 rounded-full bg-[#1a73e8] text-white flex items-center justify-center hover:bg-[#1557b0] disabled:opacity-40 transition-colors shrink-0"
-                aria-label="Send message"
+                aria-label={t("send")}
               >
                 {isRunning
                   ? <Loader2 className="w-4 h-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
@@ -267,7 +271,7 @@ export function ConciergeOverlay() {
                 onClick={close}
                 className="w-full py-2.5 text-sm font-medium bg-[#1a73e8] text-white rounded-xl hover:bg-[#1557b0] transition-colors"
               >
-                Open Settings Sidekick &rarr;
+                {t("stages.done")} →
               </button>
             </div>
           )}
