@@ -150,6 +150,7 @@ export const N2P_TOOLS: Tool[] = [
   { name: "list_virtual_assistants", description: "List virtual assistants / welcome menus", inputSchema: { type: "object", properties: { account_id: { type: "number" } } } },
   { name: "get_virtual_assistant", description: "Get a virtual assistant", inputSchema: { type: "object", required: ["menu_id"], properties: { account_id: { type: "number" }, menu_id: { type: "string" } } } },
   { name: "create_virtual_assistant", description: "Create a virtual assistant", inputSchema: { type: "object", required: ["name"], properties: { account_id: { type: "number" }, name: { type: "string" }, extension: { type: "string" } } } },
+  { name: "update_virtual_assistant", description: "Update a virtual assistant's settings (business features, name, etc.)", inputSchema: { type: "object", required: ["menu_id"], properties: { account_id: { type: "number" }, menu_id: { type: "string" }, name: { type: "string" }, settings: { type: "object", properties: { allowExtensionDialing: { type: "boolean" }, playWaitMessage: { type: "boolean" }, allowBargingThrough: { type: "boolean" } } } } } },
   { name: "delete_virtual_assistant", description: "Delete a virtual assistant", inputSchema: { type: "object", required: ["menu_id"], properties: { account_id: { type: "number" }, menu_id: { type: "string" } } } },
 
   // SPECIAL EXTENSIONS
@@ -612,6 +613,17 @@ export async function executeN2PTool(
   if (name === "create_virtual_assistant") {
     const id = resolveAccountId(args, ctx);
     const res = await v1.post(`/accounts/${id}/menus`, { name: args.name, extension: args.extension });
+    return unwrap(res.data);
+  }
+  if (name === "update_virtual_assistant") {
+    const id = resolveAccountId(args, ctx);
+    const menuId = str(args, "menu_id");
+    const payload: Record<string, unknown> = {};
+    if (args.name) payload.name = args.name;
+    if (args.settings) {
+      payload.settings = args.settings;
+    }
+    const res = await v1.put(`/accounts/${id}/multiautoattendants/${menuId}`, payload);
     return unwrap(res.data);
   }
   if (name === "delete_virtual_assistant") {

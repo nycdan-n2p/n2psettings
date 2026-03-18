@@ -87,8 +87,12 @@ export interface RoutingConfig {
 
 export interface WelcomeMenuConfig {
   enabled: boolean;
+  greetingType: "tts" | "upload" | "none";
   greetingText: string;
   menuOptions: MenuOption[];
+  allowExtensionDialing: boolean;
+  playWaitMessage: boolean;
+  allowBargingThrough: boolean;
   configured?: boolean;
 }
 
@@ -162,7 +166,7 @@ export const EMPTY_CONFIG: OnboardingData = {
   licensingVerified: false,
   hasHardphones: false,
   phoneType: "softphone",
-  welcomeMenu: { enabled: false, greetingText: "", menuOptions: [] },
+  welcomeMenu: { enabled: false, greetingType: "tts", greetingText: "", menuOptions: [], allowExtensionDialing: true, playWaitMessage: true, allowBargingThrough: true },
   routingConfig: {
     groupName: "",
     tiers: [],

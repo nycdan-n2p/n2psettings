@@ -763,12 +763,24 @@ function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[]) => v
 
 // ── 5. Architecture & Hardware ────────────────────────────────────────────────
 
+type ArchStep = "departments" | "assign" | "phones" | "hardphone_details";
+
+function deriveArchStep(config: { departments: string[]; phoneType: string; hasHardphones: boolean }): ArchStep {
+  if (config.hasHardphones) return "hardphone_details";
+  if (config.phoneType && config.phoneType !== "softphone") return "phones";
+  if (config.departments.length > 0) return "assign";
+  return "departments";
+}
+
 function ArchitectureWidget({ onMessages }: { onMessages: (msgs: string[]) => void }) {
   const { config, updateConfig } = useConcierge();
-  const [deptInput, setDeptInput]       = useState("");
-  const [depts, setDepts]               = useState<string[]>(config.departments.length ? config.departments : []);
-  const [hasPhones, setHasPhones]       = useState<boolean | null>(config.hasHardphones || null);
-  const [users, setUsers]               = useState<OnboardingUser[]>(config.users);
+  const [step, setStep] = useState<ArchStep>(() => deriveArchStep(config));
+  const [deptInput, setDeptInput] = useState("");
+  const [depts, setDepts] = useState<string[]>(config.departments.length ? config.departments : []);
+  const [users, setUsers] = useState<OnboardingUser[]>(config.users);
+  const [phoneChoice, setPhoneChoice] = useState<"softphone" | "hardphone" | "both" | null>(
+    config.phoneType !== "softphone" ? config.phoneType : null
+  );
 
   const addDept = () => {
     const v = deptInput.trim();
@@ -777,22 +789,56 @@ function ArchitectureWidget({ onMessages }: { onMessages: (msgs: string[]) => vo
     setDeptInput("");
   };
 
-  const handleContinue = () => {
-    updateConfig({ departments: depts, hasHardphones: !!hasPhones, users });
-    const userSummary = users.map((u) =>
-      `${u.firstName} ${u.lastName} \u2192 ${u.department || "Unassigned"}${u.hardphoneModel ? ` (${u.hardphoneModel})` : ""}`
-    ).join("; ");
-    onMessages([`Departments: ${depts.join(", ")}. Hardphones: ${hasPhones ? "Yes" : "No"}. Users: ${userSummary}`]);
+  const handleDeptsNext = () => {
+    updateConfig({ departments: depts });
+    if (depts.length > 0 && config.users.length > 0) {
+      onMessages([`[arch] Departments: ${depts.join(", ")}`]);
+      setStep("assign");
+    } else {
+      onMessages([`[arch] Departments: ${depts.length > 0 ? depts.join(", ") : "none"}`]);
+      setStep("phones");
+    }
   };
 
-  return (
-    <CardShell>
-      <div className="space-y-4">
-        <div>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-            <Building2 className="w-3.5 h-3.5" aria-hidden="true" /> Departments
+  const handleAssignNext = () => {
+    updateConfig({ users });
+    const summary = users.map((u) => `${u.firstName} ${u.lastName} \u2192 ${u.department || "Unassigned"}`).join("; ");
+    onMessages([`[arch] User assignments: ${summary}`]);
+    setStep("phones");
+  };
+
+  const handlePhoneChoice = (choice: "softphone" | "hardphone" | "both") => {
+    setPhoneChoice(choice);
+  };
+
+  const handlePhonesNext = () => {
+    if (!phoneChoice) return;
+    const hasHW = phoneChoice === "hardphone" || phoneChoice === "both";
+    updateConfig({ hasHardphones: hasHW, phoneType: phoneChoice });
+    if (hasHW && config.users.length > 0) {
+      onMessages([`[arch] Phone type: ${phoneChoice}`]);
+      setStep("hardphone_details");
+    } else {
+      onMessages([`[arch] Departments: ${depts.join(", ") || "none"}. Phone type: ${phoneChoice}. Architecture complete.`]);
+    }
+  };
+
+  const handleHardphoneNext = () => {
+    updateConfig({ users });
+    const summary = users.filter((u) => u.hardphoneModel).map((u) => `${u.firstName}: ${u.hardphoneModel}`).join(", ");
+    onMessages([`[arch] Hardphone details: ${summary || "none specified"}. Architecture complete.`]);
+  };
+
+  // ── Step: Departments ────────────────────────────────────────────────────
+  if (step === "departments") {
+    return (
+      <CardShell>
+        <div className="space-y-3">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
+            <Building2 className="w-3.5 h-3.5" aria-hidden="true" /> Step 1 &mdash; Departments
           </p>
-          <div className="flex gap-2 mb-2">
+          <p className="text-xs text-gray-500">What departments does your team have? e.g. Sales, Support, Finance</p>
+          <div className="flex gap-2">
             <input
               value={deptInput}
               onChange={(e) => setDeptInput(e.target.value)}
@@ -817,88 +863,137 @@ function ArchitectureWidget({ onMessages }: { onMessages: (msgs: string[]) => vo
               ))}
             </div>
           )}
+          <button onClick={handleDeptsNext} disabled={depts.length === 0}
+            className="w-full py-2 text-sm font-medium bg-[#1a73e8] text-white rounded-lg hover:bg-[#1557b0] disabled:opacity-40 transition-colors">
+            Next
+          </button>
+          <FixItButton targetStage="user_ingestion" />
         </div>
+      </CardShell>
+    );
+  }
 
-        {depts.length > 0 && users.length > 0 && (
-          <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5" aria-hidden="true" /> Assign Users to Departments
-            </p>
-            <div className="rounded-xl border border-[#e8eaed] overflow-hidden max-h-52 overflow-y-auto">
-              {users.map((u, i) => (
-                <div key={i} className="flex items-center gap-3 px-3 py-2 border-b border-[#f1f3f4] last:border-0 bg-white">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-gray-800 truncate">{u.firstName} {u.lastName}</p>
-                    <p className="text-xs text-gray-400 truncate">{u.email}</p>
-                  </div>
-                  <select
-                    value={u.department ?? ""}
-                    onChange={(e) => setUsers((us) => us.map((x, xi) => xi === i ? { ...x, department: e.target.value } : x))}
-                    aria-label={`Department for ${u.firstName} ${u.lastName}`}
-                    className="w-36 shrink-0 text-xs px-2 py-1.5 border border-[#dadce0] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
-                  >
-                    <option value="">&mdash; Unassigned &mdash;</option>
-                    {depts.map((d) => <option key={d} value={d}>{d}</option>)}
-                  </select>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-            <HardDrive className="w-3.5 h-3.5" aria-hidden="true" /> Physical Desk Phones?
+  // ── Step: Assign users to departments ────────────────────────────────────
+  if (step === "assign") {
+    return (
+      <CardShell>
+        <div className="space-y-3">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
+            <Users className="w-3.5 h-3.5" aria-hidden="true" /> Step 2 &mdash; Assign Users to Departments
           </p>
-          <div className="flex gap-2">
-            {[true, false].map((v) => (
-              <button key={String(v)} onClick={() => setHasPhones(v)}
-                aria-pressed={hasPhones === v}
-                className={`flex-1 py-2 text-sm font-medium rounded-lg border transition-all ${
-                  hasPhones === v
-                    ? "border-[#1a73e8] bg-[#e8f0fe] text-[#1a73e8]"
-                    : "border-[#dadce0] text-gray-600 hover:bg-[#f8f9fa]"
+          <div className="rounded-xl border border-[#e8eaed] overflow-hidden max-h-52 overflow-y-auto">
+            {users.map((u, i) => (
+              <div key={i} className="flex items-center gap-3 px-3 py-2 border-b border-[#f1f3f4] last:border-0 bg-white">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-gray-800 truncate">{u.firstName} {u.lastName}</p>
+                  <p className="text-xs text-gray-400 truncate">{u.email}</p>
+                </div>
+                <select
+                  value={u.department ?? ""}
+                  onChange={(e) => setUsers((us) => us.map((x, xi) => xi === i ? { ...x, department: e.target.value } : x))}
+                  aria-label={`Department for ${u.firstName} ${u.lastName}`}
+                  className="w-36 shrink-0 text-xs px-2 py-1.5 border border-[#dadce0] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                >
+                  <option value="">&mdash; Unassigned &mdash;</option>
+                  {depts.map((d) => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2 pt-1">
+            <button onClick={() => setStep("departments")} className="px-3 py-2 text-sm text-gray-500 border border-[#dadce0] rounded-lg hover:bg-[#f8f9fa]">Back</button>
+            <button onClick={handleAssignNext}
+              className="flex-1 py-2 text-sm font-medium bg-[#1a73e8] text-white rounded-lg hover:bg-[#1557b0] transition-colors">
+              Next
+            </button>
+          </div>
+        </div>
+      </CardShell>
+    );
+  }
+
+  // ── Step: Phone type ─────────────────────────────────────────────────────
+  if (step === "phones") {
+    return (
+      <CardShell>
+        <div className="space-y-3">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
+            <HardDrive className="w-3.5 h-3.5" aria-hidden="true" /> {depts.length > 0 && config.users.length > 0 ? "Step 3" : "Step 2"} &mdash; Phone Type
+          </p>
+          <p className="text-xs text-gray-500">How will your team take calls?</p>
+          <div className="space-y-2">
+            {([
+              { value: "softphone" as const, label: "Softphone only", desc: "net2phone app on computer/mobile \u2014 no hardware needed" },
+              { value: "hardphone" as const, label: "Physical desk phones", desc: "You\u2019ll need model and MAC address for each phone" },
+              { value: "both" as const, label: "Both", desc: "Some users on desk phones, some on the app" },
+            ]).map(({ value, label, desc }) => (
+              <button key={value} onClick={() => handlePhoneChoice(value)}
+                aria-pressed={phoneChoice === value}
+                className={`w-full flex items-start gap-3 p-3 rounded-xl border text-left transition-all ${
+                  phoneChoice === value ? "border-[#1a73e8] bg-[#e8f0fe]" : "border-[#dadce0] bg-white hover:bg-[#f8f9fa]"
                 }`}>
-                {v ? "Yes, we have hardphones" : "No, softphones only"}
+                <div className={`w-4 h-4 rounded-full border-2 mt-0.5 shrink-0 flex items-center justify-center ${
+                  phoneChoice === value ? "border-[#1a73e8]" : "border-[#dadce0]"
+                }`}>
+                  {phoneChoice === value && <div className="w-2 h-2 rounded-full bg-[#1a73e8]" />}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-800">{label}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
+                </div>
               </button>
             ))}
           </div>
-        </div>
-
-        {hasPhones && users.length > 0 && (
-          <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Hardphone Details</p>
-            <div className="rounded-xl border border-[#e8eaed] overflow-hidden max-h-52 overflow-y-auto">
-              {users.map((u, i) => (
-                <div key={i} className="flex items-center gap-2 px-3 py-2 border-b border-[#f1f3f4] last:border-0 bg-white">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-gray-800 truncate">{u.firstName} {u.lastName}</p>
-                    <p className="text-xs text-gray-400 truncate">{u.email}</p>
-                  </div>
-                  <input
-                    placeholder="Model (e.g. T46U)"
-                    value={u.hardphoneModel ?? ""}
-                    onChange={(e) => setUsers((us) => us.map((x, xi) => xi === i ? { ...x, hardphoneModel: e.target.value } : x))}
-                    aria-label={`Phone model for ${u.firstName}`}
-                    className="w-24 shrink-0 text-xs px-2 py-1.5 border border-[#dadce0] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
-                  />
-                  <input
-                    placeholder="MAC address"
-                    value={u.macAddress ?? ""}
-                    onChange={(e) => setUsers((us) => us.map((x, xi) => xi === i ? { ...x, macAddress: e.target.value } : x))}
-                    aria-label={`MAC address for ${u.firstName}`}
-                    className="w-32 shrink-0 text-xs px-2 py-1.5 border border-[#dadce0] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
-                  />
-                </div>
-              ))}
-            </div>
+          <div className="flex gap-2 pt-1">
+            <button onClick={() => setStep(depts.length > 0 && config.users.length > 0 ? "assign" : "departments")}
+              className="px-3 py-2 text-sm text-gray-500 border border-[#dadce0] rounded-lg hover:bg-[#f8f9fa]">Back</button>
+            <button onClick={handlePhonesNext} disabled={!phoneChoice}
+              className="flex-1 py-2 text-sm font-medium bg-[#1a73e8] text-white rounded-lg hover:bg-[#1557b0] disabled:opacity-40 transition-colors">
+              {phoneChoice === "hardphone" || phoneChoice === "both" ? "Next" : "Continue"}
+            </button>
           </div>
-        )}
+        </div>
+      </CardShell>
+    );
+  }
 
-        <button onClick={handleContinue} disabled={hasPhones === null}
-          className="w-full py-2 text-sm font-medium bg-[#1a73e8] text-white rounded-lg hover:bg-[#1557b0] disabled:opacity-40 transition-colors">
-          Continue
-        </button>
+  // ── Step: Hardphone details ──────────────────────────────────────────────
+  return (
+    <CardShell>
+      <div className="space-y-3">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Hardphone Details</p>
+        <p className="text-xs text-gray-500">Enter the model and MAC address for each desk phone. You can skip this and add them later.</p>
+        <div className="rounded-xl border border-[#e8eaed] overflow-hidden max-h-52 overflow-y-auto">
+          {users.map((u, i) => (
+            <div key={i} className="flex items-center gap-2 px-3 py-2 border-b border-[#f1f3f4] last:border-0 bg-white">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium text-gray-800 truncate">{u.firstName} {u.lastName}</p>
+                <p className="text-xs text-gray-400 truncate">{u.email}</p>
+              </div>
+              <input
+                placeholder="Model (e.g. T46U)"
+                value={u.hardphoneModel ?? ""}
+                onChange={(e) => setUsers((us) => us.map((x, xi) => xi === i ? { ...x, hardphoneModel: e.target.value } : x))}
+                aria-label={`Phone model for ${u.firstName}`}
+                className="w-24 shrink-0 text-xs px-2 py-1.5 border border-[#dadce0] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+              />
+              <input
+                placeholder="MAC address"
+                value={u.macAddress ?? ""}
+                onChange={(e) => setUsers((us) => us.map((x, xi) => xi === i ? { ...x, macAddress: e.target.value } : x))}
+                aria-label={`MAC address for ${u.firstName}`}
+                className="w-32 shrink-0 text-xs px-2 py-1.5 border border-[#dadce0] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+              />
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-2 pt-1">
+          <button onClick={() => setStep("phones")} className="px-3 py-2 text-sm text-gray-500 border border-[#dadce0] rounded-lg hover:bg-[#f8f9fa]">Back</button>
+          <button onClick={handleHardphoneNext}
+            className="flex-1 py-2 text-sm font-medium bg-[#1a73e8] text-white rounded-lg hover:bg-[#1557b0] transition-colors">
+            Continue
+          </button>
+        </div>
         <FixItButton targetStage="user_ingestion" />
       </div>
     </CardShell>
@@ -932,6 +1027,7 @@ function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[]) => voi
 
   // Welcome menu state
   const [menuEnabled, setMenuEnabled] = useState(config.welcomeMenu.enabled);
+  const [greetingType, setGreetingType] = useState<"tts" | "upload" | "none">(config.welcomeMenu.greetingType || "tts");
   const defaultGreeting = `Thank you for calling ${config.companyName || "our company"}. ${config.departments.length > 0 ? config.departments.map((d, i) => `Press ${i + 1} for ${d}`).join(". ") + "." : "Please hold while we connect you."}`;
   const [greetingText, setGreetingText] = useState(config.welcomeMenu.greetingText || defaultGreeting);
   const [menuOptions, setMenuOptions] = useState<MenuOption[]>(
@@ -939,6 +1035,9 @@ function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[]) => voi
       ? config.welcomeMenu.menuOptions
       : config.departments.map((d, i) => ({ key: String(i + 1), destinationType: "department" as const, destinationName: d }))
   );
+  const [extDialing, setExtDialing] = useState(config.welcomeMenu.allowExtensionDialing ?? true);
+  const [playWait, setPlayWait] = useState(config.welcomeMenu.playWaitMessage ?? true);
+  const [barging, setBarging] = useState(config.welcomeMenu.allowBargingThrough ?? true);
 
   // Routing type state
   const [routingChoice, setRoutingChoice] = useState<"ring_groups" | "call_queues">(config.routingType);
@@ -997,13 +1096,18 @@ function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[]) => voi
   const handleMenuNext = () => {
     const menu = {
       enabled: menuEnabled,
-      greetingText: menuEnabled ? greetingText : "",
+      greetingType: menuEnabled ? greetingType : "none" as const,
+      greetingText: menuEnabled && greetingType === "tts" ? greetingText : "",
       menuOptions: menuEnabled ? menuOptions.filter((o) => o.destinationName.trim()) : [],
+      allowExtensionDialing: extDialing,
+      playWaitMessage: playWait,
+      allowBargingThrough: barging,
       configured: true,
     };
     updateConfig({ welcomeMenu: menu });
+    const feats = [extDialing && "ext-dialing", playWait && "wait-msg", barging && "barging"].filter(Boolean).join(", ");
     const summary = menuEnabled
-      ? `[routing] Welcome menu enabled. Greeting: "${greetingText.slice(0, 60)}..." Options: ${menu.menuOptions.map((o) => `${o.key}\u2192${o.destinationName}`).join(", ")}`
+      ? `[routing] Welcome menu enabled. Greeting: ${greetingType}${greetingType === "tts" ? ` "${greetingText.slice(0, 50)}..."` : ""}. Options: ${menu.menuOptions.map((o) => `${o.key}\u2192${o.destinationName}`).join(", ")}. Features: ${feats || "none"}`
       : "[routing] Welcome menu disabled.";
     onMessages([summary]);
     setStep("routing_type");
@@ -1058,16 +1162,46 @@ function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[]) => voi
 
           {menuEnabled && (
             <>
+              {/* Greeting type */}
               <div>
-                <label htmlFor="greeting-text" className="block text-xs font-medium text-gray-600 mb-1">Greeting Text</label>
-                <textarea
-                  id="greeting-text"
-                  value={greetingText}
-                  onChange={(e) => setGreetingText(e.target.value)}
-                  rows={3}
-                  className="w-full px-3 py-2 text-sm border border-[#dadce0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1a73e8] bg-white resize-none"
-                />
+                <p className="text-xs font-medium text-gray-600 mb-1.5">Greeting</p>
+                <div className="flex gap-2">
+                  {([
+                    { value: "tts" as const, label: "Text-to-Speech" },
+                    { value: "upload" as const, label: "Upload Custom" },
+                    { value: "none" as const, label: "No Greeting" },
+                  ]).map(({ value, label }) => (
+                    <button key={value} onClick={() => setGreetingType(value)}
+                      aria-pressed={greetingType === value}
+                      className={`flex-1 py-1.5 text-xs font-medium rounded-lg border transition-all ${
+                        greetingType === value ? "border-[#1a73e8] bg-[#e8f0fe] text-[#1a73e8]" : "border-[#dadce0] text-gray-600 hover:bg-[#f8f9fa]"
+                      }`}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
+              {greetingType === "tts" && (
+                <div>
+                  <label htmlFor="greeting-text" className="block text-xs font-medium text-gray-600 mb-1">Greeting Text</label>
+                  <textarea
+                    id="greeting-text"
+                    value={greetingText}
+                    onChange={(e) => setGreetingText(e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 text-sm border border-[#dadce0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1a73e8] bg-white resize-none"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">We&apos;ll generate audio from this text when your system is built.</p>
+                </div>
+              )}
+              {greetingType === "upload" && (
+                <div className="rounded-lg border-2 border-dashed border-[#dadce0] px-4 py-3 text-center">
+                  <Upload className="w-5 h-5 mx-auto text-gray-400 mb-1" aria-hidden="true" />
+                  <p className="text-xs text-gray-500">Custom greeting upload will be available after setup is built.</p>
+                </div>
+              )}
+
+              {/* Menu Options (DTMF) */}
               <div>
                 <p className="text-xs font-medium text-gray-600 mb-2">Menu Options (DTMF keys)</p>
                 <div className="space-y-2">
@@ -1104,6 +1238,36 @@ function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[]) => voi
                 <button onClick={addMenuOption} className="flex items-center gap-1.5 text-xs text-[#1a73e8] hover:underline mt-2">
                   <Plus className="w-3 h-3" aria-hidden="true" /> Add option
                 </button>
+              </div>
+
+              {/* Business features */}
+              <div>
+                <p className="text-xs font-medium text-gray-600 mb-2">Menu Settings</p>
+                <div className="space-y-2">
+                  {([
+                    { key: "extDialing" as const, label: "Allow Extension Dialing", desc: "Callers can dial an extension directly", checked: extDialing, set: setExtDialing },
+                    { key: "playWait" as const, label: "Play \"Please wait while we connect your call\"", desc: "Play a hold message before connecting", checked: playWait, set: setPlayWait },
+                    { key: "barging" as const, label: "Allow Barging Through", desc: "Allow callers to interrupt the greeting", checked: barging, set: setBarging },
+                  ]).map(({ key, label, desc, checked, set }) => (
+                    <label key={key} className="flex items-start gap-2.5 cursor-pointer">
+                      <button
+                        type="button"
+                        role="checkbox"
+                        aria-checked={checked}
+                        onClick={() => set(!checked)}
+                        className="mt-0.5 shrink-0"
+                      >
+                        {checked
+                          ? <CheckSquare className="w-4 h-4 text-[#1a73e8]" aria-hidden="true" />
+                          : <Square className="w-4 h-4 text-gray-400" aria-hidden="true" />}
+                      </button>
+                      <div>
+                        <p className="text-xs font-medium text-gray-700">{label}</p>
+                        <p className="text-xs text-gray-400">{desc}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
               </div>
             </>
           )}

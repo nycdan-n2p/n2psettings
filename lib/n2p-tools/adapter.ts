@@ -192,6 +192,17 @@ export function adaptForMCP(
     case "create_virtual_assistant":
       return { tool: "create_virtual_assistant", args: { ...base, name: input.name } };
 
+    case "update_virtual_assistant":
+      return {
+        tool: "update_virtual_assistant",
+        args: {
+          ...base,
+          menu_id: input.menuId || input.virtualAssistantId,
+          ...(input.name ? { name: input.name } : {}),
+          ...(input.settings ? { settings: input.settings } : {}),
+        },
+      };
+
     case "generate_tts_greeting":
       return {
         tool: "generate_tts_greeting",

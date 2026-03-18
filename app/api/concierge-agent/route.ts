@@ -167,38 +167,36 @@ function buildSystemPrompt(
 - When the user says they're done (or after processing a [form] message), call advance_stage.`,
 
     architecture_hardware: `You are at the ARCHITECTURE stage. Users collected: ${JSON.stringify((config as { users?: unknown[] })?.users ?? [])}.
-IMPORTANT: Ask ONE question at a time. Do NOT present a form or ask multiple things at once.
 
-Step A — Departments (ask this FIRST, wait for answer):
-  "What departments does your team have? For example: Sales, Support, Finance."
-  → When they answer, call update_config({ departments: [...] }) immediately.
+The user interacts with a WIDGET that walks through each sub-step one at a time: departments → user assignments → phone type → hardphone details (if applicable).
 
-Step B — User assignments (ONLY after departments are answered, ONLY if users.length > 0):
-  Show a table of users and ask: "Which department should each person be in?"
-  → When they answer, call update_config({ users: [...with department fields] }).
+IMPORTANT: If you receive a message starting with "[arch]", the WIDGET has ALREADY saved the data to config. Do NOT call update_config — the data is already persisted. Just acknowledge what was configured and wait for the next widget sub-step.
 
-Step C — Phone type (ask last, wait for answer):
-  "How will your team take calls? Options:
-    a) Softphone only (net2phone app on computer/mobile — no hardware needed)
-    b) Physical desk phones (hardphones — you'll need MAC addresses)
-    c) Both (some users on desk phones, some on app)"
-  → "Or: not decided yet — we can set up softphones now and add desk phones later."
-  → If softphone/not decided: call update_config({ hasHardphones: false, phoneType: "softphone" }).
-  → If hardphone: ask for model and MAC address for each user, then call update_config({ hasHardphones: true, phoneType: "hardphone", users: [...with macAddress/hardphoneModel] }).
-  → If both: ask which users want desk phones and their MAC addresses, call update_config({ hasHardphones: true, phoneType: "both", users: [...] }).
+The widget covers these steps sequentially:
+Step A — Departments: Widget asks for department names.
+Step B — User assignments: Widget lets user assign each team member to a department (only shown if there are users AND departments).
+Step C — Phone type: Widget asks softphone / hardphone / both.
+Step D — Hardphone details: Widget asks for model + MAC address per user (only if hardphone or both).
 
-After ALL THREE steps are answered, call advance_stage.
-Do NOT call advance_stage until you have confirmed departments, user assignments, AND phone type.`,
+When you receive an "[arch]" message that says "Architecture complete", call advance_stage.
+Do NOT ask about departments, phones, or assignments yourself — the widget handles it. Just acknowledge each sub-step warmly and briefly.
+Do NOT call advance_stage until you receive a message indicating architecture is complete.`,
 
     licensing: `You are at the CALL ROUTING stage. Walk through 3 sequential sub-steps. Ask ONE question at a time, wait for the answer, save with update_config, then move to the next sub-step.
 
 IMPORTANT: If you receive a message starting with "[routing]", the call routing WIDGET has ALREADY saved all data to config. Do NOT call update_config — the data is already persisted. Just acknowledge what was configured and move to the next sub-step. If all 3 sub-steps are done (welcome menu + routing type + after-hours), call advance_stage.
 
 **Sub-step 1 — Welcome Menu (auto-attendant):**
-- Ask: "When someone calls your main number, should they hear a menu? For example: 'Thank you for calling ${(config as { companyName?: string }).companyName || "your company"}. Press 1 for Sales, Press 2 for Support.' Most businesses use one."
-- If YES: ask what the greeting should say (suggest a default using the company name and their departments). Then ask what each key press should route to — for each DTMF key, collect: the key (1-9), the destination type (department, ring_group, voicemail, directory), and the destination name.
-  Save: update_config({ welcomeMenu: { enabled: true, greetingText: "...", menuOptions: [{ key: "1", destinationType: "department", destinationName: "Sales" }, ...] } })
-- If NO: save update_config({ welcomeMenu: { enabled: false, greetingText: "", menuOptions: [] } }) and move to sub-step 2.
+The widget handles this sub-step and collects:
+- Whether to enable a welcome menu
+- Greeting type: "tts" (text-to-speech — we generate audio), "upload" (custom file uploaded later), or "none"
+- Greeting text (for TTS)
+- DTMF menu options (key + destination type + destination name)
+- Business features:
+  • Allow Extension Dialing — callers can dial an extension directly during the greeting
+  • Play "Please wait while we connect your call" — hold message before connecting
+  • Allow Barging Through — callers can interrupt the greeting by pressing a key early
+All of these are configured in the widget. When you receive a [routing] message about the welcome menu, just acknowledge the settings and move to sub-step 2.
 
 **Sub-step 2 — Ring Group vs Call Queue + config:**
 - Explain: "Ring Groups ring all members at once (included with all plans). Call Queues place callers in a waiting line with strategies like Round Robin or Longest Idle (requires a Call Queue license)."
@@ -256,7 +254,7 @@ Walk the admin through 7 stages of onboarding in order:
 3. **porting** — Choose which numbers to port
 4. **user_ingestion** — Add team members
 5. **architecture_hardware** — Departments, user mapping, desk phones
-6. **licensing** (Call Routing) — Welcome menu setup, Ring Groups vs Call Queues with full config, after-hours behavior
+6. **licensing** (Call Routing) — Welcome menu setup (greeting, DTMF, ext-dialing, wait msg, barging), Ring Groups vs Call Queues with full config, after-hours behavior
 7. **final_blueprint** — Review full blueprint and build
 
 ## Current stage: ${stage}

@@ -328,7 +328,26 @@ export async function applyConfiguration(
         push({ label: "Welcome menu", status: "warn", detail: e instanceof Error ? e.message : String(e) });
       }
 
-      if (welcomeMenuId && payload.welcomeMenu.greetingText) {
+      // Apply business features (extension dialing, wait message, barging)
+      if (welcomeMenuId) {
+        try {
+          await n2p("update_virtual_assistant", {
+            virtualAssistantId: welcomeMenuId,
+            settings: {
+              allowExtensionDialing: payload.welcomeMenu.allowExtensionDialing ?? true,
+              playWaitMessage: payload.welcomeMenu.playWaitMessage ?? true,
+              allowBargingThrough: payload.welcomeMenu.allowBargingThrough ?? true,
+            },
+          });
+          push({ label: "Applied menu settings (ext-dialing, wait msg, barging)", status: "ok" });
+        } catch (e) {
+          push({ label: "Menu settings", status: "warn", detail: e instanceof Error ? e.message : String(e) });
+        }
+      }
+
+      // Generate TTS greeting if selected
+      const usesTts = !payload.welcomeMenu.greetingType || payload.welcomeMenu.greetingType === "tts";
+      if (welcomeMenuId && usesTts && payload.welcomeMenu.greetingText) {
         try {
           await n2p("generate_tts_greeting", {
             virtualAssistantId: welcomeMenuId,
@@ -338,6 +357,8 @@ export async function applyConfiguration(
         } catch (e) {
           push({ label: "TTS greeting", status: "warn", detail: e instanceof Error ? e.message : String(e) });
         }
+      } else if (welcomeMenuId && payload.welcomeMenu.greetingType === "upload") {
+        push({ label: "Custom greeting upload", status: "skip", detail: "User will upload after build completes" });
       }
 
       if (welcomeMenuId && payload.welcomeMenu.menuOptions.length > 0) {
