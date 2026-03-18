@@ -40,7 +40,7 @@ export const STAGE_LABELS: Record<ConciergeStage, string> = {
   porting:                "Porting",
   user_ingestion:         "Users",
   architecture_hardware:  "Architecture",
-  licensing:              "Licensing",
+  licensing:              "Call Routing",
   final_blueprint:        "Review & Build",
   done:                   "Done",
 };
@@ -67,6 +67,34 @@ export interface PortingAddress {
   city: string;
   state: string;
   zip: string;
+}
+
+export interface MenuOption {
+  key: string;
+  destinationType: "department" | "ring_group" | "call_queue" | "voicemail" | "directory" | "user";
+  destinationName: string;
+}
+
+export type QueueStrategy = "ring_all" | "round_robin" | "longest_idle" | "linear" | "fewest_calls";
+
+export interface RoutingConfig {
+  groupName: string;
+  tiers: { userEmails: string[]; rings: number }[];
+  ringStrategy: QueueStrategy;
+  maxWaitTime: number;
+  maxCapacity: number;
+}
+
+export interface WelcomeMenuConfig {
+  enabled: boolean;
+  greetingText: string;
+  menuOptions: MenuOption[];
+}
+
+export interface AfterHoursConfig {
+  action: "voicemail" | "greeting" | "forward";
+  forwardNumber?: string;
+  greetingText?: string;
 }
 
 export interface OnboardingData {
@@ -100,6 +128,9 @@ export interface OnboardingData {
   licensingVerified: boolean;
   hasHardphones: boolean;
   phoneType: "hardphone" | "softphone" | "both";
+  welcomeMenu: WelcomeMenuConfig;
+  routingConfig: RoutingConfig;
+  afterHours: AfterHoursConfig;
 }
 
 const EMPTY_PORTING_CONTACT: PortingAddress = {
@@ -130,6 +161,15 @@ export const EMPTY_CONFIG: OnboardingData = {
   licensingVerified: false,
   hasHardphones: false,
   phoneType: "softphone",
+  welcomeMenu: { enabled: false, greetingText: "", menuOptions: [] },
+  routingConfig: {
+    groupName: "",
+    tiers: [],
+    ringStrategy: "ring_all",
+    maxWaitTime: 300,
+    maxCapacity: 10,
+  },
+  afterHours: { action: "voicemail" },
 };
 
 // ── State & Actions ──────────────────────────────────────────────────────────

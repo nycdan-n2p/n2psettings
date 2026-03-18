@@ -29,7 +29,7 @@ const TOOLS: Anthropic.Tool[] = [
         patch: {
           type: "object",
           description:
-            "Partial OnboardingData object. Top-level keys: name, companyName, websiteUrl, scraped, holidays, portingQueue (skipped, numbers, providerName, accountNumber, providerBtn, pin, targetPortDate, contact, onboardId, signLink), users, departments, routingType, licensingVerified, hasHardphones, phoneType (softphone|hardphone|both).",
+            "Partial OnboardingData object. Top-level keys: name, companyName, websiteUrl, scraped, holidays, portingQueue, users, departments, routingType, licensingVerified, hasHardphones, phoneType (softphone|hardphone|both), welcomeMenu ({ enabled, greetingText, menuOptions: [{ key, destinationType, destinationName }] }), routingConfig ({ groupName, tiers: [{ userEmails, rings }], ringStrategy: ring_all|round_robin|longest_idle|linear|fewest_calls, maxWaitTime, maxCapacity }), afterHours ({ action: voicemail|greeting|forward, forwardNumber?, greetingText? }).",
         },
       },
       required: ["patch"],
@@ -191,13 +191,35 @@ Step C — Phone type (ask last, wait for answer):
 After ALL THREE steps are answered, call advance_stage.
 Do NOT call advance_stage until you have confirmed departments, user assignments, AND phone type.`,
 
-    licensing: `You are at the LICENSING stage.
-- Explain the difference: Ring Groups (included, rings all at once) vs Call Queues (requires license, callers wait in line).
+    licensing: `You are at the CALL ROUTING stage. Walk through 3 sequential sub-steps. Ask ONE question at a time, wait for the answer, save with update_config, then move to the next sub-step.
+
+**Sub-step 1 — Welcome Menu (auto-attendant):**
+- Ask: "When someone calls your main number, should they hear a menu? For example: 'Thank you for calling ${(config as { companyName?: string }).companyName || "your company"}. Press 1 for Sales, Press 2 for Support.' Most businesses use one."
+- If YES: ask what the greeting should say (suggest a default using the company name and their departments). Then ask what each key press should route to — for each DTMF key, collect: the key (1-9), the destination type (department, ring_group, voicemail, directory), and the destination name.
+  Save: update_config({ welcomeMenu: { enabled: true, greetingText: "...", menuOptions: [{ key: "1", destinationType: "department", destinationName: "Sales" }, ...] } })
+- If NO: save update_config({ welcomeMenu: { enabled: false, greetingText: "", menuOptions: [] } }) and move to sub-step 2.
+
+**Sub-step 2 — Ring Group vs Call Queue + config:**
+- Explain: "Ring Groups ring all members at once (included with all plans). Call Queues place callers in a waiting line with strategies like Round Robin or Longest Idle (requires a Call Queue license)."
 - Ask which they prefer.
-- If they choose Call Queues, immediately call check_licensing("call_queues").
-  - If eligible: confirm and proceed.
-  - If NOT eligible: explain and suggest Ring Groups as a free alternative.
-- Call update_config with routingType + licensingVerified, then call advance_stage.`,
+- If Call Queues: call check_licensing("call_queues"). If not eligible, explain and suggest Ring Groups.
+- Save routingType: update_config({ routingType: "ring_groups" or "call_queues", licensingVerified: true/false }).
+- Then ask for the group/queue name (suggest "${(config as { companyName?: string }).companyName || "Main"} Team" as default).
+
+  **If Ring Groups:** ask about ring strategy — "Should all members ring simultaneously (Ring All), or should calls escalate through tiers (e.g. Tier 1 rings 3 times, then Tier 2)?"
+    - If tiered: ask which users/departments are in each tier and how many rings before escalation.
+    - Save: update_config({ routingConfig: { groupName, tiers: [{ userEmails: [...], rings: 3 }, ...], ringStrategy: "ring_all", maxWaitTime: 0, maxCapacity: 0 } })
+
+  **If Call Queues:** ask about ring strategy (Ring All / Round Robin / Longest Idle / Linear / Fewest Calls), max wait time in seconds (suggest 300 = 5 min), and max queue capacity (suggest 10).
+    - Save: update_config({ routingConfig: { groupName, tiers: [], ringStrategy: "round_robin", maxWaitTime: 300, maxCapacity: 10 } })
+
+**Sub-step 3 — After-hours behavior:**
+- Ask: "What should happen when someone calls outside business hours? Options: a) Go to voicemail (most common), b) Play a custom greeting, c) Forward to a mobile number."
+- If voicemail: save update_config({ afterHours: { action: "voicemail" } })
+- If greeting: ask for the greeting text, then save update_config({ afterHours: { action: "greeting", greetingText: "..." } })
+- If forward: ask for the number, then save update_config({ afterHours: { action: "forward", forwardNumber: "+1..." } })
+
+After ALL 3 sub-steps are answered and saved, call advance_stage. Do NOT call advance_stage until all 3 are complete.`,
 
     final_blueprint: `You are at the FINAL BLUEPRINT stage.
 BEFORE presenting the blueprint, check the config for completeness:
@@ -233,7 +255,7 @@ Walk the admin through 7 stages of onboarding in order:
 3. **porting** — Choose which numbers to port
 4. **user_ingestion** — Add team members
 5. **architecture_hardware** — Departments, user mapping, desk phones
-6. **licensing** — Ring Groups vs Call Queues
+6. **licensing** (Call Routing) — Welcome menu setup, Ring Groups vs Call Queues with full config, after-hours behavior
 7. **final_blueprint** — Review full blueprint and build
 
 ## Current stage: ${stage}

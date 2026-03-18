@@ -315,66 +315,155 @@ export async function applyConfiguration(
       }
     }
 
-    // ── 4. Ring group or call queue + call flow ─────────────────────────────
-    const groupName = `${(payload.companyName || "Main").trim()} Team`;
+    // ── 4. Welcome menu (virtual assistant) ────────────────────────────────
+    let welcomeMenuId = "";
+
+    if (payload.welcomeMenu?.enabled) {
+      try {
+        const menuName = `${(payload.companyName || "Main").trim()} Main Menu`;
+        const va = await n2p("create_virtual_assistant", { name: menuName });
+        welcomeMenuId = String(va.id ?? va.virtualAssistantId ?? "");
+        push({ label: `Created welcome menu: ${menuName}`, status: "ok", detail: `ID: ${welcomeMenuId}` });
+      } catch (e) {
+        push({ label: "Welcome menu", status: "warn", detail: e instanceof Error ? e.message : String(e) });
+      }
+
+      if (welcomeMenuId && payload.welcomeMenu.greetingText) {
+        try {
+          await n2p("generate_tts_greeting", {
+            virtualAssistantId: welcomeMenuId,
+            text: payload.welcomeMenu.greetingText,
+          });
+          push({ label: "Generated TTS greeting", status: "ok" });
+        } catch (e) {
+          push({ label: "TTS greeting", status: "warn", detail: e instanceof Error ? e.message : String(e) });
+        }
+      }
+
+      if (welcomeMenuId && payload.welcomeMenu.menuOptions.length > 0) {
+        const options = payload.welcomeMenu.menuOptions
+          .filter((o) => o.destinationName.trim())
+          .map((o) => ({
+            key: o.key,
+            destinationType: o.destinationType,
+            destinationName: o.destinationName,
+          }));
+        if (options.length > 0) {
+          try {
+            await n2p("set_menu_options", {
+              virtualAssistantId: welcomeMenuId,
+              options,
+            });
+            push({ label: `Set ${options.length} DTMF menu option(s)`, status: "ok" });
+          } catch (e) {
+            push({ label: "Menu options", status: "warn", detail: e instanceof Error ? e.message : String(e) });
+          }
+        }
+      }
+    } else {
+      push({ label: "Welcome menu", status: "skip", detail: "User chose not to set up a welcome menu" });
+    }
+
+    // ── 5. Ring group or call queue ──────────────────────────────────────────
+    const groupName = payload.routingConfig?.groupName || `${(payload.companyName || "Main").trim()} Team`;
+    let routingDestId = "";
+    const routingDestType = payload.routingType;
 
     if (payload.routingType === "ring_groups") {
-      let rgId = "";
       try {
         const rg = await n2p("create_ring_group", { name: groupName });
-        rgId = String(rg.id ?? rg.ringGroupId ?? "");
-        push({ label: `Created ring group: ${groupName}`, status: "ok", detail: `ID: ${rgId}` });
+        routingDestId = String(rg.id ?? rg.ringGroupId ?? "");
+        push({ label: `Created ring group: ${groupName}`, status: "ok", detail: `ID: ${routingDestId}` });
       } catch (e) {
         push({ label: `Ring Group: ${groupName}`, status: "warn", detail: e instanceof Error ? e.message : String(e) });
       }
 
-      if (rgId && userIds.length > 0) {
+      if (routingDestId && userIds.length > 0) {
         try {
-          await n2p("set_ring_group_members", { ringGroupId: rgId, userIds });
+          await n2p("set_ring_group_members", { ringGroupId: routingDestId, userIds });
           push({ label: `Added ${userIds.length} member(s) to ring group`, status: "ok" });
         } catch (e) {
           push({ label: "Set ring group members", status: "warn", detail: e instanceof Error ? e.message : String(e) });
         }
       }
 
-      if (rgId) {
-        const workHrs = getPrimaryWorkHours(payload.scraped.hours);
-        const mainNumber = payload.portingQueue.numbers[0] ?? payload.scraped.phones[0];
+      if (routingDestId && payload.routingConfig?.tiers && payload.routingConfig.tiers.length > 1) {
         try {
-          const cf = await n2p("build_call_flow", {
-            mainNumber: mainNumber || undefined,
-            workHours: {
-              schedule:    workHrs ?? undefined,
-              destination: { type: "ring_group", name: groupName },
-            },
-            afterHours: {
-              destination: { type: "ring_group", name: groupName },
-            },
-            noAnswer: { type: "voicemail" },
-          });
-          const msg = String((cf as { message?: string }).message ?? "");
-          push({ label: "Built call flow routing", status: "ok", detail: msg || undefined });
+          const tierConfig = payload.routingConfig.tiers.map((t, i) => ({
+            tier: i + 1,
+            rings: t.rings,
+            userIds: t.userEmails
+              .map((email) => emailToUserId.get(email))
+              .filter((id): id is number => !!id),
+          }));
+          await n2p("set_ring_group_tiers", { ringGroupId: routingDestId, tiers: tierConfig });
+          push({ label: `Configured ${tierConfig.length} ring group tier(s)`, status: "ok" });
         } catch (e) {
-          push({ label: "Call flow routing", status: "warn", detail: e instanceof Error ? e.message : String(e) });
+          push({ label: "Ring group tiers", status: "warn", detail: e instanceof Error ? e.message : String(e) });
         }
       }
     } else {
-      let queueId = "";
       try {
         const q = await n2p("create_call_queue", { name: groupName });
-        queueId = String(q.id ?? q.queueId ?? "");
-        push({ label: `Created call queue: ${groupName}`, status: "ok", detail: `ID: ${queueId}` });
+        routingDestId = String(q.id ?? q.queueId ?? "");
+        push({ label: `Created call queue: ${groupName}`, status: "ok", detail: `ID: ${routingDestId}` });
       } catch (e) {
         push({ label: `Call Queue: ${groupName}`, status: "warn", detail: e instanceof Error ? e.message : String(e) });
       }
 
-      if (queueId && userIds.length > 0) {
+      if (routingDestId && userIds.length > 0) {
         try {
-          await n2p("set_call_queue_agents", { queueId, userIds });
+          await n2p("set_call_queue_agents", { queueId: routingDestId, userIds });
           push({ label: `Added ${userIds.length} agent(s) to call queue`, status: "ok" });
         } catch (e) {
           push({ label: "Set call queue agents", status: "warn", detail: e instanceof Error ? e.message : String(e) });
         }
+      }
+
+      if (routingDestId && payload.routingConfig) {
+        try {
+          await n2p("update_call_queue", {
+            queueId: routingDestId,
+            ring_strategy_type: payload.routingConfig.ringStrategy,
+            max_wait_time_seconds: payload.routingConfig.maxWaitTime,
+            max_capacity: payload.routingConfig.maxCapacity,
+          });
+          push({ label: `Configured queue: ${payload.routingConfig.ringStrategy}, max wait ${payload.routingConfig.maxWaitTime}s, capacity ${payload.routingConfig.maxCapacity}`, status: "ok" });
+        } catch (e) {
+          push({ label: "Queue settings", status: "warn", detail: e instanceof Error ? e.message : String(e) });
+        }
+      }
+    }
+
+    // ── 6. Build call flow (wiring everything together) ──────────────────────
+    if (routingDestId) {
+      const workHrs = getPrimaryWorkHours(payload.scraped.hours);
+      const mainNumber = payload.portingQueue.numbers[0] ?? payload.scraped.phones[0];
+
+      const afterHoursConfig = payload.afterHours?.action === "forward"
+        ? { destination: { type: "external", number: payload.afterHours.forwardNumber } }
+        : payload.afterHours?.action === "greeting"
+          ? { destination: { type: "voicemail" }, greeting: payload.afterHours.greetingText }
+          : { destination: { type: "voicemail" } };
+
+      const workHoursDestination = welcomeMenuId
+        ? { type: "virtual_assistant", id: welcomeMenuId }
+        : { type: routingDestType === "ring_groups" ? "ring_group" : "call_queue", name: groupName };
+
+      try {
+        const cf = await n2p("build_call_flow", {
+          mainNumber: mainNumber || undefined,
+          workHours: {
+            schedule: workHrs ?? undefined,
+            destination: workHoursDestination,
+          },
+          afterHours: afterHoursConfig,
+          noAnswer: { type: "voicemail" },
+        });
+        const msg = String((cf as { message?: string }).message ?? "");
+        push({ label: "Built call flow routing", status: "ok", detail: msg || undefined });
+      } catch (e) {
+        push({ label: "Call flow routing", status: "warn", detail: e instanceof Error ? e.message : String(e) });
       }
     }
 

@@ -37,6 +37,10 @@ export function validateStageComplete(
 
     case "licensing":
       if (!config.routingType) missing.push("routing type");
+      if (!config.routingConfig?.groupName) missing.push("ring group/queue name");
+      if (config.welcomeMenu?.enabled && config.welcomeMenu.menuOptions.length === 0) {
+        missing.push("at least one welcome menu option");
+      }
       break;
 
     case "final_blueprint":
