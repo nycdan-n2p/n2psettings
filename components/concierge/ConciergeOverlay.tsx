@@ -350,13 +350,18 @@ export function ConciergeOverlay() {
       // Show widget for the stage we actually ended up on
       setWidgetStage(stageRef.current);
 
-      // If a stage advanced mid-loop, fire the intro for that stage now
+      // The loop may have called advance_stage internally and already responded
+      // in the new stage's context — that response IS the stage intro, so mark
+      // it as kicked-off to prevent a duplicate intro message.
+      lastKickedStageRef.current = stageRef.current;
+
+      // Only fire a pending kickoff if it targets a stage BEYOND where the loop ended
+      // (i.e., another advance happened after the loop, not inside it).
       const pending = pendingKickoffRef.current;
       pendingKickoffRef.current = null;
-      if (pending && pending !== lastKickedStageRef.current) {
+      if (pending && pending !== stageRef.current) {
         lastKickedStageRef.current = pending;
         const trigger = `[SYSTEM: The user has just entered the "${pending}" stage. Open this step naturally — introduce what you need and ask your first question. Do not say the internal stage name.]`;
-        // Short delay so the previous message renders before the next bubble
         setTimeout(() => sendMessage(trigger, false, finalMessages, pending), 100);
         return;
       }
