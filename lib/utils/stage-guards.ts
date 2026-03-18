@@ -45,6 +45,7 @@ export function validateStageComplete(
       if (config.welcomeMenu?.enabled && config.welcomeMenu.menuOptions.length === 0) {
         missing.push("at least one welcome menu option");
       }
+      if (!config.afterHours?.action) missing.push("after-hours behavior");
       break;
 
     case "final_blueprint":

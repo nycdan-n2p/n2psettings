@@ -21,15 +21,15 @@ const TOOLS: Anthropic.Tool[] = [
   },
   {
     name: "update_config",
-    description:
-      "Persist data collected in conversation to the onboarding config object. Call this whenever the user provides a name, website, confirms timezone, provides users, departments, etc. Patch only the fields that changed.",
+        description:
+            "Persist data collected in conversation to the onboarding config object. Call this whenever the user provides a name, website, confirms timezone, provides users, departments, etc. Patch only the fields that changed.",
     input_schema: {
       type: "object",
       properties: {
         patch: {
           type: "object",
           description:
-            "Partial OnboardingData object. Top-level keys: name, companyName, websiteUrl, scraped, holidays, portingQueue, users, departments, routingType, licensingVerified, hasHardphones, phoneType (softphone|hardphone|both), welcomeMenu ({ enabled, greetingText, menuOptions: [{ key, destinationType, destinationName }] }), routingConfig ({ groupName, tiers: [{ userEmails, rings }], ringStrategy: ring_all|round_robin|longest_idle|linear|fewest_calls, maxWaitTime, maxCapacity }), afterHours ({ action: voicemail|greeting|forward, forwardNumber?, greetingText? }).",
+            "Partial OnboardingData object. Top-level keys: name, companyName, websiteUrl, scraped, holidays, portingQueue, users (array of { firstName, lastName, email?, extension?, department? }), departments (string[]), assignmentsDone (boolean — set true after user-dept assignments are done), routingType (ring_groups|call_queues), licensingVerified, hasHardphones, phoneType (softphone|hardphone|both), welcomeMenu ({ enabled, greetingType: tts|upload|none, greetingText, menuOptions: [{ key, destinationType, destinationName }], allowExtensionDialing, playWaitMessage, allowBargingThrough, configured? }), routingConfig ({ groupName, scheduleType: 24_7|business_hours|custom, customSchedule?: { name, weekDays, start, end }, tiers: [{ userEmails, rings }], ringStrategy: ring_all|round_robin|longest_idle|linear|fewest_calls, maxWaitTime, maxCapacity }), afterHours ({ action: voicemail|greeting|forward, forwardNumber?, greetingText? }), cdrAnalysis (set analyzed/skipped/approvedRecommendation flags).",
         },
       },
       required: ["patch"],
@@ -176,7 +176,7 @@ function buildSystemPrompt(
 - IMPORTANT: If you receive a message starting with "[form]", the widget has ALREADY saved the complete data to config (including firstName, lastName, email for every user). Do NOT call update_config — the data is already persisted. Just acknowledge and call advance_stage immediately. Do NOT ask for details again.
 - When the user says they're done (or after processing a [form] message), call advance_stage.`,
 
-    architecture_hardware: `You are at the ARCHITECTURE stage. Users collected: ${JSON.stringify((config as { users?: unknown[] })?.users ?? [])}.
+    architecture_hardware: `You are at the ARCHITECTURE stage. The config already contains the users list — refer to it in the "Data collected so far" section below.
 
 The user interacts with a WIDGET that walks through each sub-step one at a time: departments → user assignments → phone type → hardphone details (if applicable).
 
@@ -336,7 +336,7 @@ export async function POST(req: NextRequest) {
   try {
     const stream = client.messages.stream({
       model: "claude-sonnet-4-6",
-      max_tokens: 1024,
+      max_tokens: 8192,
       system: buildSystemPrompt(body.stage ?? "welcome_scrape", body.config ?? {}),
       tools: TOOLS,
       messages: body.messages,

@@ -19,12 +19,6 @@ export interface ApplyStep {
   detail?: string;
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function delay(ms: number) {
-  return new Promise<void>((resolve) => setTimeout(resolve, ms));
-}
-
 // ── researchWebsite ──────────────────────────────────────────────────────────
 
 export async function researchWebsite(url: string): Promise<ScrapedWebsiteData> {
@@ -209,7 +203,8 @@ export async function applyConfiguration(
 
   async function n2p(
     tool: string,
-    input: Record<string, unknown>
+    input: Record<string, unknown>,
+    timeoutMs = 20_000
   ): Promise<Record<string, unknown>> {
     console.info(`[Concierge apply] \u2192 ${tool}`, JSON.stringify(input).slice(0, 200));
     const res = await fetch("/api/n2p-tools", {
@@ -219,6 +214,7 @@ export async function applyConfiguration(
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ tool, input }),
+      signal: AbortSignal.timeout(timeoutMs),
     });
     const json = await res.json();
     if (!res.ok) {
@@ -237,6 +233,8 @@ export async function applyConfiguration(
 
     // ── 1. Create users ─────────────────────────────────────────────────────
     const userIds: number[] = [];
+    // Index-based map so CDR users without emails can still be mapped to dept
+    const userIndexToId = new Map<number, number>();
     const emailToUserId = new Map<string, number>();
 
     if (payload.users.length === 0) {
@@ -252,25 +250,39 @@ export async function applyConfiguration(
       }
 
       let allUsersFailed = true;
-      for (const user of payload.users) {
+      for (let i = 0; i < payload.users.length; i++) {
+        const user = payload.users[i];
+        // Use CDR-extracted extension if available, otherwise auto-assign
+        const ext = user.extension && /^\d+$/.test(user.extension)
+          ? user.extension
+          : String(nextExt++);
         try {
           const created = await n2p("create_user", {
             firstName: user.firstName,
             lastName:  user.lastName,
             email:     user.email,
-            extension: String(nextExt++),
+            extension: ext,
           });
           const userId = Number(created.userId ?? created.id ?? 0);
           if (userId) {
             userIds.push(userId);
+            userIndexToId.set(i, userId);
             if (user.email) emailToUserId.set(user.email, userId);
-            push({ label: `Created user: ${user.firstName} ${user.lastName} (ext ${nextExt - 1})`, status: "ok" });
+            push({ label: `Created user: ${user.firstName} ${user.lastName} (ext ${ext})`, status: "ok" });
             allUsersFailed = false;
           } else {
             push({ label: `User: ${user.firstName} ${user.lastName}`, status: "warn", detail: "API returned no user ID" });
           }
         } catch (e) {
-          push({ label: `User: ${user.firstName} ${user.lastName}`, status: "warn", detail: e instanceof Error ? e.message : String(e) });
+          const errMsg = e instanceof Error ? e.message : String(e);
+          // 400 "already exists" is not fatal — user may be pre-existing
+          const isConflict = errMsg.includes("400") || errMsg.toLowerCase().includes("already");
+          push({ label: `User: ${user.firstName} ${user.lastName}`, status: "warn", detail: isConflict ? "Email already registered — skipped" : errMsg });
+          if (!isConflict) {
+            // Still mark not-all-failed only if at least one succeeded
+          } else {
+            allUsersFailed = false; // Conflict = user exists = not a build failure
+          }
         }
       }
 
@@ -299,9 +311,11 @@ export async function applyConfiguration(
     }
 
     // ── 3. Assign users to departments ──────────────────────────────────────
-    for (const user of payload.users) {
+    for (let i = 0; i < payload.users.length; i++) {
+      const user = payload.users[i];
       if (!user.department) continue;
-      const userId = user.email ? emailToUserId.get(user.email) : undefined;
+      // Prefer index-based lookup (works for CDR users without emails)
+      const userId = userIndexToId.get(i) ?? (user.email ? emailToUserId.get(user.email) : undefined);
       const deptId = deptNameToId.get(user.department);
       if (!userId || !deptId) {
         push({ label: `Assign ${user.firstName} \u2192 ${user.department}`, status: "warn", detail: "Missing userId or deptId" });
@@ -474,12 +488,14 @@ export async function applyConfiguration(
       const afterHoursConfig = payload.afterHours?.action === "forward"
         ? { destination: { type: "external", number: payload.afterHours.forwardNumber } }
         : payload.afterHours?.action === "greeting"
-          ? { destination: { type: "voicemail" }, greeting: payload.afterHours.greetingText }
+          ? { destination: { type: "greeting", greetingText: payload.afterHours.greetingText } }
           : { destination: { type: "voicemail" } };
 
       const workHoursDestination = welcomeMenuId
         ? { type: "virtual_assistant", id: welcomeMenuId }
-        : { type: routingDestType === "ring_groups" ? "ring_group" : "call_queue", name: groupName };
+        : routingDestId
+          ? { type: routingDestType === "ring_groups" ? "ring_group" : "call_queue", id: routingDestId, name: groupName }
+          : { type: routingDestType === "ring_groups" ? "ring_group" : "call_queue", name: groupName };
 
       try {
         const cf = await n2p("build_call_flow", {
@@ -498,8 +514,8 @@ export async function applyConfiguration(
       }
     }
 
-    console.info(`[Concierge apply] Done \u2014 ${okCount} ok, ${warnCount} warnings`);
-    return { success: true, steps, okCount, warnCount };
+  console.info(`[Concierge apply] Done \u2014 ${okCount} ok, ${warnCount} warnings`);
+  return { success: true, steps, okCount, warnCount };
 
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Configuration failed";
@@ -507,5 +523,3 @@ export async function applyConfiguration(
     return { success: false, error: msg, steps, okCount, warnCount };
   }
 }
-
-export { delay };

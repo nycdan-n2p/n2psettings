@@ -118,12 +118,15 @@ export function useConciergeAgent() {
   const [widgetStage, setWidgetStage] = useState<ConciergeStage>(stage);
 
   // Always-current refs — immune to stale closures
-  const isRunningRef       = useRef(false);
-  const apiMessagesRef     = useRef<ApiMessage[]>([]);
-  const stageRef           = useRef(stage);
-  const configRef          = useRef(config);
-  const lastKickedStageRef = useRef<ConciergeStage | null>(null);
-  const pendingKickoffRef  = useRef<ConciergeStage | null>(null);
+  const isRunningRef        = useRef(false);
+  const apiMessagesRef      = useRef<ApiMessage[]>([]);
+  const stageRef            = useRef(stage);
+  const configRef           = useRef(config);
+  const lastKickedStageRef  = useRef<ConciergeStage | null>(null);
+  const pendingKickoffRef   = useRef<ConciergeStage | null>(null);
+  // Set to true when apply_configuration succeeds so advance_stage no longer
+  // triggers the "done" kickoff (handleApplySuccess handles the transition).
+  const buildSucceededRef   = useRef(false);
 
   useEffect(() => { stageRef.current = stage; }, [stage]);
   useEffect(() => { configRef.current = config; }, [config]);
@@ -145,6 +148,11 @@ export function useConciergeAgent() {
 
       // ── advance_stage ─────────────────────────────────────────────────────
       if (name === "advance_stage") {
+        // If the build already succeeded, handleApplySuccess owns the transition —
+        // skip the redundant advance so we don't fire the "done" kickoff twice.
+        if (buildSucceededRef.current) {
+          return { result: { success: true, message: "Build complete — transition handled." }, loopState };
+        }
         const validation = validateStageComplete(loopState.stage, loopState.config);
         if (!validation.valid) {
           trackEvent("validation_failed", { stage: loopState.stage, missing: validation.missing });
@@ -337,11 +345,12 @@ export function useConciergeAgent() {
           .map((b) => b.text)
           .join("");
 
-        if (response.stop_reason === "end_turn") {
+        if (response.stop_reason === "end_turn" || response.stop_reason === "max_tokens") {
+          const displayText = textContent || (response.stop_reason === "max_tokens" ? "_(response was cut off — please try again or rephrase your question)_" : "\u2026");
           setMessages((prev) =>
             prev.map((m) =>
               m.id === activeBubbleId
-                ? { ...m, isTyping: false, text: textContent || "\u2026" }
+                ? { ...m, isTyping: false, text: displayText }
                 : m
             )
           );
@@ -394,7 +403,10 @@ export function useConciergeAgent() {
 
             if (tool.name === "apply_configuration") {
               const r = toolResult as { success: boolean };
-              if (r?.success) handleApplySuccess();
+              if (r?.success) {
+                buildSucceededRef.current = true;
+                handleApplySuccess();
+              }
             }
 
             toolResults.push({
@@ -410,9 +422,13 @@ export function useConciergeAgent() {
             return [...cleaned, { id: nextBubbleId, role: "concierge" as const, text: "", isTyping: true }];
           });
 
-          msgs = [
+          // Truncate before appending new tool exchange to prevent msgs growing unboundedly
+          const msgsWithAssistant = truncateMessages([
             ...msgs,
             { role: "assistant", content: response.content as Anthropic.ContentBlockParam[] },
+          ]);
+          msgs = [
+            ...msgsWithAssistant,
             { role: "user", content: toolResults as Anthropic.ToolResultBlockParam[] },
           ];
           activeBubbleId = nextBubbleId;
@@ -503,6 +519,7 @@ export function useConciergeAgent() {
     lastKickedStageRef.current = null;
     pendingKickoffRef.current = null;
     isRunningRef.current = false;
+    buildSucceededRef.current = false;
   }, [contextReset]);
 
   return { messages, isRunning, widgetStage, sendMessage, resetAgent };

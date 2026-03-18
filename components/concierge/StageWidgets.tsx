@@ -1956,9 +1956,13 @@ function CdrWidget({ onMessages }: { onMessages: (msgs: string[]) => void }) {
     if (newDepts.length > 0) updates.departments = newDepts;
     if (rec.routingType) updates.routingType = rec.routingType;
     if (rec.routingType) {
+      const VALID_STRATEGIES: QueueStrategy[] = ["ring_all", "round_robin", "longest_idle", "linear", "fewest_calls"];
+      // Normalize CDR-returned strategy (Claude may use dashes or different casing)
+      const rawStrategy = String(rec.strategy ?? "").toLowerCase().replace(/-/g, "_");
+      const safeStrategy: QueueStrategy = (VALID_STRATEGIES.includes(rawStrategy as QueueStrategy) ? rawStrategy : "ring_all") as QueueStrategy;
       updates.routingConfig = {
         ...config.routingConfig,
-        ringStrategy: rec.strategy,
+        ringStrategy: safeStrategy,
         scheduleType: "24_7",
       };
     }
