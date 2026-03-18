@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
   Globe, ArrowRight, CheckSquare, Square, Upload, Plus,
   Trash2, Phone, Users, Building2, HardDrive, ShieldCheck,
   RefreshCw, Loader2, AlertCircle, SkipForward, ExternalLink,
-  Calendar, Lock, Clock,
+  Calendar, Lock, Clock, CheckCircle2, XCircle,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -592,6 +592,100 @@ function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => void })
 
 // ── 4. User Ingestion ─────────────────────────────────────────────────────────
 
+type EmailStatus = "idle" | "checking" | "available" | "taken" | "warn";
+
+function useEmailValidation(email: string, debounceMs = 600) {
+  const [status, setStatus] = useState<EmailStatus>("idle");
+  const [hint, setHint] = useState("");
+
+  const validate = useCallback(async (addr: string) => {
+    const trimmed = addr.trim().toLowerCase();
+    if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      setStatus("idle");
+      setHint("");
+      return;
+    }
+    setStatus("checking");
+    setHint("");
+    try {
+      const { getAccessToken } = await import("@/lib/auth");
+      const token = getAccessToken();
+      if (!token) { setStatus("idle"); return; }
+      const res = await fetch(`/api/validate-user-email?email=${encodeURIComponent(trimmed)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) { setStatus("idle"); return; }
+      const json = await res.json() as { available: boolean; warn?: string };
+      if (json.warn) { setStatus("warn"); setHint(json.warn); }
+      else if (json.available) { setStatus("available"); setHint(""); }
+      else { setStatus("taken"); setHint("Email already registered in this account"); }
+    } catch {
+      setStatus("idle");
+    }
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => validate(email), debounceMs);
+    return () => clearTimeout(t);
+  }, [email, debounceMs, validate]);
+
+  return { status, hint };
+}
+
+function EmailBadge({ status, hint }: { status: EmailStatus; hint: string }) {
+  if (status === "idle") return null;
+  if (status === "checking") return (
+    <span className="inline-flex items-center gap-1 text-xs text-gray-400">
+      <Loader2 className="w-3 h-3 animate-spin motion-reduce:animate-none" aria-hidden="true" /> checking…
+    </span>
+  );
+  if (status === "available") return (
+    <span className="inline-flex items-center gap-1 text-xs text-[#34a853]" role="status">
+      <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" /> Available
+    </span>
+  );
+  if (status === "taken") return (
+    <span className="inline-flex items-center gap-1 text-xs text-red-600" role="alert">
+      <XCircle className="w-3.5 h-3.5" aria-hidden="true" /> Already registered
+    </span>
+  );
+  if (status === "warn") return (
+    <span className="inline-flex items-center gap-1 text-xs text-amber-600" role="status" title={hint}>
+      <AlertCircle className="w-3 h-3" aria-hidden="true" /> Unverified
+    </span>
+  );
+  return null;
+}
+
+// Sub-component: validates a single user row asynchronously and shows status
+function UserRow({ user, index, onRemove }: {
+  user: OnboardingUser;
+  index: number;
+  onRemove: (i: number) => void;
+}) {
+  const { status } = useEmailValidation(user.email ?? "", 300);
+  return (
+    <tr className="bg-white">
+      <td className="px-3 py-2 text-gray-700">{user.firstName} {user.lastName}</td>
+      <td className="px-3 py-2 text-gray-500">
+        <div className="flex items-center gap-2">
+          <span>{user.email}</span>
+          <EmailBadge status={status} hint="" />
+        </div>
+      </td>
+      <td className="px-2 py-2">
+        <button
+          onClick={() => onRemove(index)}
+          className="text-gray-300 hover:text-red-500"
+          aria-label={`Remove ${user.firstName} ${user.lastName}`}
+        >
+          <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+        </button>
+      </td>
+    </tr>
+  );
+}
+
 function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[]) => void }) {
   const { config, updateConfig } = useConcierge();
   const [mode, setMode]             = useState<"choose" | "manual" | "csv" | "confirm">("choose");
@@ -604,9 +698,16 @@ function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[]) => v
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // Live validation for the email being typed
+  const { status: newEmailStatus, hint: newEmailHint } = useEmailValidation(newEmail, 600);
+
   const addManual = () => {
     const v = validateUser({ firstName: newFirst, lastName: newLast, email: newEmail });
     if (!v.valid) { setValidationErrors(v.errors); return; }
+    if (newEmailStatus === "taken") {
+      setValidationErrors(["This email is already registered in the account. Use a different email."]);
+      return;
+    }
     setValidationErrors([]);
     setUsers((u) => [...u, { firstName: newFirst.trim(), lastName: newLast.trim(), email: newEmail.trim() }]);
     setNewFirst(""); setNewLast(""); setNewEmail("");
@@ -631,7 +732,7 @@ function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[]) => v
   const handleConfirm = () => {
     updateConfig({ users });
     const list = users.map((u) =>
-      `${u.firstName} ${u.lastName} <${u.email}>${u.department ? ` [${u.department}]` : ""}`
+      `${u.firstName} ${u.lastName} <${u.email ?? ""}>${u.department ? ` [${u.department}]` : ""}`
     ).join("; ");
     onMessages([`[form] ${users.length} user${users.length !== 1 ? "s" : ""} confirmed: ${list}. Please call update_config with these users then advance_stage.`]);
   };
@@ -670,13 +771,16 @@ function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[]) => v
   }
 
   if (mode === "manual") {
+    const hasTakenEmails = users.length > 0; // UserRow handles per-row status
+    const addDisabled = !newFirst.trim() || !newEmail.trim() || newEmailStatus === "checking" || newEmailStatus === "taken";
+
     return (
       <CardShell>
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Add Team Members</p>
 
         {users.length > 0 && (
           <div className="mb-3 rounded-xl overflow-hidden border border-[#e8eaed]">
-            <table className="w-full text-xs">
+            <table className="w-full text-xs" aria-label="Team members">
               <thead>
                 <tr className="bg-[#f8f9fa]">
                   <th className="px-3 py-2 text-left font-semibold text-gray-500">Name</th>
@@ -686,38 +790,44 @@ function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[]) => v
               </thead>
               <tbody className="divide-y divide-[#f1f3f4]">
                 {users.map((u, i) => (
-                  <tr key={i} className="bg-white">
-                    <td className="px-3 py-2 text-gray-700">{u.firstName} {u.lastName}</td>
-                    <td className="px-3 py-2 text-gray-500">{u.email}</td>
-                    <td className="px-2 py-2">
-                      <button onClick={() => setUsers((u2) => u2.filter((_, idx) => idx !== i))} className="text-gray-300 hover:text-red-500" aria-label={`Remove ${u.firstName} ${u.lastName}`}>
-                        <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
-                      </button>
-                    </td>
-                  </tr>
+                  <UserRow key={i} user={u} index={i} onRemove={(idx) => setUsers((u2) => u2.filter((_, j) => j !== idx))} />
                 ))}
               </tbody>
             </table>
           </div>
         )}
 
-        <div className="grid grid-cols-3 gap-2 mb-2">
+        <div className="grid grid-cols-3 gap-2 mb-1">
           <input placeholder="First name" value={newFirst} onChange={(e) => setNewFirst(e.target.value)}
             aria-label="First name"
             className="px-2.5 py-1.5 text-sm border border-[#dadce0] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1a73e8] bg-white" />
           <input placeholder="Last name" value={newLast} onChange={(e) => setNewLast(e.target.value)}
             aria-label="Last name"
             className="px-2.5 py-1.5 text-sm border border-[#dadce0] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1a73e8] bg-white" />
-          <input placeholder="Email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)}
+          <input placeholder="Email" value={newEmail}
+            onChange={(e) => { setNewEmail(e.target.value); setValidationErrors([]); }}
             onKeyDown={(e) => e.key === "Enter" && addManual()}
             aria-label="Email"
-            className="px-2.5 py-1.5 text-sm border border-[#dadce0] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1a73e8] bg-white" />
+            className={`px-2.5 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1a73e8] bg-white ${
+              newEmailStatus === "taken" ? "border-red-400" : newEmailStatus === "available" ? "border-[#34a853]" : "border-[#dadce0]"
+            }`} />
+        </div>
+        {/* Inline email status badge */}
+        <div className="flex items-center justify-end mb-2 min-h-[1.25rem]">
+          <EmailBadge status={newEmailStatus} hint={newEmailHint} />
         </div>
         <ValidationErrors errors={validationErrors} />
-        <button onClick={addManual} disabled={!newFirst.trim() || !newEmail.trim()}
+        <button onClick={addManual} disabled={addDisabled}
           className="flex items-center gap-1.5 text-sm text-[#1a73e8] hover:underline disabled:opacity-40 mb-3">
           <Plus className="w-3.5 h-3.5" aria-hidden="true" /> Add person
         </button>
+
+        {hasTakenEmails && (
+          <p className="text-xs text-amber-600 mb-2 flex items-start gap-1.5">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
+            Users marked &ldquo;Already registered&rdquo; will fail to create. Remove them or use a different email.
+          </p>
+        )}
 
         <button onClick={handleConfirm} disabled={users.length === 0}
           className="w-full py-2 text-sm font-medium bg-[#1a73e8] text-white rounded-lg hover:bg-[#1557b0] disabled:opacity-40 transition-colors">
@@ -728,26 +838,25 @@ function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[]) => v
     );
   }
 
-  // CSV confirm
+  // CSV confirm — show per-row validation
   return (
     <CardShell>
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
         {users.length} users parsed from CSV &mdash; confirm to continue
       </p>
+      <p className="text-xs text-gray-400 mb-2">Validating emails against your account&hellip;</p>
       <div className="rounded-xl overflow-hidden border border-[#e8eaed] mb-4 max-h-60 overflow-y-auto">
-        <table className="w-full text-xs">
+        <table className="w-full text-xs" aria-label="CSV users">
           <thead className="sticky top-0 bg-[#f8f9fa]">
             <tr>
               <th className="px-3 py-2 text-left font-semibold text-gray-500">Name</th>
               <th className="px-3 py-2 text-left font-semibold text-gray-500">Email</th>
+              <th className="px-2 py-2"><span className="sr-only">Remove</span></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#f1f3f4]">
             {users.map((u, i) => (
-              <tr key={i} className="bg-white">
-                <td className="px-3 py-2 text-gray-700">{u.firstName} {u.lastName}</td>
-                <td className="px-3 py-2 text-gray-500">{u.email}</td>
-              </tr>
+              <UserRow key={i} user={u} index={i} onRemove={(idx) => setUsers((u2) => u2.filter((_, j) => j !== idx))} />
             ))}
           </tbody>
         </table>
