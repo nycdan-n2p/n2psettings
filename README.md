@@ -9,14 +9,14 @@ A Google Admin–style settings console for net2phone UCaaS, built with Next.js 
 1. [Tech Stack](#tech-stack)
 2. [Features](#features)
 3. [The Concierge — AI Onboarding Agent](#the-concierge--ai-onboarding-agent)
-4. [API Routes](#api-routes)
-5. [Proxy Architecture](#proxy-architecture)
-6. [MCP Server](#mcp-server)
-7. [Local Development](#local-development)
-8. [Environment Variables](#environment-variables)
-9. [Deployment (Vercel)](#deployment-vercel)
-10. [Security](#security)
-11. [Localization Roadmap](#localization-roadmap)
+4. [Internationalization (i18n)](#internationalization-i18n)
+5. [API Routes](#api-routes)
+6. [Proxy Architecture](#proxy-architecture)
+7. [MCP Server](#mcp-server)
+8. [Local Development](#local-development)
+9. [Environment Variables](#environment-variables)
+10. [Deployment (Vercel)](#deployment-vercel)
+11. [Security](#security)
 12. [Known Limitations](#known-limitations)
 
 ---
@@ -37,6 +37,7 @@ A Google Admin–style settings console for net2phone UCaaS, built with Next.js 
 | AI streaming | Server-Sent Events (SSE) |
 | AI context | Model Context Protocol (MCP) via `lib/mcp/server.ts` |
 | Markdown rendering | `react-markdown` + `remark-gfm` |
+| Internationalization | `next-intl` (locale routing, `useTranslations`, `NextIntlClientProvider`) |
 
 ---
 
@@ -72,7 +73,7 @@ A Google Admin–style settings console for net2phone UCaaS, built with Next.js 
 ### Integrations
 - **SIP Trunking** — Trunk accounts, trunks, limits, service addresses, phone numbers
 - **SIP Tie-Lines** — Tie-line configuration
-- **Webhooks / API** — Webhook configuration, event types
+- **Webhooks / API** — Full webhook management: name, destination URL, description, event filtering (All / Specific), user scoping (Entire Company / Specific Team Members), secret key display with copy, create + delete via API
 - **API Setup** — Auth API setup
 
 ### Settings
@@ -116,6 +117,7 @@ The Concierge is an AI-powered conversational onboarding agent that guides new a
 - **Retry logic:** `lib/utils/retry.ts` wraps all MCP calls with exponential backoff.
 - **Conversation truncation:** `lib/utils/truncate-messages.ts` keeps the message history within Claude's context window.
 - **Analytics:** `lib/utils/analytics.ts` tracks flow events. Wire a real destination (PostHog, Segment, custom webhook) with one call to `setAnalyticsDestination(fn)`.
+- **Locale-aware AI:** The active locale is sent with every request to `/api/concierge-agent`; the system prompt instructs Claude to respond in the user's language.
 
 ### Widget Files
 
@@ -139,6 +141,68 @@ components/concierge/
 ├── ProgressBar.tsx
 └── ErrorBoundary (via components/ui/ErrorBoundary.tsx)
 ```
+
+---
+
+## Internationalization (i18n)
+
+The app ships with full multi-language support powered by [`next-intl`](https://next-intl-docs.vercel.app/).
+
+### Supported Locales
+
+| Locale | Language | Market |
+|---|---|---|
+| `en` | English | USA, global (default) |
+| `es` | Spanish | CALA (Latin America) |
+| `fr-CA` | French (Canadian) | Canada |
+| `pt-BR` | Portuguese (Brazilian) | Brazil |
+
+### How It Works
+
+**Locale detection order:**
+1. URL prefix — `/es/ucass/...` routes to Spanish
+2. `NEXT_LOCALE` cookie — set when the user picks a language from the selector
+3. Browser `Accept-Language` header
+4. Default locale (`en`) — English users see no prefix (`/ucass/...`)
+
+**Routing strategy:** `"as-needed"` prefix — the default locale (`en`) uses no prefix, so all existing `/ucass/*` bookmarks and links continue to work unchanged. Non-English locales are prefixed: `/es/ucass/...`, `/fr-CA/ucass/...`, `/pt-BR/ucass/...`.
+
+**Key files:**
+
+```
+i18n/
+├── config.ts       # Locale list, default locale, lang tags
+├── request.ts      # Server-side getRequestConfig (loads messages per locale)
+└── routing.ts      # defineRouting with localePrefix: "as-needed"
+
+messages/
+├── en.json         # English (base / source of truth)
+├── es.json         # Spanish
+├── fr-CA.json      # French Canadian
+└── pt-BR.json      # Brazilian Portuguese
+
+middleware.ts       # next-intl middleware (locale detection + URL rewriting)
+contexts/LocaleContext.tsx   # Client-side locale state + setLocale() helper
+components/ui/LocaleSelector.tsx  # Globe icon dropdown in the TopBar
+```
+
+**String coverage:** All message files include translations for:
+- Common UI primitives (`common.*`)
+- Auth / login page (`login.*`, `auth.*`)
+- Top navigation groups and items (`nav.*`)
+- TopBar controls (`topbar.*`)
+- The full Concierge agent UI — all 8 stages, all widget labels, error messages, placeholders (`concierge.*`)
+- Sidekick / N2P Assistant (`assistant.*`)
+- Schedules, Ring Groups, Team Members sections
+- Error boundary and error pages (`errors.*`)
+- Language picker labels (`locale.*`)
+
+**Adding a new locale:**
+1. Add the locale code to `i18n/config.ts` → `locales` array.
+2. Create `messages/<locale>.json` (copy `en.json` as a base).
+3. That's it — the middleware, routing, and `LocaleSelector` pick it up automatically.
+
+**AI language support:** The user's active locale is forwarded to `/api/concierge-agent` with every request. The system prompt instructs Claude to respond **only** in that language, so the entire onboarding conversation (including AI-generated summaries, tables, and confirmations) matches the user's selected language.
 
 ---
 
@@ -222,6 +286,10 @@ Open [http://localhost:3000](http://localhost:3000).
 **Login:** Paste your OAuth2 refresh token on the login page. Obtain it from [app.net2phone.com](https://app.net2phone.com): DevTools → Application → Local Storage → `n2p_refresh_token`.
 
 > If you get `invalid_grant`, the token may be expired. Log back in at app.net2phone.com and copy a fresh `n2p_refresh_token`.
+
+### Changing the UI language locally
+
+The language picker (globe icon in the top bar) switches the locale at runtime and sets a `NEXT_LOCALE` cookie. Alternatively, navigate directly to `/es`, `/fr-CA`, or `/pt-BR` to test a specific locale without touching the cookie.
 
 ---
 
@@ -313,22 +381,6 @@ The following security controls are in place:
 
 ---
 
-## Localization Roadmap
-
-The application currently serves English only. Support for **CALA Spanish**, **Brazilian Portuguese**, and **French Canadian** is planned in two phases:
-
-**Phase 1 — Static UI strings**
-- Adopt `next-intl` with locale routing (`/en`, `/es`, `/pt-BR`, `/fr-CA`)
-- Extract all hardcoded strings into `messages/{locale}.json` files
-- Locale detection: URL path → user account preference → browser `Accept-Language`
-
-**Phase 2 — AI-generated content**
-- Pass the user's locale to Claude via the system prompt (e.g. `"Respond in French Canadian"`)
-- Locale-aware phone number validation using `libphonenumber-js` (replaces the current regex)
-- Date/time formatting using `Intl.DateTimeFormat` per locale
-
----
-
 ## Known Limitations
 
 | Area | Limitation |
@@ -336,7 +388,9 @@ The application currently serves English only. Support for **CALA Spanish**, **B
 | Onboarding state | Stored in `os.tmpdir()` — ephemeral on Vercel; swap to Vercel KV for production |
 | Rate limiting | In-memory per-instance — does not share counts across Vercel function instances; swap to Upstash Redis |
 | Analytics | Events are collected locally and logged to console; wire `setAnalyticsDestination()` to PostHog or Segment |
-| Localization | English only; see roadmap above |
 | CDR file size | Truncated to 40,000 characters (~800 rows) before AI analysis |
 | Porting LOA | Sign URL is provided by the net2phone API; the signing flow is external |
 | Onboarding legacy route | `/api/onboarding-agent` is a non-streaming legacy route; `/api/concierge-agent` is the active route |
+| i18n — AI content | Claude's responses are language-instructed via system prompt; output quality depends on Claude's multilingual capability for edge-case phrasing |
+| i18n — date/time | Dates and times are formatted in English regardless of locale; full `Intl.DateTimeFormat` integration is a future improvement |
+| i18n — phone validation | Phone number regex is generic; `libphonenumber-js` per-locale validation is a future improvement |
