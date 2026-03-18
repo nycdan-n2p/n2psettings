@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit, getClientKey } from "@/lib/server/rate-limit";
 
 // ── Tool definitions ──────────────────────────────────────────────────────────
 
@@ -313,10 +314,34 @@ function sseErrorResponse(message: string) {
 
 // ── Route ─────────────────────────────────────────────────────────────────────
 
+const MAX_MESSAGES = 200;
+const MAX_BODY_BYTES = 2_000_000; // 2 MB
+
 export async function POST(req: NextRequest) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return sseErrorResponse("ANTHROPIC_API_KEY is not configured. Add it to .env.local.");
+  }
+
+  // Require authentication — this route calls a paid AI API.
+  const auth = req.headers.get("Authorization");
+  if (!auth?.startsWith("Bearer ")) {
+    return sseErrorResponse("Unauthorized");
+  }
+
+  // Rate limit: 30 requests per minute per client IP.
+  const rl = checkRateLimit(getClientKey(req), "concierge-agent", 30, 60);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait before sending another message." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+    );
+  }
+
+  // Reject oversized bodies before parsing.
+  const contentLength = req.headers.get("content-length");
+  if (contentLength && parseInt(contentLength, 10) > MAX_BODY_BYTES) {
+    return sseErrorResponse("Request body too large.");
   }
 
   let body: {
@@ -329,6 +354,14 @@ export async function POST(req: NextRequest) {
     body = await req.json();
   } catch {
     return sseErrorResponse("Invalid JSON body.");
+  }
+
+  // Validate messages array to prevent prompt injection via oversized history.
+  if (!Array.isArray(body.messages)) {
+    return sseErrorResponse("messages must be an array.");
+  }
+  if (body.messages.length > MAX_MESSAGES) {
+    return sseErrorResponse(`Too many messages (max ${MAX_MESSAGES}).`);
   }
 
   const client = new Anthropic({ apiKey });

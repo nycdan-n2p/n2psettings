@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkProxyPath } from "@/lib/server/proxy-guard";
 
 // Proxies requests to auth.net2phone.com/api
 // Forwards the Bearer token so we don't need cookie-based auth.
@@ -44,7 +45,11 @@ async function proxyRequest(
   request: NextRequest,
   { path }: { path: string[] }
 ) {
-  const pathStr = path.join("/");
+  const pathCheck = checkProxyPath(path);
+  if (!pathCheck.ok) {
+    return NextResponse.json({ error: `Invalid path: ${pathCheck.reason}` }, { status: 400 });
+  }
+  const pathStr = pathCheck.sanitized!;
   const url = new URL(request.url);
   const targetUrl = `${N2P_AUTH_BASE}/api/${pathStr}${url.search}`;
 

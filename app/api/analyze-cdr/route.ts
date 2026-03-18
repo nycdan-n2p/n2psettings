@@ -1,5 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit, getClientKey } from "@/lib/server/rate-limit";
+import { extractAnthropicText } from "@/lib/server/type-guards";
 
 const client = new Anthropic();
 
@@ -12,6 +14,28 @@ function truncateCsv(csv: string, maxChars = 40_000): string {
 }
 
 export async function POST(req: NextRequest) {
+  // Require a valid Bearer token — prevents unauthenticated callers from
+  // consuming paid Anthropic credits.
+  const auth = req.headers.get("Authorization");
+  if (!auth?.startsWith("Bearer ")) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Rate limit: 10 CDR analyses per minute per client IP (expensive operation).
+  const rl = checkRateLimit(getClientKey(req), "analyze-cdr", 10, 60);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait before uploading another CDR." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+    );
+  }
+
+  // Guard against excessively large request bodies before parsing JSON.
+  const contentLength = req.headers.get("content-length");
+  if (contentLength && parseInt(contentLength, 10) > 5_000_000) {
+    return NextResponse.json({ error: "Request body too large (max 5 MB)." }, { status: 413 });
+  }
+
   let csvText: string;
   try {
     ({ csvText } = await req.json());
@@ -65,7 +89,7 @@ ${safecsv}`;
       messages: [{ role: "user", content: prompt }],
     });
 
-    const raw = (response.content[0] as { type: string; text: string }).text?.trim() ?? "";
+    const raw = extractAnthropicText(response.content);
     const jsonStr = raw.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "").trim();
 
     let data: Record<string, unknown>;

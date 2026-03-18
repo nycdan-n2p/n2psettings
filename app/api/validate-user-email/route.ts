@@ -1,17 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeN2PTool } from "@/lib/mcp/server";
-
-function decodeJwtPayload(token: string): Record<string, unknown> {
-  try {
-    const parts = token.split(".");
-    if (parts.length !== 3) return {};
-    const payload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const padded = payload + "=".repeat((4 - (payload.length % 4)) % 4);
-    return JSON.parse(Buffer.from(padded, "base64").toString("utf-8")) as Record<string, unknown>;
-  } catch {
-    return {};
-  }
-}
+import { claimsFromAuthHeader, tokenFromAuthHeader } from "@/lib/server/jwt";
 
 /**
  * GET /api/validate-user-email?email=...
@@ -20,8 +9,8 @@ function decodeJwtPayload(token: string): Record<string, unknown> {
  * Uses search_team_members to check if the email already exists in the account.
  */
 export async function GET(req: NextRequest) {
-  const auth = req.headers.get("Authorization");
-  const token = auth?.startsWith("Bearer ") ? auth.slice(7) : null;
+  const authHeader = req.headers.get("Authorization");
+  const token = tokenFromAuthHeader(authHeader);
   if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -31,18 +20,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "email param required" }, { status: 400 });
   }
 
-  const claims = decodeJwtPayload(token);
-  const accountId = (() => {
-    for (const k of ["aid", "accountId", "account_id", "AccountId", "account"]) {
-      const v = claims[k];
-      if (v !== undefined && v !== null) {
-        const n = Number(v);
-        if (!isNaN(n) && n > 0) return n;
-      }
-    }
-    return null;
-  })();
-
+  const accountId = claimsFromAuthHeader(authHeader)?.accountId ?? null;
   if (!accountId) {
     return NextResponse.json({ error: "Token missing account ID" }, { status: 401 });
   }

@@ -115,7 +115,9 @@ export default function DashboardLayout({
             </main>
           </div>
           <AssistantSidePanel />
-          <ConciergeOverlay />
+          <ErrorBoundary context="Concierge">
+            <ConciergeOverlay />
+          </ErrorBoundary>
         </div>
       </AssistantProvider>
     </ConciergeProvider>

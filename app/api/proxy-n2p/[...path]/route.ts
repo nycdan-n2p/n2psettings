@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkProxyPath } from "@/lib/server/proxy-guard";
 
 // Routes to api.n2p.io/v2 — used for sip-registrations, sip-trunks, etc.
 // (Distinct from proxy-v2 which routes to app.net2phone.com/api/v2 for call-queues)
@@ -43,7 +44,11 @@ async function proxyRequest(
   request: NextRequest,
   { path }: { path: string[] }
 ) {
-  const pathStr = path.join("/");
+  const pathCheck = checkProxyPath(path);
+  if (!pathCheck.ok) {
+    return NextResponse.json({ error: `Invalid path: ${pathCheck.reason}` }, { status: 400 });
+  }
+  const pathStr = pathCheck.sanitized!;
   const url = new URL(request.url);
   const targetUrl = `${N2P_BASE}/${pathStr}${url.search}`;
 

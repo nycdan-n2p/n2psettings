@@ -1,5 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
+import { checkSsrf } from "@/lib/server/ssrf-guard";
+import { checkRateLimit, getClientKey } from "@/lib/server/rate-limit";
+import { extractAnthropicText } from "@/lib/server/type-guards";
 
 const client = new Anthropic();
 
@@ -23,6 +26,15 @@ function htmlToText(html: string): string {
 // ── Route ─────────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  // Rate limit: 20 scrapes per minute per client IP.
+  const rl = checkRateLimit(getClientKey(req), "research-website", 20, 60);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+    );
+  }
+
   let url: string;
   try {
     ({ url } = await req.json());
@@ -36,6 +48,12 @@ export async function POST(req: NextRequest) {
 
   // Normalise the URL
   const normalised = url.startsWith("http") ? url : `https://${url}`;
+
+  // Block SSRF — reject private IPs, loopback, metadata endpoints, etc.
+  const ssrf = checkSsrf(normalised);
+  if (!ssrf.ok) {
+    return NextResponse.json({ error: `Invalid URL: ${ssrf.reason}` }, { status: 400 });
+  }
 
   // ── Step 1: Fetch the website ──────────────────────────────────────────────
 
@@ -106,7 +124,7 @@ ${pageText}`;
       messages: [{ role: "user", content: prompt }],
     });
 
-    const raw = (response.content[0] as { type: string; text: string }).text?.trim() ?? "";
+    const raw = extractAnthropicText(response.content);
 
     // Strip any accidental markdown fences
     const jsonStr = raw.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "").trim();

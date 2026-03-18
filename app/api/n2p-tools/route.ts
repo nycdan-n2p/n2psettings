@@ -1,49 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeN2PTool } from "@/lib/mcp/server";
 import { adaptForMCP, type AdaptResult } from "@/lib/n2p-tools/adapter";
-
-function decodeJwtPayload(token: string): Record<string, unknown> {
-  try {
-    const parts = token.split(".");
-    if (parts.length !== 3) return {};
-    const payload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const padded = payload + "=".repeat((4 - (payload.length % 4)) % 4);
-    return JSON.parse(Buffer.from(padded, "base64").toString("utf-8")) as Record<string, unknown>;
-  } catch {
-    return {};
-  }
-}
-
-function pickNumber(claims: Record<string, unknown>, ...keys: string[]): number | null {
-  for (const k of keys) {
-    const v = claims[k];
-    if (v !== undefined && v !== null) {
-      const n = Number(v);
-      if (!isNaN(n) && n > 0) return n;
-    }
-  }
-  return null;
-}
-
-function pickString(claims: Record<string, unknown>, ...keys: string[]): string | null {
-  for (const k of keys) {
-    const v = claims[k];
-    if (typeof v === "string" && v) return v;
-  }
-  return null;
-}
+import { claimsFromAuthHeader, tokenFromAuthHeader } from "@/lib/server/jwt";
+import {
+  extractArray,
+  safeN2PCreatedUser,
+  isN2PRingGroup,
+  isN2PCallQueue,
+  isN2PDepartment,
+  isRecord,
+} from "@/lib/server/type-guards";
 
 export async function POST(req: NextRequest) {
-  const auth = req.headers.get("Authorization");
-  const token = auth?.startsWith("Bearer ") ? auth.slice(7) : null;
+  const authHeader = req.headers.get("Authorization");
+  const token = tokenFromAuthHeader(authHeader);
   if (!token) {
     return NextResponse.json({ error: "Missing or invalid Authorization header" }, { status: 401 });
   }
 
-  const claims = decodeJwtPayload(token);
-  const accountId = pickNumber(claims, "aid", "accountId", "account_id", "AccountId", "account");
-  const clientId = pickNumber(claims, "cid", "clientId", "client_id", "ClientId");
-  const sipClientId = pickString(claims, "sipClientId", "sip_client_id");
+  const claims = claimsFromAuthHeader(authHeader);
+  const accountId = claims?.accountId ?? null;
+  const clientId = claims?.clientId ?? null;
+  const sipClientId = claims?.sipClientId ?? null;
 
   if (!accountId) {
     return NextResponse.json({ error: "Token missing account ID (aid)" }, { status: 401 });
@@ -72,14 +50,10 @@ export async function POST(req: NextRequest) {
 
   if (adapted.composite === "create_user_with_phone") {
     try {
-      const created = await executeN2PTool(adapted.tool, adapted.args as Record<string, unknown>, ctx) as {
-        userId?: number;
-        firstName?: string;
-        lastName?: string;
-        extension?: string;
-      };
+      const raw = await executeN2PTool(adapted.tool, adapted.args as Record<string, unknown>, ctx);
+      const created = safeN2PCreatedUser(raw);
       let phoneAssigned = false;
-      const phoneNumber = input?.phoneNumber as string | undefined;
+      const phoneNumber = typeof input?.phoneNumber === "string" ? input.phoneNumber : undefined;
       if (phoneNumber && created?.userId) {
         try {
           await executeN2PTool("assign_phone_to_user", {
@@ -96,8 +70,8 @@ export async function POST(req: NextRequest) {
         data: {
           success: true,
           userId: created?.userId,
-          name: created ? `${created.firstName} ${created.lastName}` : undefined,
-          extension: created?.extension ?? input?.extension,
+          name: created ? `${created.firstName ?? ""} ${created.lastName ?? ""}`.trim() : undefined,
+          extension: created?.extension ?? (typeof input?.extension === "string" ? input.extension : undefined),
           phoneAssigned,
           phoneNumber: phoneNumber ?? null,
         },
@@ -111,8 +85,8 @@ export async function POST(req: NextRequest) {
   if (anthropicTool === "get_user_call_stats") {
     try {
       const raw = await executeN2PTool(adapted.tool, adapted.args as Record<string, unknown>, ctx);
-      const rows = Array.isArray(raw) ? raw : (raw as { users?: unknown[] })?.users ?? [];
-      const userId = input?.userId as number | undefined;
+      const rows = Array.isArray(raw) ? raw : (isRecord(raw) && Array.isArray(raw.users) ? raw.users : []);
+      const userId = typeof input?.userId === "number" ? input.userId : undefined;
       const row = (rows as Array<Record<string, unknown>>).find(
         (r) => r.userId === userId || r.user_id === userId
       );
@@ -164,8 +138,9 @@ export async function POST(req: NextRequest) {
 
   if (anthropicTool === "get_next_extension") {
     try {
-      const raw = await executeN2PTool(adapted.tool, adapted.args as Record<string, unknown>, ctx) as { nextExtension?: string };
-      return NextResponse.json({ data: { nextExtension: raw?.nextExtension } });
+      const raw = await executeN2PTool(adapted.tool, adapted.args as Record<string, unknown>, ctx);
+      const nextExtension = isRecord(raw) && typeof raw.nextExtension === "string" ? raw.nextExtension : undefined;
+      return NextResponse.json({ data: { nextExtension } });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Tool failed";
       return NextResponse.json({ error: msg }, { status: 500 });
@@ -175,12 +150,12 @@ export async function POST(req: NextRequest) {
   if (anthropicTool === "list_ring_groups") {
     try {
       const raw = await executeN2PTool(adapted.tool, adapted.args as Record<string, unknown>, ctx);
-      const groups = Array.isArray(raw) ? raw : [];
-      const mapped = groups.map((g: Record<string, unknown>) => ({
+      const groups = extractArray(raw);
+      const mapped = groups.filter(isN2PRingGroup).map((g) => ({
         id: g.id,
         name: g.name,
         extension: g.extension,
-        memberCount: Array.isArray(g.lines) ? (g.lines as unknown[]).length : 0,
+        memberCount: Array.isArray(g.lines) ? g.lines.length : 0,
       }));
       return NextResponse.json({ data: mapped });
     } catch (e) {
@@ -192,12 +167,12 @@ export async function POST(req: NextRequest) {
   if (anthropicTool === "list_call_queues") {
     try {
       const raw = await executeN2PTool(adapted.tool, adapted.args as Record<string, unknown>, ctx);
-      const items = Array.isArray(raw) ? raw : (raw as { items?: unknown[] })?.items ?? [];
-      const mapped = items.map((q: Record<string, unknown>) => ({
+      const items = extractArray(raw);
+      const mapped = items.filter(isN2PCallQueue).map((q) => ({
         id: q.id,
         name: q.name ?? q.display_name,
         extension: q.extension,
-        agentCount: q.agents_count ?? (Array.isArray(q.agents) ? (q.agents as unknown[]).length : 0),
+        agentCount: q.agents_count ?? (Array.isArray(q.agents) ? q.agents.length : 0),
       }));
       return NextResponse.json({ data: mapped });
     } catch (e) {
@@ -209,8 +184,8 @@ export async function POST(req: NextRequest) {
   if (anthropicTool === "list_departments") {
     try {
       const raw = await executeN2PTool(adapted.tool, adapted.args as Record<string, unknown>, ctx);
-      const depts = Array.isArray(raw) ? raw : [];
-      const mapped = depts.map((d: Record<string, unknown>) => ({
+      const depts = extractArray(raw);
+      const mapped = depts.filter(isN2PDepartment).map((d) => ({
         deptId: d.deptId ?? d.dept_id,
         name: d.name,
         extension: d.extension,
@@ -224,18 +199,14 @@ export async function POST(req: NextRequest) {
 
   if (anthropicTool === "create_user") {
     try {
-      const created = await executeN2PTool(adapted.tool, adapted.args as Record<string, unknown>, ctx) as {
-        userId?: number;
-        firstName?: string;
-        lastName?: string;
-        extension?: string;
-      };
+      const raw = await executeN2PTool(adapted.tool, adapted.args as Record<string, unknown>, ctx);
+      const created = safeN2PCreatedUser(raw);
       return NextResponse.json({
         data: {
           success: true,
           userId: created?.userId,
-          name: created ? `${created.firstName} ${created.lastName}` : undefined,
-          extension: created?.extension ?? input?.extension,
+          name: created ? `${created.firstName ?? ""} ${created.lastName ?? ""}`.trim() : undefined,
+          extension: created?.extension ?? (typeof input?.extension === "string" ? input.extension : undefined),
           phoneAssigned: false,
           phoneNumber: null,
         },

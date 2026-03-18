@@ -1,4 +1,4 @@
-type EventName =
+export type EventName =
   | "flow_started"
   | "stage_entered"
   | "stage_completed"
@@ -14,11 +14,33 @@ type EventName =
   | "error_occurred"
   | "validation_failed";
 
-interface AnalyticsEvent {
+export interface AnalyticsEvent {
   name: EventName;
   data: Record<string, unknown>;
   timestamp: number;
   sessionId: string;
+}
+
+/**
+ * Analytics destination plug-in.
+ *
+ * By default events are collected in-memory (useful for `getFlowMetrics()`).
+ * To ship events to a real analytics service, set a custom destination:
+ *
+ *   import { setAnalyticsDestination } from "@/lib/utils/analytics";
+ *   // PostHog example:
+ *   setAnalyticsDestination((event) => posthog.capture(event.name, event.data));
+ *   // Segment example:
+ *   setAnalyticsDestination((event) => analytics.track(event.name, event.data));
+ *   // Custom webhook example:
+ *   setAnalyticsDestination((event) => fetch("/api/analytics", { method: "POST", body: JSON.stringify(event) }));
+ */
+type AnalyticsDestination = (event: AnalyticsEvent) => void;
+
+let destination: AnalyticsDestination | null = null;
+
+export function setAnalyticsDestination(fn: AnalyticsDestination) {
+  destination = fn;
 }
 
 let sessionId = typeof crypto !== "undefined"
@@ -35,6 +57,12 @@ export function trackEvent(name: EventName, data?: Record<string, unknown>) {
     sessionId,
   };
   events.push(event);
+
+  // Forward to the configured destination (PostHog, Segment, custom webhook, etc.)
+  if (destination) {
+    try { destination(event); } catch { /* never let analytics break the app */ }
+  }
+
   if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
     console.info(`[analytics] ${name}`, event.data);
   }

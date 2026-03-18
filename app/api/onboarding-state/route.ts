@@ -2,24 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { promises as fs } from "fs";
 import path from "path";
 import os from "os";
+import { claimsFromAuthHeader } from "@/lib/server/jwt";
 
 const STATE_DIR = path.join(os.tmpdir(), "n2p-onboarding-state");
 
 function getAccountIdFromToken(req: NextRequest): string | null {
-  const auth = req.headers.get("Authorization");
-  if (!auth?.startsWith("Bearer ")) return null;
-  const token = auth.slice(7);
-  try {
-    const parts = token.split(".");
-    if (parts.length !== 3) return null;
-    const payload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const padded = payload + "=".repeat((4 - (payload.length % 4)) % 4);
-    const claims = JSON.parse(Buffer.from(padded, "base64").toString());
-    const aid = claims.aid ?? claims.accountId ?? claims.account_id;
-    return aid ? String(aid) : null;
-  } catch {
-    return null;
-  }
+  const accountId = claimsFromAuthHeader(req.headers.get("Authorization"))?.accountId;
+  return accountId ? String(accountId) : null;
 }
 
 async function ensureDir() {
@@ -52,7 +41,7 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let body: { stage: string; config: Record<string, unknown> };
+  let body: { stage: string; config: Record<string, unknown>; clientVersion?: number };
   try {
     body = await req.json();
   } catch {
@@ -60,13 +49,33 @@ export async function PUT(req: NextRequest) {
   }
 
   await ensureDir();
+
+  const fp = filePath(accountId);
+
+  // Optimistic locking: if the client sends a `clientVersion` (the `updatedAt`
+  // timestamp it last read), reject the write if a newer version already exists
+  // on disk. This prevents a stale background save from overwriting fresh data.
+  if (body.clientVersion !== undefined) {
+    try {
+      const existing = JSON.parse(await fs.readFile(fp, "utf-8")) as { updatedAt?: number };
+      if (existing.updatedAt && existing.updatedAt > body.clientVersion) {
+        return NextResponse.json(
+          { error: "Conflict — a newer version of this state exists.", serverVersion: existing.updatedAt },
+          { status: 409 }
+        );
+      }
+    } catch {
+      // File doesn't exist yet — write is safe.
+    }
+  }
+
+  const now = Date.now();
   try {
-    await fs.writeFile(
-      filePath(accountId),
-      JSON.stringify({ ...body, updatedAt: Date.now() }),
-      "utf-8"
-    );
-    return NextResponse.json({ ok: true });
+    // Write to a temp file then rename for an atomic swap, avoiding partial writes.
+    const tmpPath = fp + ".tmp";
+    await fs.writeFile(tmpPath, JSON.stringify({ ...body, updatedAt: now }), "utf-8");
+    await fs.rename(tmpPath, fp);
+    return NextResponse.json({ ok: true, updatedAt: now });
   } catch (err) {
     console.error("[onboarding-state] Write failed:", err);
     return NextResponse.json({ error: "Failed to save state" }, { status: 500 });

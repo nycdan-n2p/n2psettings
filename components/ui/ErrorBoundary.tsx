@@ -1,65 +1,72 @@
 "use client";
 
-import React from "react";
+import { Component, type ReactNode, type ErrorInfo } from "react";
+import { AlertCircle, RefreshCw } from "lucide-react";
 
 interface Props {
-  children: React.ReactNode;
-  fallback?: React.ReactNode;
+  children: ReactNode;
+  /** Optional custom fallback UI. Receives the error and a reset callback. */
+  fallback?: (error: Error, reset: () => void) => ReactNode;
+  /** If provided, shown as the panel title in the default fallback. */
+  context?: string;
 }
 
 interface State {
-  hasError: boolean;
-  message: string;
+  error: Error | null;
 }
 
 /**
- * Class-based error boundary — catches render/lifecycle errors in child tree.
- * Must be a class component; hooks cannot implement componentDidCatch.
+ * ErrorBoundary — catches render-time errors in the subtree and shows a
+ * graceful fallback instead of crashing the whole page.
+ *
+ * Usage:
+ *   <ErrorBoundary context="Concierge">
+ *     <ConciergeOverlay />
+ *   </ErrorBoundary>
  */
-export class ErrorBoundary extends React.Component<Props, State> {
+export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, message: "" };
+    this.state = { error: null };
   }
 
-  static getDerivedStateFromError(error: unknown): State {
-    const message =
-      error instanceof Error ? error.message : "An unexpected error occurred";
-    return { hasError: true, message };
+  static getDerivedStateFromError(error: Error): State {
+    return { error };
   }
 
-  componentDidCatch(error: unknown, info: React.ErrorInfo) {
-    // In production you'd send this to your error tracking service (Sentry, etc.)
-    console.error("[ErrorBoundary] Caught error:", error, info.componentStack);
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error(`[ErrorBoundary${this.props.context ? `:${this.props.context}` : ""}]`, error, info.componentStack);
   }
 
-  handleReset = () => {
-    this.setState({ hasError: false, message: "" });
-  };
+  reset = () => this.setState({ error: null });
 
   render() {
-    if (this.state.hasError) {
-      if (this.props.fallback) return this.props.fallback;
+    const { error } = this.state;
+    const { children, fallback, context } = this.props;
 
-      return (
-        <div className="flex flex-col items-center justify-center min-h-[300px] p-8 text-center">
-          <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
-            <span className="text-red-600 text-xl font-bold">!</span>
-          </div>
-          <h2 className="text-lg font-medium text-gray-900 mb-2">
-            Something went wrong
-          </h2>
-          <p className="text-sm text-gray-500 mb-6 max-w-sm">{this.state.message}</p>
-          <button
-            onClick={this.handleReset}
-            className="px-4 py-2 bg-[#1a73e8] text-white text-sm font-medium rounded-md hover:bg-[#1557b0] transition-colors"
-          >
-            Try again
-          </button>
+    if (!error) return children;
+
+    if (fallback) return fallback(error, this.reset);
+
+    return (
+      <div
+        role="alert"
+        className="flex flex-col items-center justify-center gap-4 p-8 text-center rounded-2xl border border-red-200 bg-red-50"
+      >
+        <AlertCircle className="w-8 h-8 text-red-500" aria-hidden="true" />
+        <div className="space-y-1">
+          <p className="text-sm font-semibold text-red-700">
+            {context ? `${context} encountered an error` : "Something went wrong"}
+          </p>
+          <p className="text-xs text-red-500 max-w-xs break-words">{error.message}</p>
         </div>
-      );
-    }
-
-    return this.props.children;
+        <button
+          onClick={this.reset}
+          className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-red-700 border border-red-300 rounded-lg hover:bg-red-100 transition-colors"
+        >
+          <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" /> Try again
+        </button>
+      </div>
+    );
   }
 }
