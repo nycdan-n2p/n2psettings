@@ -76,6 +76,10 @@
   },
 
   "nav": {
+    "sidebar": {
+      "apps": "Aplicativos",
+      "products": "Produtos net2phone"
+    },
     "groups": {
       "overview": "Visão geral",
       "communications": "Comunicações",

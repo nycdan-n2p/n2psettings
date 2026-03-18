@@ -3,11 +3,65 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useApp } from "@/contexts/AppContext";
 import { useAssistant } from "@/contexts/AssistantContext";
 import { useState } from "react";
 import { getNavForProduct } from "@/lib/config/nav";
 import { getProductFromPath, PRODUCTS } from "@/lib/config/products";
+
+const NAV_GROUP_KEYS: Record<string, string> = {
+  "Overview": "groups.overview",
+  "Communications": "groups.communications",
+  "Organization": "groups.organization",
+  "Call Routing": "groups.callRouting",
+  "Resources": "groups.resources",
+  "Integrations": "groups.integrations",
+  "Settings": "groups.settings",
+  "Help & Support": "groups.helpSupport",
+  "AI Agent": "groups.aiAgent",
+  "Huddle": "groups.huddle",
+  "Coach": "groups.coach",
+  "Ucontact": "groups.ucontact",
+};
+
+const NAV_ITEM_KEYS: Record<string, string> = {
+  "Dashboard": "items.dashboard",
+  "Analytics": "items.analytics",
+  "Calls": "items.calls",
+  "Voicemail": "items.voicemail",
+  "Calendar": "items.calendar",
+  "Company": "items.company",
+  "Team Members": "items.teamMembers",
+  "Departments": "items.departments",
+  "Virtual Assistant": "items.virtualAssistant",
+  "Ring Groups": "items.ringGroups",
+  "Call Queues": "items.callQueues",
+  "Agent": "items.agent",
+  "Phone Numbers": "items.phoneNumbers",
+  "Devices": "items.devices",
+  "Device Management": "items.deviceManagement",
+  "Schedules": "items.schedules",
+  "Special Extensions": "items.specialExtensions",
+  "Virtual Fax": "items.virtualFax",
+  "SIP Trunking": "items.sipTrunking",
+  "SIP Tie-Lines": "items.sipTieLines",
+  "Webhooks/API": "items.webhooksApi",
+  "API Setup": "items.apiSetup",
+  "Voicemail Settings": "items.voicemailSettings",
+  "Music Options": "items.musicOptions",
+  "Company Directory": "items.companyDirectory",
+  "911 Contacts": "items.contacts911",
+  "Licenses": "items.licenses",
+  "Trust Center": "items.trustCenter",
+  "Kari's Law": "items.karisLaw",
+  "Delegates": "items.delegates",
+  "Number Porting": "items.numberPorting",
+  "Bulk Operations": "items.bulkOperations",
+  "Overview": "items.overview",
+  "Settings": "items.settings",
+  "Call History": "items.callHistory",
+};
 
 interface NavItem {
   href?: string;
@@ -27,6 +81,8 @@ function NavGroupSection({ group }: { group: NavGroup }) {
   const { bootstrap } = useApp();
   const { open: openAssistant } = useAssistant();
   const [expanded, setExpanded] = useState(true);
+  const t = useTranslations("nav");
+  const tAny = t as unknown as (key: string) => string;
 
   const visibleItems = group.items.filter((item) => {
     if (!item.feature) return true;
@@ -34,6 +90,13 @@ function NavGroupSection({ group }: { group: NavGroup }) {
   });
 
   if (visibleItems.length === 0) return null;
+
+  const groupLabel = NAV_GROUP_KEYS[group.label]
+    ? tAny(NAV_GROUP_KEYS[group.label])
+    : group.label;
+
+  const itemLabel = (label: string) =>
+    NAV_ITEM_KEYS[label] ? tAny(NAV_ITEM_KEYS[label]) : label;
 
   return (
     <div className="mb-1">
@@ -46,7 +109,7 @@ function NavGroupSection({ group }: { group: NavGroup }) {
         ) : (
           <ChevronRight className="w-4 h-4" />
         )}
-        {group.label}
+        {groupLabel}
       </button>
       {expanded && (
         <div className="space-y-0.5">
@@ -60,7 +123,7 @@ function NavGroupSection({ group }: { group: NavGroup }) {
                   className="flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors text-gray-700 hover:bg-[#e8eaed] w-full text-left"
                 >
                   <Icon className="w-5 h-5 shrink-0" />
-                  {item.label}
+                  {itemLabel(item.label)}
                 </button>
               );
             }
@@ -74,7 +137,7 @@ function NavGroupSection({ group }: { group: NavGroup }) {
                   className="flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors text-gray-700 hover:bg-[#e8eaed]"
                 >
                   <Icon className="w-5 h-5 shrink-0" />
-                  {item.label}
+                  {itemLabel(item.label)}
                 </a>
               );
             }
@@ -92,7 +155,7 @@ function NavGroupSection({ group }: { group: NavGroup }) {
                 }`}
               >
                 <Icon className="w-5 h-5 shrink-0" />
-                {item.label}
+                {itemLabel(item.label)}
               </Link>
             );
           })}
@@ -107,6 +170,7 @@ export function Sidebar() {
   const productId = getProductFromPath(pathname);
   const [productsExpanded, setProductsExpanded] = useState(true);
   const uniteExpanded = productId === "ucass";
+  const t = useTranslations("nav");
 
   const ucassNavGroups = getNavForProduct("ucass");
 
@@ -115,7 +179,7 @@ export function Sidebar() {
       <nav className="p-3">
         <div className="mb-2">
           <p className="px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
-            Apps
+            {t("sidebar.apps")}
           </p>
           <Link
             href="/products"
@@ -126,7 +190,7 @@ export function Sidebar() {
                 : "text-gray-700 hover:bg-[#e8eaed]"
             }`}
           >
-            Overview
+            {t("items.overview")}
           </Link>
         </div>
 
@@ -140,7 +204,7 @@ export function Sidebar() {
             ) : (
               <ChevronRight className="w-4 h-4" />
             )}
-            net2phone products
+            {t("sidebar.products")}
           </button>
 
           {productsExpanded && (
