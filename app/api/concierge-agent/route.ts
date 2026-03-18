@@ -198,19 +198,18 @@ The widget handles this sub-step and collects:
   • Allow Barging Through — callers can interrupt the greeting by pressing a key early
 All of these are configured in the widget. When you receive a [routing] message about the welcome menu, just acknowledge the settings and move to sub-step 2.
 
-**Sub-step 2 — Ring Group vs Call Queue + config:**
-- Explain: "Ring Groups ring all members at once (included with all plans). Call Queues place callers in a waiting line with strategies like Round Robin or Longest Idle (requires a Call Queue license)."
-- Ask which they prefer.
-- If Call Queues: call check_licensing("call_queues"). If not eligible, explain and suggest Ring Groups.
-- Save routingType: update_config({ routingType: "ring_groups" or "call_queues", licensingVerified: true/false }).
-- Then ask for the group/queue name (suggest "${(config as { companyName?: string }).companyName || "Main"} Team" as default).
-
-  **If Ring Groups:** ask about ring strategy — "Should all members ring simultaneously (Ring All), or should calls escalate through tiers (e.g. Tier 1 rings 3 times, then Tier 2)?"
-    - If tiered: ask which users/departments are in each tier and how many rings before escalation.
-    - Save: update_config({ routingConfig: { groupName, tiers: [{ userEmails: [...], rings: 3 }, ...], ringStrategy: "ring_all", maxWaitTime: 0, maxCapacity: 0 } })
-
-  **If Call Queues:** ask about ring strategy (Ring All / Round Robin / Longest Idle / Linear / Fewest Calls), max wait time in seconds (suggest 300 = 5 min), and max queue capacity (suggest 10).
-    - Save: update_config({ routingConfig: { groupName, tiers: [], ringStrategy: "round_robin", maxWaitTime: 300, maxCapacity: 10 } })
+**Sub-step 2 — Ring Group vs Call Queue + config + schedule:**
+The widget handles this sub-step and collects:
+- Routing type: Ring Groups (included, rings all/tiered) vs Call Queues (needs license, queue strategies)
+- Group/queue name
+- Ring group: ring-all or tiered escalation with per-tier ring count and member selection
+- Call queue: ring strategy, max wait time, max capacity
+- **Schedule (Time Blocks)**: Every ring group/queue is tied to a schedule. Options:
+  • 24/7 — always active (system default, no schedule needed)
+  • Business hours — uses the hours scraped from their website
+  • Custom — user picks specific days and start/end times
+  The schedule determines WHEN the ring group/queue is active. If not 24/7, an after-hours flow handles calls outside those hours.
+When you receive a [routing] message about routing config, just acknowledge the settings (including the schedule choice) and move to sub-step 3.
 
 **Sub-step 3 — After-hours behavior:**
 - Ask: "What should happen when someone calls outside business hours? Options: a) Go to voicemail (most common), b) Play a custom greeting, c) Forward to a mobile number."

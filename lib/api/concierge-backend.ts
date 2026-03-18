@@ -458,7 +458,17 @@ export async function applyConfiguration(
 
     // ── 6. Build call flow (wiring everything together) ──────────────────────
     if (routingDestId) {
-      const workHrs = getPrimaryWorkHours(payload.scraped.hours);
+      const schedType = payload.routingConfig?.scheduleType || "24_7";
+      let workHrs: { weekDays: number[]; start: string; end: string } | null = null;
+      if (schedType === "business_hours") {
+        workHrs = getPrimaryWorkHours(payload.scraped.hours);
+      } else if (schedType === "custom" && payload.routingConfig?.customSchedule) {
+        const cs = payload.routingConfig.customSchedule;
+        workHrs = { weekDays: cs.weekDays, start: cs.start, end: cs.end };
+      }
+      const schedLabel = schedType === "24_7" ? "24/7" : schedType === "business_hours" ? "Business hours" : "Custom schedule";
+      push({ label: `Schedule type: ${schedLabel}`, status: "ok", detail: workHrs ? `${workHrs.start}-${workHrs.end}` : "Always active" });
+
       const mainNumber = payload.portingQueue.numbers[0] ?? payload.scraped.phones[0];
 
       const afterHoursConfig = payload.afterHours?.action === "forward"

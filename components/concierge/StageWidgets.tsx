@@ -5,7 +5,7 @@ import {
   Globe, ArrowRight, CheckSquare, Square, Upload, Plus,
   Trash2, Phone, Users, Building2, HardDrive, ShieldCheck,
   RefreshCw, Loader2, AlertCircle, SkipForward, ExternalLink,
-  Calendar, Lock,
+  Calendar, Lock, Clock,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -1054,6 +1054,17 @@ function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[]) => voi
       : [{ userEmails: config.users.map((u) => u.email), rings: 3 }]
   );
 
+  // Schedule state
+  const hasBusinessHours = Object.keys(config.scraped.hours).length > 0;
+  const [scheduleType, setScheduleType] = useState<"24_7" | "business_hours" | "custom">(
+    config.routingConfig.scheduleType || "24_7"
+  );
+  const [customDays, setCustomDays] = useState<number[]>(
+    config.routingConfig.customSchedule?.weekDays ?? [1, 2, 3, 4, 5]
+  );
+  const [customStart, setCustomStart] = useState(config.routingConfig.customSchedule?.start ?? "09:00");
+  const [customEnd, setCustomEnd] = useState(config.routingConfig.customSchedule?.end ?? "17:00");
+
   // After-hours state
   const [afterAction, setAfterAction] = useState(config.afterHours.action);
   const [afterGreeting, setAfterGreeting] = useState(config.afterHours.greetingText ?? "");
@@ -1116,6 +1127,8 @@ function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[]) => voi
   const handleRoutingNext = () => {
     const rc = {
       groupName,
+      scheduleType,
+      customSchedule: scheduleType === "custom" ? { name: `${groupName} Hours`, weekDays: customDays, start: customStart, end: customEnd } : undefined,
       tiers: routingChoice === "ring_groups" ? (tiered ? tiers : [{ userEmails: config.users.map((u) => u.email), rings: 3 }]) : [],
       ringStrategy: routingChoice === "call_queues" ? ringStrategy : "ring_all" as QueueStrategy,
       maxWaitTime: routingChoice === "call_queues" ? maxWaitTime : 0,
@@ -1123,10 +1136,11 @@ function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[]) => voi
     };
     updateConfig({ routingType: routingChoice, licensingVerified: eligible === true, routingConfig: rc });
     const label = routingChoice === "ring_groups" ? "Ring Groups" : "Call Queues";
+    const schedLabel = scheduleType === "24_7" ? "24/7" : scheduleType === "business_hours" ? "Business hours" : `Custom (${customStart}-${customEnd})`;
     const detail = routingChoice === "call_queues"
       ? ` (${STRATEGY_OPTIONS.find((s) => s.value === ringStrategy)?.label}, max wait ${maxWaitTime}s, capacity ${maxCapacity})`
       : tiered ? ` (${tiers.length} tiers)` : " (Ring All)";
-    onMessages([`[routing] Routing: ${label} "${groupName}"${detail}`]);
+    onMessages([`[routing] Routing: ${label} "${groupName}"${detail}. Schedule: ${schedLabel}`]);
     setStep("after_hours");
   };
 
@@ -1431,6 +1445,67 @@ function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[]) => voi
               </div>
             </div>
           )}
+
+          {/* Schedule / Time Blocks */}
+          <div>
+            <p className="text-xs font-medium text-gray-600 mb-1.5 flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5" aria-hidden="true" /> Schedule (Time Blocks)
+            </p>
+            <p className="text-xs text-gray-400 mb-2">When should this {routingChoice === "ring_groups" ? "ring group" : "queue"} be active?</p>
+            <div className="space-y-2">
+              {([
+                { value: "24_7" as const, label: "24/7 — Always active", desc: "Calls ring every day, all day (system default)" },
+                ...(hasBusinessHours ? [{ value: "business_hours" as const, label: "Business hours from website", desc: `Use the hours we scraped: ${Object.entries(config.scraped.hours).slice(0, 2).map(([d, h]) => `${d}: ${h}`).join(", ")}${Object.keys(config.scraped.hours).length > 2 ? "..." : ""}` }] : []),
+                { value: "custom" as const, label: "Custom schedule", desc: "Set specific days and hours" },
+              ]).map(({ value, label, desc }) => (
+                <button key={value} onClick={() => setScheduleType(value)}
+                  aria-pressed={scheduleType === value}
+                  className={`w-full flex items-start gap-3 p-3 rounded-xl border text-left transition-all ${
+                    scheduleType === value ? "border-[#1a73e8] bg-[#e8f0fe]" : "border-[#dadce0] bg-white hover:bg-[#f8f9fa]"
+                  }`}>
+                  <div className={`w-4 h-4 rounded-full border-2 mt-0.5 shrink-0 flex items-center justify-center ${
+                    scheduleType === value ? "border-[#1a73e8]" : "border-[#dadce0]"
+                  }`}>
+                    {scheduleType === value && <div className="w-2 h-2 rounded-full bg-[#1a73e8]" />}
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-800">{label}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{desc}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+            {scheduleType === "custom" && (
+              <div className="mt-3 p-3 bg-white border border-[#e8eaed] rounded-xl space-y-2">
+                <div>
+                  <p className="text-xs font-medium text-gray-600 mb-1">Days</p>
+                  <div className="flex gap-1">
+                    {(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]).map((day, i) => (
+                      <button key={day} onClick={() => setCustomDays((d) => d.includes(i) ? d.filter((x) => x !== i) : [...d, i].sort())}
+                        aria-pressed={customDays.includes(i)}
+                        className={`w-9 h-8 text-xs font-medium rounded-lg border transition-all ${
+                          customDays.includes(i) ? "border-[#1a73e8] bg-[#e8f0fe] text-[#1a73e8]" : "border-[#dadce0] text-gray-500 hover:bg-[#f8f9fa]"
+                        }`}>
+                        {day}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label htmlFor="sched-start" className="block text-xs font-medium text-gray-600 mb-1">Start</label>
+                    <input id="sched-start" type="time" value={customStart} onChange={(e) => setCustomStart(e.target.value)}
+                      className="w-full px-2 py-1.5 text-sm border border-[#dadce0] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#1a73e8]" />
+                  </div>
+                  <div>
+                    <label htmlFor="sched-end" className="block text-xs font-medium text-gray-600 mb-1">End</label>
+                    <input id="sched-end" type="time" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)}
+                      className="w-full px-2 py-1.5 text-sm border border-[#dadce0] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#1a73e8]" />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
           <div className="flex gap-2 pt-1">
             <button onClick={() => setStep("welcome_menu")} className="px-3 py-2 text-sm text-gray-500 border border-[#dadce0] rounded-lg hover:bg-[#f8f9fa]">Back</button>

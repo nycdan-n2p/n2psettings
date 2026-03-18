@@ -79,6 +79,8 @@ export type QueueStrategy = "ring_all" | "round_robin" | "longest_idle" | "linea
 
 export interface RoutingConfig {
   groupName: string;
+  scheduleType: "24_7" | "business_hours" | "custom";
+  customSchedule?: { name: string; weekDays: number[]; start: string; end: string };
   tiers: { userEmails: string[]; rings: number }[];
   ringStrategy: QueueStrategy;
   maxWaitTime: number;
@@ -169,6 +171,7 @@ export const EMPTY_CONFIG: OnboardingData = {
   welcomeMenu: { enabled: false, greetingType: "tts", greetingText: "", menuOptions: [], allowExtensionDialing: true, playWaitMessage: true, allowBargingThrough: true },
   routingConfig: {
     groupName: "",
+    scheduleType: "24_7",
     tiers: [],
     ringStrategy: "ring_all",
     maxWaitTime: 300,
