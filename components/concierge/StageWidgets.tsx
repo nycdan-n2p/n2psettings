@@ -16,7 +16,6 @@ import {
 import {
   parseCSV,
   checkLicensing,
-  applyConfiguration,
 } from "@/lib/api/concierge-backend";
 
 // ── Shared ────────────────────────────────────────────────────────────────────
@@ -105,7 +104,7 @@ function WelcomeScrapeWidget({ onMessages }: { onMessages: (msgs: string[]) => v
 // ── 2. Verification & Holidays ────────────────────────────────────────────────
 
 function VerificationWidget({ onMessages }: { onMessages: (msgs: string[]) => void }) {
-  const { config, updateConfig, advance } = useConcierge();
+  const { config, updateConfig } = useConcierge();
   const { scraped } = config;
 
   const [editHours, setEditHours] = useState<Record<string, string>>(scraped.hours);
@@ -113,18 +112,16 @@ function VerificationWidget({ onMessages }: { onMessages: (msgs: string[]) => vo
   const [editLocation, setEditLocation] = useState(scraped.location);
 
   const handleHolidayChoice = (yes: boolean) => {
+    // Persist any edits made in the form before sending to AI
     updateConfig({
       scraped: { ...scraped, hours: editHours, timezone: editTimezone, location: editLocation },
     });
+    // Let the AI call update_config (holidays) + advance_stage — no direct advance() here
     if (yes) {
       onMessages(["Yes, load public holidays"]);
-      // Holidays are fetched lazily in the overlay based on location; store intent
-      updateConfig({ holidays: [{ date: "__auto__", name: "__auto__" }] });
     } else {
       onMessages(["No, skip holidays"]);
-      updateConfig({ holidays: [] });
     }
-    advance();
   };
 
   const days = Object.keys(editHours);
@@ -213,7 +210,7 @@ function VerificationWidget({ onMessages }: { onMessages: (msgs: string[]) => vo
 // ── 3. Porting ────────────────────────────────────────────────────────────────
 
 function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => void }) {
-  const { config, updateConfig, advance } = useConcierge();
+  const { config, updateConfig } = useConcierge();
   const phones = config.scraped.phones;
   const [selected, setSelected] = useState<Set<string>>(new Set(phones));
 
@@ -233,8 +230,8 @@ function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => void })
         address: config.scraped.address,
       },
     });
+    // Let AI call advance_stage — no direct advance() to avoid race with driveLoop
     onMessages([numbers.length ? `Port ${numbers.length} number${numbers.length !== 1 ? "s" : ""}: ${numbers.join(", ")}` : "Skip porting for now"]);
-    advance();
   };
 
   return (
@@ -437,7 +434,7 @@ function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[]) => v
 // ── 5. Architecture & Hardware ────────────────────────────────────────────────
 
 function ArchitectureWidget({ onMessages }: { onMessages: (msgs: string[]) => void }) {
-  const { config, updateConfig, advance } = useConcierge();
+  const { config, updateConfig } = useConcierge();
   const [deptInput, setDeptInput]       = useState("");
   const [depts, setDepts]               = useState<string[]>(config.departments.length ? config.departments : []);
   const [hasPhones, setHasPhones]       = useState<boolean | null>(config.hasHardphones || null);
@@ -452,8 +449,8 @@ function ArchitectureWidget({ onMessages }: { onMessages: (msgs: string[]) => vo
 
   const handleContinue = () => {
     updateConfig({ departments: depts, hasHardphones: !!hasPhones, users });
+    // Let AI call advance_stage — no direct advance() to avoid race with driveLoop
     onMessages([`${depts.length} department${depts.length !== 1 ? "s" : ""}: ${depts.join(", ")}. Hardphones: ${hasPhones ? "Yes" : "No"}`]);
-    advance();
   };
 
   return (
@@ -572,7 +569,7 @@ function ArchitectureWidget({ onMessages }: { onMessages: (msgs: string[]) => vo
 // ── 6. Licensing ──────────────────────────────────────────────────────────────
 
 function LicensingWidget({ onMessages }: { onMessages: (msgs: string[]) => void }) {
-  const { config, updateConfig, advance } = useConcierge();
+  const { config, updateConfig } = useConcierge();
   const [choice, setChoice]   = useState<"ring_groups" | "call_queues">(config.routingType);
   const [checking, setChecking] = useState(false);
   const [eligible, setEligible] = useState<boolean | null>(null);
@@ -591,8 +588,8 @@ function LicensingWidget({ onMessages }: { onMessages: (msgs: string[]) => void 
 
   const handleContinue = () => {
     updateConfig({ routingType: choice, licensingVerified: eligible === true });
+    // Let AI call advance_stage — no direct advance() to avoid race with driveLoop
     onMessages([`Routing: ${choice === "ring_groups" ? "Ring Groups" : "Call Queues"}`]);
-    advance();
   };
 
   return (
@@ -666,28 +663,15 @@ function FinalBlueprintWidget({
   onMessages: (msgs: string[]) => void;
   onApply: () => void;
 }) {
-  const { config, updateConfig, advance } = useConcierge();
+  const { config } = useConcierge();
   const [applying, setApplying] = useState(false);
-  const [error, setError]       = useState("");
 
-  const handleConfirm = async () => {
-    setError("");
+  // Widget just sends "Confirm & Build" — the AI calls apply_configuration({ confirm: true })
+  // which triggers the handleApplySuccess transition in the overlay (no double-apply).
+  const handleConfirm = () => {
     setApplying(true);
     onMessages(["Confirm & Build"]);
-    try {
-      const result = await applyConfiguration(config);
-      if (result.success) {
-        updateConfig({});
-        advance();
-        onApply();
-      } else {
-        setError(result.error ?? "Something went wrong. Please try again.");
-      }
-    } catch {
-      setError("Network error. Please try again.");
-    } finally {
-      setApplying(false);
-    }
+    // applying spinner stays until the widgetStage changes (AI finishes)
   };
 
   // Build blueprint markdown
