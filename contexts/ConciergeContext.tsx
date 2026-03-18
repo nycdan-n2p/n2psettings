@@ -6,8 +6,10 @@ import {
   useReducer,
   useCallback,
   useEffect,
+  useRef,
   type ReactNode,
 } from "react";
+import { getAccessToken } from "@/lib/auth";
 
 // ── Stage definitions ────────────────────────────────────────────────────────
 
@@ -216,8 +218,9 @@ const ConciergeContext = createContext<ConciergeContextValue | null>(null);
 
 export function ConciergeProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const serverSyncedRef = useRef(false);
 
-  // Persist stage + config (not isOpen / isTransitioning) on every change
+  // ── localStorage persistence ────────────────────────────────────────────
   useEffect(() => {
     try {
       localStorage.setItem(
@@ -229,6 +232,50 @@ export function ConciergeProvider({ children }: { children: ReactNode }) {
     }
   }, [state.stage, state.config]);
 
+  // ── Server-side persistence: load on mount ──────────────────────────────
+  useEffect(() => {
+    if (serverSyncedRef.current) return;
+    serverSyncedRef.current = true;
+
+    const token = getAccessToken();
+    if (!token) return;
+
+    const localData = loadSaved();
+    if (localData.stage && localData.stage !== "welcome_scrape") return;
+
+    fetch("/api/onboarding-state", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data?.stage || data.stage === "welcome_scrape") return;
+        dispatch({ type: "SET_STAGE", stage: data.stage });
+        if (data.config) {
+          dispatch({ type: "UPDATE_CONFIG", patch: data.config });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // ── Server-side persistence: debounced save on change ───────────────────
+  useEffect(() => {
+    const token = getAccessToken();
+    if (!token) return;
+
+    const timer = setTimeout(() => {
+      fetch("/api/onboarding-state", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ stage: state.stage, config: state.config }),
+      }).catch(() => {});
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [state.stage, state.config]);
+
   const open              = useCallback(() => dispatch({ type: "OPEN" }), []);
   const close             = useCallback(() => dispatch({ type: "CLOSE" }), []);
   const advance           = useCallback(() => dispatch({ type: "ADVANCE_STAGE" }), []);
@@ -237,6 +284,13 @@ export function ConciergeProvider({ children }: { children: ReactNode }) {
   const setTransitioning  = useCallback((v: boolean) => dispatch({ type: "SET_TRANSITIONING", value: v }), []);
   const reset             = useCallback(() => {
     try { localStorage.removeItem(STORAGE_KEY); } catch { /* noop */ }
+    const token = getAccessToken();
+    if (token) {
+      fetch("/api/onboarding-state", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(() => {});
+    }
     dispatch({ type: "RESET" });
   }, []);
 

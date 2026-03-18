@@ -17,12 +17,13 @@ export interface Message {
 
 function TypingDots() {
   return (
-    <div className="flex items-center gap-1 px-1 py-0.5">
+    <div className="flex items-center gap-1 px-1 py-0.5" role="status" aria-label="Concierge is typing">
       {[0, 1, 2].map((i) => (
         <span
           key={i}
-          className="w-2 h-2 rounded-full bg-[#1a73e8] opacity-60 animate-bounce"
+          className="w-2 h-2 rounded-full bg-[#1a73e8] opacity-60 animate-bounce motion-reduce:animate-none"
           style={{ animationDelay: `${i * 150}ms`, animationDuration: "900ms" }}
+          aria-hidden="true"
         />
       ))}
     </div>
@@ -36,9 +37,9 @@ export function MessageBubble({ message }: { message: Message }) {
 
   if (isConcierge) {
     return (
-      <div className="flex items-start gap-3 mb-4">
+      <div className="flex items-start gap-3 mb-4" role="article" aria-label="Concierge message">
         {/* Avatar */}
-        <div className="w-8 h-8 rounded-full bg-[#1a73e8] flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+        <div className="w-8 h-8 rounded-full bg-[#1a73e8] flex items-center justify-center shrink-0 mt-0.5 shadow-sm" aria-hidden="true">
           <Bot className="w-4 h-4 text-white" />
         </div>
 
@@ -60,7 +61,7 @@ export function MessageBubble({ message }: { message: Message }) {
 
   // User bubble — right-aligned
   return (
-    <div className="flex justify-end mb-4">
+    <div className="flex justify-end mb-4" role="article" aria-label="Your message">
       <div className="max-w-[75%] bg-[#1a73e8] text-white rounded-2xl rounded-tr-sm px-4 py-2.5 shadow-sm">
         <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.text}</p>
       </div>
@@ -72,7 +73,7 @@ export function MessageBubble({ message }: { message: Message }) {
 
 export function MessageList({ messages }: { messages: Message[] }) {
   return (
-    <div className="flex flex-col px-4 py-4">
+    <div className="flex flex-col px-4 py-4" role="log" aria-label="Message history">
       {messages.map((msg) => (
         <MessageBubble key={msg.id} message={msg} />
       ))}

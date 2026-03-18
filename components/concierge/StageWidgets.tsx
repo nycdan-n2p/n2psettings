@@ -19,25 +19,45 @@ import {
   checkLicensing,
 } from "@/lib/api/concierge-backend";
 import { getAccessToken } from "@/lib/auth";
+import {
+  validateUrl,
+  validateUser,
+  validatePortingProvider,
+  validatePortingAddress,
+  validatePhoneNumber,
+} from "@/lib/utils/validation";
 
 // ── Shared ────────────────────────────────────────────────────────────────────
 
-function FixItButton({ targetStage, label = "Wait, let's fix that" }: { targetStage: ConciergeStage; label?: string }) {
+function FixItButton({ targetStage, label = "Wait, let\u2019s fix that" }: { targetStage: ConciergeStage; label?: string }) {
   const { setStage } = useConcierge();
   return (
     <button
       onClick={() => setStage(targetStage)}
       className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-[#1a73e8] transition-colors mt-3"
     >
-      <RefreshCw className="w-3 h-3" /> {label}
+      <RefreshCw className="w-3 h-3" aria-hidden="true" /> {label}
     </button>
   );
 }
 
 function CardShell({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`mx-4 mb-4 bg-[#f8f9fa] border border-[#e8eaed] rounded-2xl p-5 ${className}`}>
+    <div className={`mx-4 mb-4 bg-[#f8f9fa] border border-[#e8eaed] rounded-2xl p-5 ${className}`} role="region">
       {children}
+    </div>
+  );
+}
+
+function ValidationErrors({ errors }: { errors: string[] }) {
+  if (errors.length === 0) return null;
+  return (
+    <div className="space-y-1" role="alert">
+      {errors.map((e, i) => (
+        <p key={i} className="flex items-center gap-1.5 text-xs text-red-600">
+          <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" /> {e}
+        </p>
+      ))}
     </div>
   );
 }
@@ -48,22 +68,25 @@ function WelcomeScrapeWidget({ onMessages }: { onMessages: (msgs: string[]) => v
   const { config } = useConcierge();
   const [name, setName] = useState(config.name);
   const [url, setUrl]   = useState(config.websiteUrl);
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState<string[]>([]);
 
-  // Widget is just a structured input helper.
-  // The AI handles research_website → update_config → advance_stage.
   const handleSubmit = () => {
-    if (!name.trim() || !url.trim()) { setError("Please enter both your name and website."); return; }
-    setError("");
-    onMessages([`${name.trim()} · ${url.trim()}`]);
+    const errs: string[] = [];
+    if (!name.trim()) errs.push("Please enter your name.");
+    if (!url.trim()) errs.push("Please enter your company website.");
+    else if (!validateUrl(url.trim())) errs.push("Please enter a valid website URL.");
+    if (errs.length) { setErrors(errs); return; }
+    setErrors([]);
+    onMessages([`${name.trim()} \u00b7 ${url.trim()}`]);
   };
 
   return (
     <CardShell>
       <div className="space-y-3">
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Your Name</label>
+          <label htmlFor="welcome-name" className="block text-xs font-medium text-gray-600 mb-1">Your Name</label>
           <input
+            id="welcome-name"
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -72,10 +95,11 @@ function WelcomeScrapeWidget({ onMessages }: { onMessages: (msgs: string[]) => v
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Company Website</label>
+          <label htmlFor="welcome-url" className="block text-xs font-medium text-gray-600 mb-1">Company Website</label>
           <div className="relative">
-            <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" aria-hidden="true" />
             <input
+              id="welcome-url"
               type="url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
@@ -85,17 +109,13 @@ function WelcomeScrapeWidget({ onMessages }: { onMessages: (msgs: string[]) => v
             />
           </div>
         </div>
-        {error && (
-          <p className="flex items-center gap-1.5 text-xs text-red-600">
-            <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {error}
-          </p>
-        )}
+        <ValidationErrors errors={errors} />
         <button
           onClick={handleSubmit}
           disabled={!name.trim() || !url.trim()}
           className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#1a73e8] text-white text-sm font-medium rounded-lg hover:bg-[#1557b0] disabled:opacity-50 transition-colors"
         >
-          <ArrowRight className="w-4 h-4" />
+          <ArrowRight className="w-4 h-4" aria-hidden="true" />
           Let&apos;s Go
         </button>
       </div>
@@ -114,11 +134,9 @@ function VerificationWidget({ onMessages }: { onMessages: (msgs: string[]) => vo
   const [editLocation, setEditLocation] = useState(scraped.location);
 
   const handleHolidayChoice = (yes: boolean) => {
-    // Persist any edits made in the form before sending to AI
     updateConfig({
       scraped: { ...scraped, hours: editHours, timezone: editTimezone, location: editLocation },
     });
-    // Let the AI call update_config (holidays) + advance_stage — no direct advance() here
     if (yes) {
       onMessages(["Yes, load public holidays"]);
     } else {
@@ -131,19 +149,20 @@ function VerificationWidget({ onMessages }: { onMessages: (msgs: string[]) => vo
   return (
     <CardShell>
       <div className="space-y-4">
-        {/* Location + Timezone row */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Location</label>
+            <label htmlFor="verify-location" className="block text-xs font-medium text-gray-600 mb-1">Location</label>
             <input
+              id="verify-location"
               value={editLocation}
               onChange={(e) => setEditLocation(e.target.value)}
               className="w-full px-2.5 py-1.5 text-sm border border-[#dadce0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1a73e8] bg-white"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Timezone</label>
+            <label htmlFor="verify-timezone" className="block text-xs font-medium text-gray-600 mb-1">Timezone</label>
             <input
+              id="verify-timezone"
               value={editTimezone}
               onChange={(e) => setEditTimezone(e.target.value)}
               className="w-full px-2.5 py-1.5 text-sm border border-[#dadce0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1a73e8] bg-white"
@@ -151,7 +170,6 @@ function VerificationWidget({ onMessages }: { onMessages: (msgs: string[]) => vo
           </div>
         </div>
 
-        {/* Business Hours */}
         <div>
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Business Hours</p>
           <div className="space-y-1.5 bg-white border border-[#e8eaed] rounded-xl overflow-hidden">
@@ -161,6 +179,7 @@ function VerificationWidget({ onMessages }: { onMessages: (msgs: string[]) => vo
                 <input
                   value={editHours[day]}
                   onChange={(e) => setEditHours((h) => ({ ...h, [day]: e.target.value }))}
+                  aria-label={`${day} hours`}
                   className="flex-1 text-xs px-2 py-1 border border-[#dadce0] rounded focus:outline-none focus:ring-1 focus:ring-[#1a73e8] bg-white"
                 />
               </div>
@@ -168,7 +187,6 @@ function VerificationWidget({ onMessages }: { onMessages: (msgs: string[]) => vo
           </div>
         </div>
 
-        {/* Phone numbers found */}
         {scraped.phones.length > 0 && (
           <div>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
@@ -177,14 +195,13 @@ function VerificationWidget({ onMessages }: { onMessages: (msgs: string[]) => vo
             <div className="flex flex-wrap gap-2">
               {scraped.phones.map((p) => (
                 <span key={p} className="flex items-center gap-1.5 px-2.5 py-1 bg-[#e8f0fe] text-[#1a73e8] rounded-full text-xs font-medium">
-                  <Phone className="w-3 h-3" /> {p}
+                  <Phone className="w-3 h-3" aria-hidden="true" /> {p}
                 </span>
               ))}
             </div>
           </div>
         )}
 
-        {/* Holiday question */}
         <div className="pt-2 border-t border-[#f1f3f4]">
           <p className="text-sm font-medium text-gray-800 mb-3">
             Should I auto-load public holidays into your schedule?
@@ -217,14 +234,15 @@ function field(
   label: string,
   value: string,
   onChange: (v: string) => void,
-  opts?: { placeholder?: string; required?: boolean; type?: string }
+  opts?: { placeholder?: string; required?: boolean; type?: string; id?: string }
 ) {
   return (
     <div className="space-y-1">
-      <label className="block text-xs font-medium text-gray-600">
+      <label htmlFor={opts?.id} className="block text-xs font-medium text-gray-600">
         {label}{opts?.required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
       <input
+        id={opts?.id}
         type={opts?.type ?? "text"}
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -243,7 +261,6 @@ function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => void })
   const [selected, setSelected] = useState<Set<string>>(new Set(phones));
   const [manualNum, setManualNum] = useState("");
 
-  // Provider details
   const [providerName, setProviderName]     = useState(config.portingQueue.providerName);
   const [accountNumber, setAccountNumber]   = useState(config.portingQueue.accountNumber);
   const [providerBtn, setProviderBtn]       = useState(config.portingQueue.providerBtn);
@@ -253,7 +270,6 @@ function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => void })
     return d.toISOString().split("T")[0];
   })());
 
-  // Contact / billing address
   const existing = config.portingQueue.contact;
   const [firstName, setFirstName]   = useState(existing.firstName || config.name.split(" ")[0] || "");
   const [lastName, setLastName]     = useState(existing.lastName  || config.name.split(" ").slice(1).join(" ") || "");
@@ -267,6 +283,7 @@ function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => void })
   const [zip, setZip]                   = useState(existing.zip);
 
   const [submitError, setSubmitError] = useState("");
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [signUrl, setSignUrl]         = useState(config.portingQueue.signLink ?? "");
   const [onboardId, setOnboardId]     = useState(config.portingQueue.onboardId);
 
@@ -279,12 +296,19 @@ function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => void })
 
   const addManual = () => {
     const n = manualNum.trim().replace(/\s+/g, "");
-    if (n) { setSelected((s) => { const next = new Set(s); next.add(n); return next; }); setManualNum(""); }
+    if (!n) return;
+    if (!validatePhoneNumber(n)) {
+      setValidationErrors(["Please enter a valid phone number (10\u201315 digits)."]);
+      return;
+    }
+    setValidationErrors([]);
+    setSelected((s) => { const next = new Set(s); next.add(n); return next; });
+    setManualNum("");
   };
 
   const handleSkip = () => {
     updateConfig({ portingQueue: { ...config.portingQueue, skipped: true, numbers: [] } });
-    onMessages(["Skip porting — I don't have numbers to port right now or will handle it later."]);
+    onMessages(["Skip porting \u2014 I don\u2019t have numbers to port right now or will handle it later."]);
   };
 
   const handleNumbersNext = () => {
@@ -294,13 +318,17 @@ function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => void })
   };
 
   const handleProviderNext = () => {
-    if (!providerName || !accountNumber || !providerBtn || !pin) return;
+    const v = validatePortingProvider({ providerName, accountNumber, providerBtn, pin });
+    if (!v.valid) { setValidationErrors(v.errors); return; }
+    setValidationErrors([]);
     updateConfig({ portingQueue: { ...config.portingQueue, providerName, accountNumber, providerBtn, pin, targetPortDate: targetDate } });
     setStep("address");
   };
 
   const handleSubmit = async () => {
-    if (!firstName || !lastName || !email || !address1 || !city || !stateAbbr || !zip) return;
+    const v = validatePortingAddress({ firstName, lastName, email, address1, city, state: stateAbbr, zip });
+    if (!v.valid) { setValidationErrors(v.errors); return; }
+    setValidationErrors([]);
     setStep("submitting");
     setSubmitError("");
 
@@ -362,13 +390,13 @@ function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => void })
               onClick={() => setStep("numbers")}
               className="flex items-center justify-center gap-2 py-2.5 text-sm font-semibold bg-[#1a73e8] text-white rounded-xl hover:bg-[#1557b0] transition-colors"
             >
-              <Phone className="w-4 h-4" /> Yes, I have numbers to port
+              <Phone className="w-4 h-4" aria-hidden="true" /> Yes, I have numbers to port
             </button>
             <button
               onClick={handleSkip}
               className="flex items-center justify-center gap-2 py-2.5 text-sm font-medium text-gray-600 bg-[#f8f9fa] border border-[#dadce0] rounded-xl hover:bg-[#f1f3f4] transition-colors"
             >
-              <SkipForward className="w-4 h-4" /> Skip &mdash; I&apos;ll handle this later
+              <SkipForward className="w-4 h-4" aria-hidden="true" /> Skip &mdash; I&apos;ll handle this later
             </button>
           </div>
           <FixItButton targetStage="verification_holidays" />
@@ -382,16 +410,17 @@ function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => void })
     return (
       <CardShell>
         <div className="space-y-3">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Step 1 of 3 — Numbers to Port</p>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Step 1 of 3 &mdash; Numbers to Port</p>
           {phones.length > 0 && (
             <div className="space-y-1.5">
               <p className="text-xs text-gray-500">Found on your website:</p>
               {phones.map((p) => (
                 <button key={p} onClick={() => toggle(p)}
                   className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg border text-left transition-all ${selected.has(p) ? "border-[#1a73e8] bg-[#e8f0fe]" : "border-[#dadce0] bg-white hover:bg-[#f8f9fa]"}`}
+                  aria-pressed={selected.has(p)}
                 >
-                  {selected.has(p) ? <CheckSquare className="w-4 h-4 text-[#1a73e8] shrink-0" /> : <Square className="w-4 h-4 text-gray-300 shrink-0" />}
-                  <Phone className="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                  {selected.has(p) ? <CheckSquare className="w-4 h-4 text-[#1a73e8] shrink-0" aria-hidden="true" /> : <Square className="w-4 h-4 text-gray-300 shrink-0" aria-hidden="true" />}
+                  <Phone className="w-3.5 h-3.5 text-gray-500 shrink-0" aria-hidden="true" />
                   <span className="text-sm font-medium text-gray-800">{p}</span>
                 </button>
               ))}
@@ -401,17 +430,19 @@ function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => void })
             <input value={manualNum} onChange={(e) => setManualNum(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addManual()}
               placeholder="Add a number manually, e.g. +12125551234"
+              aria-label="Manual phone number"
               className="flex-1 px-3 py-2 text-sm border border-[#dadce0] rounded-lg focus:outline-none focus:border-[#1a73e8]" />
-            <button onClick={addManual} className="px-3 py-2 bg-[#f1f3f4] border border-[#dadce0] rounded-lg hover:bg-[#e8eaed]">
-              <Plus className="w-4 h-4 text-gray-600" />
+            <button onClick={addManual} className="px-3 py-2 bg-[#f1f3f4] border border-[#dadce0] rounded-lg hover:bg-[#e8eaed]" aria-label="Add number">
+              <Plus className="w-4 h-4 text-gray-600" aria-hidden="true" />
             </button>
           </div>
+          <ValidationErrors errors={validationErrors} />
           {selected.size > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {Array.from(selected).filter((p) => !phones.includes(p)).map((p) => (
                 <span key={p} className="flex items-center gap-1 px-2 py-0.5 text-xs bg-[#e8f0fe] text-[#1a73e8] rounded-full">
                   {p}
-                  <button onClick={() => toggle(p)} className="text-[#1a73e8] hover:text-[#1557b0]">×</button>
+                  <button onClick={() => toggle(p)} className="text-[#1a73e8] hover:text-[#1557b0]" aria-label={`Remove ${p}`}>&times;</button>
                 </span>
               ))}
             </div>
@@ -420,7 +451,7 @@ function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => void })
             <button onClick={() => setStep("decide")} className="px-3 py-2 text-sm text-gray-500 border border-[#dadce0] rounded-lg hover:bg-[#f8f9fa]">Back</button>
             <button onClick={handleNumbersNext} disabled={selected.size === 0}
               className="flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold bg-[#1a73e8] text-white rounded-lg hover:bg-[#1557b0] disabled:opacity-40 transition-colors">
-              Next <ArrowRight className="w-4 h-4" />
+              Next <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -433,28 +464,29 @@ function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => void })
     return (
       <CardShell>
         <div className="space-y-3">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Step 2 of 3 — Current Provider Details</p>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Step 2 of 3 &mdash; Current Provider Details</p>
           <p className="text-xs text-gray-500">Find these on your current phone bill.</p>
           <div className="grid grid-cols-2 gap-2">
-            {field("Provider / Carrier name", providerName, setProviderName, { placeholder: "e.g. Verizon", required: true })}
-            {field("Account number", accountNumber, setAccountNumber, { placeholder: "Your acct # with them", required: true })}
-            {field("Billing Telephone Number (BTN)", providerBtn, setProviderBtn, { placeholder: "+1 main billing number", required: true })}
-            {field("PIN / Passcode", pin, setPin, { placeholder: "Transfer PIN", required: true, type: "password" })}
+            {field("Provider / Carrier name", providerName, setProviderName, { placeholder: "e.g. Verizon", required: true, id: "port-provider" })}
+            {field("Account number", accountNumber, setAccountNumber, { placeholder: "Your acct # with them", required: true, id: "port-acct" })}
+            {field("Billing Telephone Number (BTN)", providerBtn, setProviderBtn, { placeholder: "+1 main billing number", required: true, id: "port-btn" })}
+            {field("PIN / Passcode", pin, setPin, { placeholder: "Transfer PIN", required: true, type: "password", id: "port-pin" })}
           </div>
           <div className="space-y-1">
-            <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600">
-              <Calendar className="w-3.5 h-3.5" /> Target Port Date<span className="text-red-500">*</span>
+            <label htmlFor="port-date" className="flex items-center gap-1.5 text-xs font-medium text-gray-600">
+              <Calendar className="w-3.5 h-3.5" aria-hidden="true" /> Target Port Date<span className="text-red-500">*</span>
             </label>
-            <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)}
+            <input id="port-date" type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)}
               min={new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0]}
               className="w-full px-3 py-2 text-sm border border-[#dadce0] rounded-lg focus:outline-none focus:border-[#1a73e8]" />
-            <p className="text-xs text-gray-400">Porting typically takes 2–4 weeks. Select a date at least 2 weeks out.</p>
+            <p className="text-xs text-gray-400">Porting typically takes 2&ndash;4 weeks. Select a date at least 2 weeks out.</p>
           </div>
+          <ValidationErrors errors={validationErrors} />
           <div className="flex gap-2 pt-1">
-            <button onClick={() => setStep("numbers")} className="px-3 py-2 text-sm text-gray-500 border border-[#dadce0] rounded-lg hover:bg-[#f8f9fa]">Back</button>
+            <button onClick={() => { setValidationErrors([]); setStep("numbers"); }} className="px-3 py-2 text-sm text-gray-500 border border-[#dadce0] rounded-lg hover:bg-[#f8f9fa]">Back</button>
             <button onClick={handleProviderNext} disabled={!providerName || !accountNumber || !providerBtn || !pin}
               className="flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold bg-[#1a73e8] text-white rounded-lg hover:bg-[#1557b0] disabled:opacity-40 transition-colors">
-              Next <ArrowRight className="w-4 h-4" />
+              Next <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -467,34 +499,35 @@ function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => void })
     return (
       <CardShell>
         <div className="space-y-3">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Step 3 of 3 — Billing Contact & Address</p>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Step 3 of 3 &mdash; Billing Contact &amp; Address</p>
           <p className="text-xs text-gray-500">Must match the address on your current phone bill.</p>
           <div className="grid grid-cols-2 gap-2">
-            {field("First name", firstName, setFirstName, { required: true })}
-            {field("Last name", lastName, setLastName, { required: true })}
+            {field("First name", firstName, setFirstName, { required: true, id: "addr-fn" })}
+            {field("Last name", lastName, setLastName, { required: true, id: "addr-ln" })}
           </div>
           <div className="grid grid-cols-2 gap-2">
-            {field("Email", email, setEmail, { required: true, type: "email" })}
-            {field("Phone", contactPhone, setContactPhone, { placeholder: "+1..." })}
+            {field("Email", email, setEmail, { required: true, type: "email", id: "addr-email" })}
+            {field("Phone", contactPhone, setContactPhone, { placeholder: "+1...", id: "addr-phone" })}
           </div>
-          {field("Company name", companyName, setCompanyName, { required: true })}
-          {field("Address line 1", address1, setAddress1, { required: true })}
-          {field("Address line 2", address2, setAddress2, { placeholder: "Suite, floor, etc. (optional)" })}
+          {field("Company name", companyName, setCompanyName, { required: true, id: "addr-co" })}
+          {field("Address line 1", address1, setAddress1, { required: true, id: "addr-1" })}
+          {field("Address line 2", address2, setAddress2, { placeholder: "Suite, floor, etc. (optional)", id: "addr-2" })}
           <div className="grid grid-cols-3 gap-2">
-            <div className="col-span-1">{field("State", stateAbbr, setStateAbbr, { placeholder: "CO", required: true })}</div>
-            <div className="col-span-1">{field("City", city, setCity, { required: true })}</div>
-            <div className="col-span-1">{field("ZIP", zip, setZip, { required: true })}</div>
+            <div className="col-span-1">{field("State", stateAbbr, setStateAbbr, { placeholder: "CO", required: true, id: "addr-st" })}</div>
+            <div className="col-span-1">{field("City", city, setCity, { required: true, id: "addr-city" })}</div>
+            <div className="col-span-1">{field("ZIP", zip, setZip, { required: true, id: "addr-zip" })}</div>
           </div>
+          <ValidationErrors errors={validationErrors} />
           {submitError && (
-            <p className="flex items-center gap-1.5 text-xs text-red-600">
-              <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {submitError}
+            <p className="flex items-center gap-1.5 text-xs text-red-600" role="alert">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" /> {submitError}
             </p>
           )}
           <div className="flex gap-2 pt-1">
-            <button onClick={() => setStep("provider")} className="px-3 py-2 text-sm text-gray-500 border border-[#dadce0] rounded-lg hover:bg-[#f8f9fa]">Back</button>
+            <button onClick={() => { setValidationErrors([]); setStep("provider"); }} className="px-3 py-2 text-sm text-gray-500 border border-[#dadce0] rounded-lg hover:bg-[#f8f9fa]">Back</button>
             <button onClick={handleSubmit} disabled={!firstName || !lastName || !email || !address1 || !city || !stateAbbr || !zip}
               className="flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold bg-[#1a73e8] text-white rounded-lg hover:bg-[#1557b0] disabled:opacity-40 transition-colors">
-              Submit Porting Request <ArrowRight className="w-4 h-4" />
+              Submit Porting Request <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -506,9 +539,9 @@ function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => void })
   if (step === "submitting") {
     return (
       <CardShell>
-        <div className="flex flex-col items-center gap-3 py-4">
-          <Loader2 className="w-7 h-7 text-[#1a73e8] animate-spin" />
-          <p className="text-sm font-medium text-gray-700">Submitting porting request…</p>
+        <div className="flex flex-col items-center gap-3 py-4" role="status">
+          <Loader2 className="w-7 h-7 text-[#1a73e8] animate-spin motion-reduce:animate-none" aria-hidden="true" />
+          <p className="text-sm font-medium text-gray-700">Submitting porting request&hellip;</p>
         </div>
       </CardShell>
     );
@@ -520,7 +553,7 @@ function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => void })
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-            <Phone className="w-4 h-4 text-green-600" />
+            <Phone className="w-4 h-4 text-green-600" aria-hidden="true" />
           </div>
           <div>
             <p className="text-sm font-semibold text-gray-800">Porting request submitted!</p>
@@ -530,12 +563,12 @@ function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => void })
         {signUrl ? (
           <div className="rounded-xl border border-[#e8eaed] bg-[#f8f9fa] p-3 space-y-2">
             <p className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
-              <Lock className="w-3.5 h-3.5" /> Sign your Letter of Authorization (LOA)
+              <Lock className="w-3.5 h-3.5" aria-hidden="true" /> Sign your Letter of Authorization (LOA)
             </p>
             <p className="text-xs text-gray-500">You must sign the LOA to authorize the number transfer. Opens in a new tab.</p>
             <a href={signUrl} target="_blank" rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 py-2.5 text-sm font-semibold bg-[#1a73e8] text-white rounded-lg hover:bg-[#1557b0] transition-colors">
-              Sign LOA <ExternalLink className="w-4 h-4" />
+              Sign LOA <ExternalLink className="w-4 h-4" aria-hidden="true" />
             </a>
           </div>
         ) : (
@@ -559,10 +592,14 @@ function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[]) => v
   const [newLast, setNewLast]       = useState("");
   const [newEmail, setNewEmail]     = useState("");
   const [csvLoading, setCsvLoading] = useState(false);
+  const [csvError, setCsvError]     = useState("");
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const addManual = () => {
-    if (!newFirst.trim() || !newEmail.trim()) return;
+    const v = validateUser({ firstName: newFirst, lastName: newLast, email: newEmail });
+    if (!v.valid) { setValidationErrors(v.errors); return; }
+    setValidationErrors([]);
     setUsers((u) => [...u, { firstName: newFirst.trim(), lastName: newLast.trim(), email: newEmail.trim() }]);
     setNewFirst(""); setNewLast(""); setNewEmail("");
   };
@@ -571,16 +608,20 @@ function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[]) => v
     const file = e.target.files?.[0];
     if (!file) return;
     setCsvLoading(true);
-    const parsed = await parseCSV(file);
-    setUsers(parsed);
-    setCsvLoading(false);
-    setMode("confirm");
+    setCsvError("");
+    try {
+      const parsed = await parseCSV(file);
+      setUsers(parsed);
+      setCsvLoading(false);
+      setMode("confirm");
+    } catch (err) {
+      setCsvError(err instanceof Error ? err.message : "Failed to parse CSV");
+      setCsvLoading(false);
+    }
   };
 
   const handleConfirm = () => {
-    // Persist locally so the AI receives the latest users in its config snapshot
     updateConfig({ users });
-    // Send rich message so AI can save + advance without asking again
     const list = users.map((u) =>
       `${u.firstName} ${u.lastName} <${u.email}>${u.department ? ` [${u.department}]` : ""}`
     ).join("; ");
@@ -596,7 +637,7 @@ function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[]) => v
             onClick={() => setMode("manual")}
             className="flex flex-col items-center gap-2 p-4 border border-[#dadce0] rounded-xl hover:border-[#1a73e8] hover:bg-[#e8f0fe] transition-all group"
           >
-            <Users className="w-6 h-6 text-gray-400 group-hover:text-[#1a73e8]" />
+            <Users className="w-6 h-6 text-gray-400 group-hover:text-[#1a73e8]" aria-hidden="true" />
             <span className="text-sm font-medium text-gray-700 group-hover:text-[#1a73e8]">Manual Entry</span>
           </button>
           <button
@@ -604,12 +645,17 @@ function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[]) => v
             className="flex flex-col items-center gap-2 p-4 border border-[#dadce0] rounded-xl hover:border-[#1a73e8] hover:bg-[#e8f0fe] transition-all group"
           >
             {csvLoading
-              ? <Loader2 className="w-6 h-6 animate-spin text-[#1a73e8]" />
-              : <Upload className="w-6 h-6 text-gray-400 group-hover:text-[#1a73e8]" />}
+              ? <Loader2 className="w-6 h-6 animate-spin text-[#1a73e8]" aria-hidden="true" />
+              : <Upload className="w-6 h-6 text-gray-400 group-hover:text-[#1a73e8]" aria-hidden="true" />}
             <span className="text-sm font-medium text-gray-700 group-hover:text-[#1a73e8]">Upload CSV</span>
           </button>
         </div>
-        <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleCSV} />
+        {csvError && (
+          <p className="flex items-center gap-1.5 text-xs text-red-600 mt-2" role="alert">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" /> {csvError}
+          </p>
+        )}
+        <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleCSV} aria-label="Upload CSV file" />
         <FixItButton targetStage="porting" />
       </CardShell>
     );
@@ -620,7 +666,6 @@ function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[]) => v
       <CardShell>
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Add Team Members</p>
 
-        {/* Existing users table */}
         {users.length > 0 && (
           <div className="mb-3 rounded-xl overflow-hidden border border-[#e8eaed]">
             <table className="w-full text-xs">
@@ -628,7 +673,7 @@ function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[]) => v
                 <tr className="bg-[#f8f9fa]">
                   <th className="px-3 py-2 text-left font-semibold text-gray-500">Name</th>
                   <th className="px-3 py-2 text-left font-semibold text-gray-500">Email</th>
-                  <th className="px-2 py-2" />
+                  <th className="px-2 py-2"><span className="sr-only">Remove</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#f1f3f4]">
@@ -637,8 +682,8 @@ function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[]) => v
                     <td className="px-3 py-2 text-gray-700">{u.firstName} {u.lastName}</td>
                     <td className="px-3 py-2 text-gray-500">{u.email}</td>
                     <td className="px-2 py-2">
-                      <button onClick={() => setUsers((u2) => u2.filter((_, idx) => idx !== i))} className="text-gray-300 hover:text-red-500">
-                        <Trash2 className="w-3.5 h-3.5" />
+                      <button onClick={() => setUsers((u2) => u2.filter((_, idx) => idx !== i))} className="text-gray-300 hover:text-red-500" aria-label={`Remove ${u.firstName} ${u.lastName}`}>
+                        <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                       </button>
                     </td>
                   </tr>
@@ -648,19 +693,22 @@ function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[]) => v
           </div>
         )}
 
-        {/* Add row */}
         <div className="grid grid-cols-3 gap-2 mb-2">
           <input placeholder="First name" value={newFirst} onChange={(e) => setNewFirst(e.target.value)}
+            aria-label="First name"
             className="px-2.5 py-1.5 text-sm border border-[#dadce0] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1a73e8] bg-white" />
           <input placeholder="Last name" value={newLast} onChange={(e) => setNewLast(e.target.value)}
+            aria-label="Last name"
             className="px-2.5 py-1.5 text-sm border border-[#dadce0] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1a73e8] bg-white" />
           <input placeholder="Email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && addManual()}
+            aria-label="Email"
             className="px-2.5 py-1.5 text-sm border border-[#dadce0] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1a73e8] bg-white" />
         </div>
+        <ValidationErrors errors={validationErrors} />
         <button onClick={addManual} disabled={!newFirst.trim() || !newEmail.trim()}
           className="flex items-center gap-1.5 text-sm text-[#1a73e8] hover:underline disabled:opacity-40 mb-3">
-          <Plus className="w-3.5 h-3.5" /> Add person
+          <Plus className="w-3.5 h-3.5" aria-hidden="true" /> Add person
         </button>
 
         <button onClick={handleConfirm} disabled={users.length === 0}
@@ -676,7 +724,7 @@ function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[]) => v
   return (
     <CardShell>
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-        {users.length} users parsed from CSV — confirm to continue
+        {users.length} users parsed from CSV &mdash; confirm to continue
       </p>
       <div className="rounded-xl overflow-hidden border border-[#e8eaed] mb-4 max-h-60 overflow-y-auto">
         <table className="w-full text-xs">
@@ -724,19 +772,17 @@ function ArchitectureWidget({ onMessages }: { onMessages: (msgs: string[]) => vo
   const handleContinue = () => {
     updateConfig({ departments: depts, hasHardphones: !!hasPhones, users });
     const userSummary = users.map((u) =>
-      `${u.firstName} ${u.lastName} → ${u.department || "Unassigned"}${u.hardphoneModel ? ` (${u.hardphoneModel})` : ""}`
+      `${u.firstName} ${u.lastName} \u2192 ${u.department || "Unassigned"}${u.hardphoneModel ? ` (${u.hardphoneModel})` : ""}`
     ).join("; ");
-    // Let AI call advance_stage — no direct advance() to avoid race with driveLoop
     onMessages([`Departments: ${depts.join(", ")}. Hardphones: ${hasPhones ? "Yes" : "No"}. Users: ${userSummary}`]);
   };
 
   return (
     <CardShell>
       <div className="space-y-4">
-        {/* Departments */}
         <div>
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-            <Building2 className="w-3.5 h-3.5" /> Departments
+            <Building2 className="w-3.5 h-3.5" aria-hidden="true" /> Departments
           </p>
           <div className="flex gap-2 mb-2">
             <input
@@ -744,10 +790,11 @@ function ArchitectureWidget({ onMessages }: { onMessages: (msgs: string[]) => vo
               onChange={(e) => setDeptInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addDept()}
               placeholder="e.g. Sales"
+              aria-label="Department name"
               className="flex-1 px-2.5 py-1.5 text-sm border border-[#dadce0] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1a73e8] bg-white"
             />
-            <button onClick={addDept} className="px-3 py-1.5 bg-[#1a73e8] text-white rounded-lg text-sm hover:bg-[#1557b0]">
-              <Plus className="w-4 h-4" />
+            <button onClick={addDept} className="px-3 py-1.5 bg-[#1a73e8] text-white rounded-lg text-sm hover:bg-[#1557b0]" aria-label="Add department">
+              <Plus className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
           {depts.length > 0 && (
@@ -755,8 +802,8 @@ function ArchitectureWidget({ onMessages }: { onMessages: (msgs: string[]) => vo
               {depts.map((d) => (
                 <span key={d} className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-[#e8f0fe] text-[#1a73e8] rounded-full text-xs font-medium">
                   {d}
-                  <button onClick={() => setDepts((ds) => ds.filter((x) => x !== d))} className="text-[#1a73e8] hover:text-red-500">
-                    ×
+                  <button onClick={() => setDepts((ds) => ds.filter((x) => x !== d))} className="text-[#1a73e8] hover:text-red-500" aria-label={`Remove ${d}`}>
+                    &times;
                   </button>
                 </span>
               ))}
@@ -764,11 +811,10 @@ function ArchitectureWidget({ onMessages }: { onMessages: (msgs: string[]) => vo
           )}
         </div>
 
-        {/* Assign users to depts — each user gets their own row with name + dropdown */}
         {depts.length > 0 && users.length > 0 && (
           <div>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5" /> Assign Users to Departments
+              <Users className="w-3.5 h-3.5" aria-hidden="true" /> Assign Users to Departments
             </p>
             <div className="rounded-xl border border-[#e8eaed] overflow-hidden max-h-52 overflow-y-auto">
               {users.map((u, i) => (
@@ -780,9 +826,10 @@ function ArchitectureWidget({ onMessages }: { onMessages: (msgs: string[]) => vo
                   <select
                     value={u.department ?? ""}
                     onChange={(e) => setUsers((us) => us.map((x, xi) => xi === i ? { ...x, department: e.target.value } : x))}
+                    aria-label={`Department for ${u.firstName} ${u.lastName}`}
                     className="w-36 shrink-0 text-xs px-2 py-1.5 border border-[#dadce0] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                   >
-                    <option value="">— Unassigned —</option>
+                    <option value="">&mdash; Unassigned &mdash;</option>
                     {depts.map((d) => <option key={d} value={d}>{d}</option>)}
                   </select>
                 </div>
@@ -791,14 +838,14 @@ function ArchitectureWidget({ onMessages }: { onMessages: (msgs: string[]) => vo
           </div>
         )}
 
-        {/* Hardphones */}
         <div>
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-            <HardDrive className="w-3.5 h-3.5" /> Physical Desk Phones?
+            <HardDrive className="w-3.5 h-3.5" aria-hidden="true" /> Physical Desk Phones?
           </p>
           <div className="flex gap-2">
             {[true, false].map((v) => (
               <button key={String(v)} onClick={() => setHasPhones(v)}
+                aria-pressed={hasPhones === v}
                 className={`flex-1 py-2 text-sm font-medium rounded-lg border transition-all ${
                   hasPhones === v
                     ? "border-[#1a73e8] bg-[#e8f0fe] text-[#1a73e8]"
@@ -810,7 +857,6 @@ function ArchitectureWidget({ onMessages }: { onMessages: (msgs: string[]) => vo
           </div>
         </div>
 
-        {/* Hardphone config per user */}
         {hasPhones && users.length > 0 && (
           <div>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Hardphone Details</p>
@@ -825,12 +871,14 @@ function ArchitectureWidget({ onMessages }: { onMessages: (msgs: string[]) => vo
                     placeholder="Model (e.g. T46U)"
                     value={u.hardphoneModel ?? ""}
                     onChange={(e) => setUsers((us) => us.map((x, xi) => xi === i ? { ...x, hardphoneModel: e.target.value } : x))}
+                    aria-label={`Phone model for ${u.firstName}`}
                     className="w-24 shrink-0 text-xs px-2 py-1.5 border border-[#dadce0] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                   />
                   <input
                     placeholder="MAC address"
                     value={u.macAddress ?? ""}
                     onChange={(e) => setUsers((us) => us.map((x, xi) => xi === i ? { ...x, macAddress: e.target.value } : x))}
+                    aria-label={`MAC address for ${u.firstName}`}
                     className="w-32 shrink-0 text-xs px-2 py-1.5 border border-[#dadce0] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                   />
                 </div>
@@ -871,7 +919,6 @@ function LicensingWidget({ onMessages }: { onMessages: (msgs: string[]) => void 
 
   const handleContinue = () => {
     updateConfig({ routingType: choice, licensingVerified: eligible === true });
-    // Let AI call advance_stage — no direct advance() to avoid race with driveLoop
     onMessages([`Routing: ${choice === "ring_groups" ? "Ring Groups" : "Call Queues"}`]);
   };
 
@@ -879,12 +926,14 @@ function LicensingWidget({ onMessages }: { onMessages: (msgs: string[]) => void 
     <CardShell>
       <div className="space-y-3">
         <p className="text-xs text-gray-500">Select how inbound calls should be routed to your team:</p>
-        <div className="space-y-2">
+        <div className="space-y-2" role="radiogroup" aria-label="Routing type">
           {([
             { value: "ring_groups" as const, label: "Ring Groups", desc: "Included with all plans. Rings all members simultaneously." },
             { value: "call_queues" as const, label: "Call Queues", desc: "Requires Call Queue license. Callers wait in line." },
           ]).map(({ value, label, desc }) => (
             <button key={value} onClick={() => handleChoice(value)}
+              role="radio"
+              aria-checked={choice === value}
               className={`w-full flex items-start gap-3 p-3 rounded-xl border text-left transition-all ${
                 choice === value ? "border-[#1a73e8] bg-[#e8f0fe]" : "border-[#dadce0] bg-white hover:bg-[#f8f9fa]"
               }`}>
@@ -901,17 +950,16 @@ function LicensingWidget({ onMessages }: { onMessages: (msgs: string[]) => void 
           ))}
         </div>
 
-        {/* License check result */}
         {choice === "call_queues" && (
           <div>
             {checking && (
-              <p className="flex items-center gap-2 text-xs text-gray-500">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Checking license eligibility…
+              <p className="flex items-center gap-2 text-xs text-gray-500" role="status">
+                <Loader2 className="w-3.5 h-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" /> Checking license eligibility&hellip;
               </p>
             )}
             {eligible === false && !checking && (
-              <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800" role="alert">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
                 <div>
                   <p className="font-semibold">Call Queue license not found</p>
                   <p className="mt-0.5">Contact your net2phone account manager to add this feature.</p>
@@ -919,8 +967,8 @@ function LicensingWidget({ onMessages }: { onMessages: (msgs: string[]) => void 
               </div>
             )}
             {eligible === true && !checking && (
-              <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-xl text-xs text-green-800">
-                <ShieldCheck className="w-4 h-4 shrink-0" />
+              <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-xl text-xs text-green-800" role="status">
+                <ShieldCheck className="w-4 h-4 shrink-0" aria-hidden="true" />
                 <p className="font-semibold">Call Queue license verified</p>
               </div>
             )}
@@ -947,34 +995,30 @@ function FinalBlueprintWidget({
   const { config } = useConcierge();
   const [applying, setApplying] = useState(false);
 
-  // Widget just sends "Confirm & Build" — the AI calls apply_configuration({ confirm: true })
-  // which triggers the handleApplySuccess transition in the overlay (no double-apply).
   const handleConfirm = () => {
     setApplying(true);
     onMessages(["Confirm & Build"]);
-    // applying spinner stays until the widgetStage changes (AI finishes)
   };
 
-  // Build blueprint markdown
   const hoursRows = Object.entries(config.scraped.hours)
     .map(([day, hrs]) => `| ${day} | ${hrs} |`)
     .join("\n");
 
   const usersRows = config.users
-    .map((u) => `| ${u.firstName} ${u.lastName} | ${u.email} | ${u.department ?? "—"} |`)
+    .map((u) => `| ${u.firstName} ${u.lastName} | ${u.email} | ${u.department ?? "\u2014"} |`)
     .join("\n");
 
   const blueprint = `
-## ${config.companyName || "Your Company"} — Setup Blueprint
+## ${config.companyName || "Your Company"} \u2014 Setup Blueprint
 
 | Field | Value |
 |---|---|
 | Location | ${config.scraped.location} |
 | Timezone | ${config.scraped.timezone} |
 | Routing Type | ${config.routingType === "ring_groups" ? "Ring Groups" : "Call Queues"} |
-| Departments | ${config.departments.join(", ") || "—"} |
+| Departments | ${config.departments.join(", ") || "\u2014"} |
 | Users | ${config.users.length} |
-| Numbers to Port | ${config.portingQueue.numbers.length || "—"} |
+| Numbers to Port | ${config.portingQueue.numbers.length || "\u2014"} |
 | Holidays | ${config.holidays.length > 0 && config.holidays[0]?.date !== "__auto__" ? config.holidays.length : config.holidays.length > 0 ? "Auto-loaded" : "None"} |
 
 ### Business Hours
@@ -987,7 +1031,7 @@ ${hoursRows}
 
 | Name | Email | Department |
 |---|---|---|
-${usersRows || "| — | — | — |"}
+${usersRows || "| \u2014 | \u2014 | \u2014 |"}
 `.trim();
 
   return (
@@ -1003,8 +1047,8 @@ ${usersRows || "| — | — | — |"}
         <button onClick={handleConfirm} disabled={applying}
           className="w-full flex items-center justify-center gap-2 py-3 text-sm font-semibold bg-[#1a73e8] text-white rounded-xl hover:bg-[#1557b0] disabled:opacity-50 transition-colors">
           {applying
-            ? <><Loader2 className="w-4 h-4 animate-spin" /> Building your system…</>
-            : <><ShieldCheck className="w-4 h-4" /> Confirm &amp; Build</>}
+            ? <><Loader2 className="w-4 h-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> Building your system&hellip;</>
+            : <><ShieldCheck className="w-4 h-4" aria-hidden="true" /> Confirm &amp; Build</>}
         </button>
         <FixItButton targetStage="licensing" label="Go back and change something" />
       </div>
@@ -1016,7 +1060,6 @@ ${usersRows || "| — | — | — |"}
 
 interface StageWidgetsProps {
   onUserMessages: (msgs: string[]) => void;
-  /** Explicit stage to render — defaults to context stage if omitted. */
   currentStage?: string;
 }
 

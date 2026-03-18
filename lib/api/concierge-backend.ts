@@ -1,4 +1,5 @@
 import type { OnboardingData, OnboardingUser } from "@/contexts/ConciergeContext";
+import { withRetry, isRetryableNetworkError } from "@/lib/utils/retry";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -27,12 +28,16 @@ function delay(ms: number) {
 // ── researchWebsite ──────────────────────────────────────────────────────────
 
 export async function researchWebsite(url: string): Promise<ScrapedWebsiteData> {
-  const res = await fetch("/api/research-website", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url }),
-    signal: AbortSignal.timeout(25_000),
-  });
+  const res = await withRetry(
+    () =>
+      fetch("/api/research-website", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+        signal: AbortSignal.timeout(25_000),
+      }),
+    { maxRetries: 2, shouldRetry: isRetryableNetworkError }
+  );
 
   const json = await res.json();
   if (!res.ok) {
@@ -44,13 +49,16 @@ export async function researchWebsite(url: string): Promise<ScrapedWebsiteData> 
 // ── parseCSV ─────────────────────────────────────────────────────────────────
 
 export async function parseCSV(file: File): Promise<OnboardingUser[]> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const text = e.target?.result as string;
         const lines = text.split(/\r?\n/).filter(Boolean);
-        if (lines.length < 2) throw new Error("Too few rows");
+        if (lines.length < 2) {
+          reject(new Error("CSV must have a header row and at least one data row."));
+          return;
+        }
 
         const headers = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/\s+/g, "_"));
 
@@ -81,53 +89,48 @@ export async function parseCSV(file: File): Promise<OnboardingUser[]> {
           };
         }).filter((u) => u.firstName || u.email);
 
-        resolve(users.length ? users : mockUsers());
-      } catch {
-        resolve(mockUsers());
+        if (users.length === 0) {
+          reject(new Error("No valid user rows found. Ensure your CSV has first_name, last_name, and email columns."));
+          return;
+        }
+
+        resolve(users);
+      } catch (e) {
+        reject(e instanceof Error ? e : new Error("Failed to parse CSV file"));
       }
     };
-    reader.onerror = () => resolve(mockUsers());
+    reader.onerror = () => reject(new Error("Failed to read CSV file"));
     reader.readAsText(file);
   });
 }
 
-function mockUsers(): OnboardingUser[] {
-  return [
-    { firstName: "Alice",  lastName: "Chen",     email: "alice@company.com" },
-    { firstName: "Bob",    lastName: "Martinez",  email: "bob@company.com" },
-    { firstName: "Carol",  lastName: "Johnson",   email: "carol@company.com" },
-    { firstName: "David",  lastName: "Kim",       email: "david@company.com" },
-  ];
-}
-
 // ── checkLicensing ────────────────────────────────────────────────────────────
-//
-// Checks the account's license list for call_queue eligibility.
-// Falls back to false if the token is unavailable or the API call fails.
 
 export async function checkLicensing(
   feature: string,
   token?: string
 ): Promise<boolean> {
-  if (feature !== "call_queues") return true; // ring_groups always included
-
-  if (!token) return false; // can't check without auth
+  if (feature !== "call_queues") return true;
+  if (!token) return false;
 
   try {
-    const res = await fetch("/api/n2p-tools", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ tool: "list_licenses", input: {} }),
-    });
+    const res = await withRetry(
+      () =>
+        fetch("/api/n2p-tools", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ tool: "list_licenses", input: {} }),
+        }),
+      { maxRetries: 2, shouldRetry: isRetryableNetworkError }
+    );
     if (!res.ok) return false;
     const json = await res.json();
     const licenses = (json.data ?? json) as Array<Record<string, unknown>>;
     if (!Array.isArray(licenses)) return false;
 
-    // Check for any call queue related license
     return licenses.some((lic) => {
       const name = String(lic.name ?? lic.licenseType ?? lic.type ?? "").toLowerCase();
       return name.includes("queue") || name.includes("ccaas") || name.includes("contact");
@@ -138,10 +141,6 @@ export async function checkLicensing(
 }
 
 // ── Business hours parser ─────────────────────────────────────────────────────
-//
-// Converts scraped hours like { Monday: "9:00 AM – 5:00 PM", Saturday: "Closed" }
-// into net2phone schedule rules and also the simplified schedule block needed
-// by build_call_flow.
 
 const DAY_NUM: Record<string, number> = {
   Sunday: 1, Monday: 2, Tuesday: 3, Wednesday: 4, Thursday: 5, Friday: 6, Saturday: 7,
@@ -165,7 +164,6 @@ function parseTime(t: string): string | null {
 function getPrimaryWorkHours(
   hours: Record<string, string>
 ): { weekDays: number[]; start: string; end: string } | null {
-  // Collect open-day groups
   const groups: Record<string, number[]> = {};
   for (const [day, timeStr] of Object.entries(hours)) {
     const dayNum = DAY_NUM[day];
@@ -180,7 +178,6 @@ function getPrimaryWorkHours(
   }
   const entries = Object.entries(groups);
   if (!entries.length) return null;
-  // Pick the block with the most days (Mon–Fri typically)
   entries.sort((a, b) => b[1].length - a[1].length);
   const [key, weekDays] = entries[0];
   const [start, end] = key.split("|");
@@ -188,20 +185,11 @@ function getPrimaryWorkHours(
 }
 
 // ── applyConfiguration ────────────────────────────────────────────────────────
-//
-// Submits the complete onboarding payload to the backend via real API calls.
-// Operations in order:
-//   0. Auth preflight — fail fast if the token is invalid
-//   1. Create each user (auto-assign extension)
-//   2. Create each department
-//   3. Assign users to their departments
-//   4a. ring_groups: create ring group + set members + build call flow
-//   4b. call_queues: create call queue + set agents
 
 export async function applyConfiguration(
   payload: OnboardingData,
   token: string,
-  onStep?: (step: ApplyStep) => void   // live progress callback for the UI
+  onStep?: (step: ApplyStep) => void
 ): Promise<{ success: boolean; error?: string; steps: ApplyStep[]; okCount: number; warnCount: number }> {
   const steps: ApplyStep[] = [];
   let okCount = 0;
@@ -212,11 +200,10 @@ export async function applyConfiguration(
     if (step.status === "ok")   okCount++;
     if (step.status === "warn") warnCount++;
     onStep?.(step);
-    // Always log to console so Vercel logs capture every outcome
     if (step.status === "ok") {
-      console.info(`[Concierge apply] ✓ ${step.label}`);
+      console.info(`[Concierge apply] \u2713 ${step.label}`);
     } else if (step.status === "warn") {
-      console.error(`[Concierge apply] ✗ ${step.label}: ${step.detail ?? "(no detail)"}`);
+      console.error(`[Concierge apply] \u2717 ${step.label}: ${step.detail ?? "(no detail)"}`);
     }
   }
 
@@ -224,7 +211,7 @@ export async function applyConfiguration(
     tool: string,
     input: Record<string, unknown>
   ): Promise<Record<string, unknown>> {
-    console.info(`[Concierge apply] → ${tool}`, JSON.stringify(input).slice(0, 200));
+    console.info(`[Concierge apply] \u2192 ${tool}`, JSON.stringify(input).slice(0, 200));
     const res = await fetch("/api/n2p-tools", {
       method: "POST",
       headers: {
@@ -236,22 +223,19 @@ export async function applyConfiguration(
     const json = await res.json();
     if (!res.ok) {
       const errMsg = json.error ?? `${tool} failed (HTTP ${res.status})`;
-      console.error(`[Concierge apply] ✗ ${tool} HTTP ${res.status}:`, JSON.stringify(json).slice(0, 300));
+      console.error(`[Concierge apply] \u2717 ${tool} HTTP ${res.status}:`, JSON.stringify(json).slice(0, 300));
       throw new Error(errMsg);
     }
-    console.info(`[Concierge apply] ← ${tool} ok:`, JSON.stringify(json.data ?? json).slice(0, 200));
+    console.info(`[Concierge apply] \u2190 ${tool} ok:`, JSON.stringify(json.data ?? json).slice(0, 200));
     return (json.data ?? json) as Record<string, unknown>;
   }
 
   try {
-    // ── 0. Auth preflight ─────────────────────────────────────────────────────
-    // This call will fail with a 401 if the token is invalid or missing account_id.
-    // We let the error propagate so the outer catch returns success: false.
-    console.info("[Concierge apply] Starting — preflight account check");
+    console.info("[Concierge apply] Starting \u2014 preflight account check");
     await n2p("get_account_summary", {});
     push({ label: "Account connection verified", status: "ok" });
 
-    // ── 1. Create users ───────────────────────────────────────────────────────
+    // ── 1. Create users ─────────────────────────────────────────────────────
     const userIds: number[] = [];
     const emailToUserId = new Map<string, number>();
 
@@ -283,21 +267,20 @@ export async function applyConfiguration(
             push({ label: `Created user: ${user.firstName} ${user.lastName} (ext ${nextExt - 1})`, status: "ok" });
             allUsersFailed = false;
           } else {
-            push({ label: `User: ${user.firstName} ${user.lastName}`, status: "warn", detail: "API returned no user ID — user may already exist" });
+            push({ label: `User: ${user.firstName} ${user.lastName}`, status: "warn", detail: "API returned no user ID" });
           }
         } catch (e) {
           push({ label: `User: ${user.firstName} ${user.lastName}`, status: "warn", detail: e instanceof Error ? e.message : String(e) });
         }
       }
 
-      // If every single user creation failed, something is fundamentally wrong
       if (allUsersFailed && payload.users.length > 0) {
         const lastErr = steps.filter((s) => s.status === "warn").pop()?.detail ?? "Unknown error";
         return { success: false, error: `Could not create any users. Last error: ${lastErr}`, steps, okCount, warnCount };
       }
     }
 
-    // ── 2. Create departments ─────────────────────────────────────────────────
+    // ── 2. Create departments ───────────────────────────────────────────────
     const deptNameToId = new Map<string, number>();
 
     for (const deptName of payload.departments) {
@@ -315,24 +298,24 @@ export async function applyConfiguration(
       }
     }
 
-    // ── 3. Assign users to departments ────────────────────────────────────────
+    // ── 3. Assign users to departments ──────────────────────────────────────
     for (const user of payload.users) {
       if (!user.department) continue;
       const userId = emailToUserId.get(user.email);
       const deptId = deptNameToId.get(user.department);
       if (!userId || !deptId) {
-        push({ label: `Assign ${user.firstName} → ${user.department}`, status: "warn", detail: "Missing userId or deptId" });
+        push({ label: `Assign ${user.firstName} \u2192 ${user.department}`, status: "warn", detail: "Missing userId or deptId" });
         continue;
       }
       try {
         await n2p("assign_user_to_department", { userId, deptId });
-        push({ label: `${user.firstName} ${user.lastName} → ${user.department}`, status: "ok" });
+        push({ label: `${user.firstName} ${user.lastName} \u2192 ${user.department}`, status: "ok" });
       } catch (e) {
-        push({ label: `Assign ${user.firstName} → ${user.department}`, status: "warn", detail: e instanceof Error ? e.message : String(e) });
+        push({ label: `Assign ${user.firstName} \u2192 ${user.department}`, status: "warn", detail: e instanceof Error ? e.message : String(e) });
       }
     }
 
-    // ── 4. Ring group or call queue + call flow ───────────────────────────────
+    // ── 4. Ring group or call queue + call flow ─────────────────────────────
     const groupName = `${(payload.companyName || "Main").trim()} Team`;
 
     if (payload.routingType === "ring_groups") {
@@ -395,7 +378,7 @@ export async function applyConfiguration(
       }
     }
 
-    console.info(`[Concierge apply] Done — ${okCount} ok, ${warnCount} warnings`);
+    console.info(`[Concierge apply] Done \u2014 ${okCount} ok, ${warnCount} warnings`);
     return { success: true, steps, okCount, warnCount };
 
   } catch (e) {
@@ -405,5 +388,4 @@ export async function applyConfiguration(
   }
 }
 
-// ── Keep delay accessible for any future test/mock usage ─────────────────────
 export { delay };

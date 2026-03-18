@@ -1,13 +1,9 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 // ── Tool definitions ──────────────────────────────────────────────────────────
-//
-// Concierge-specific tools (executed client-side) + a subset of n2p tools
-// that the AI may call during the final build step.
 
 const TOOLS: Anthropic.Tool[] = [
-  // ── State-machine controls (client executes these) ──────────────────────────
   {
     name: "advance_stage",
     description:
@@ -39,12 +35,10 @@ const TOOLS: Anthropic.Tool[] = [
       required: ["patch"],
     },
   },
-
-  // ── Data-gathering tools (client executes these via mock/real backends) ──────
   {
     name: "research_website",
     description:
-      "Analyze a company website URL and extract: city/location, timezone, business hours, and phone numbers. Call this as soon as you have the website URL — don't wait for the user to provide data you can scrape.",
+      "Analyze a company website URL and extract: city/location, timezone, business hours, and phone numbers. Call this as soon as you have the website URL.",
     input_schema: {
       type: "object",
       properties: {
@@ -84,12 +78,9 @@ const TOOLS: Anthropic.Tool[] = [
       required: ["confirm"],
     },
   },
-
-  // ── net2phone account tools (client calls /api/n2p-tools) ───────────────────
   {
     name: "get_account_summary",
-    description:
-      "Get the current account overview: total DIDs, available numbers, and max user seats. Useful at the start to understand account capacity.",
+    description: "Get the current account overview: total DIDs, available numbers, and max user seats.",
     input_schema: { type: "object", properties: {}, required: [] },
   },
   {
@@ -99,8 +90,7 @@ const TOOLS: Anthropic.Tool[] = [
   },
   {
     name: "create_schedule",
-    description:
-      "Create a business-hours schedule from the scraped or confirmed hours. Called during the build step.",
+    description: "Create a business-hours schedule from the scraped or confirmed hours.",
     input_schema: {
       type: "object",
       properties: {
@@ -113,8 +103,7 @@ const TOOLS: Anthropic.Tool[] = [
   },
   {
     name: "build_call_flow",
-    description:
-      "Build the full call routing flow (schedule + ring group or call queue). Called during the final build step.",
+    description: "Build the full call routing flow (schedule + ring group or call queue).",
     input_schema: {
       type: "object",
       properties: {
@@ -128,8 +117,7 @@ const TOOLS: Anthropic.Tool[] = [
   },
   {
     name: "search_support",
-    description:
-      "Search net2phone support articles for product questions. Use when the user asks about a feature, pricing, or setup guidance outside the current step.",
+    description: "Search net2phone support articles for product questions.",
     input_schema: {
       type: "object",
       properties: {
@@ -267,15 +255,37 @@ ${JSON.stringify(config, null, 2)}
 - End each message with a clear next step or question.`;
 }
 
+// ── SSE helper ────────────────────────────────────────────────────────────────
+
+function sseResponse(readable: ReadableStream) {
+  return new Response(readable, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
+  });
+}
+
+function sseErrorResponse(message: string) {
+  const encoder = new TextEncoder();
+  const readable = new ReadableStream({
+    start(controller) {
+      controller.enqueue(
+        encoder.encode(`data: ${JSON.stringify({ type: "error", error: message })}\n\n`)
+      );
+      controller.close();
+    },
+  });
+  return sseResponse(readable);
+}
+
 // ── Route ─────────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    return NextResponse.json(
-      { error: "ANTHROPIC_API_KEY is not configured. Add it to .env.local." },
-      { status: 500 }
-    );
+    return sseErrorResponse("ANTHROPIC_API_KEY is not configured. Add it to .env.local.");
   }
 
   let body: {
@@ -287,23 +297,56 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+    return sseErrorResponse("Invalid JSON body.");
   }
 
   const client = new Anthropic({ apiKey });
 
   try {
-    const response = await client.messages.create({
+    const stream = client.messages.stream({
       model: "claude-sonnet-4-6",
       max_tokens: 1024,
       system: buildSystemPrompt(body.stage ?? "welcome_scrape", body.config ?? {}),
       tools: TOOLS,
       messages: body.messages,
     });
-    return NextResponse.json(response);
+
+    const encoder = new TextEncoder();
+    const readable = new ReadableStream({
+      async start(controller) {
+        stream.on("text", (text) => {
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ type: "text_delta", text })}\n\n`)
+          );
+        });
+
+        try {
+          const msg = await stream.finalMessage();
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({
+                type: "message_complete",
+                stop_reason: msg.stop_reason,
+                content: msg.content,
+              })}\n\n`
+            )
+          );
+        } catch (err) {
+          const errMsg = err instanceof Error ? err.message : "Stream error";
+          console.error("[concierge-agent] stream error:", errMsg);
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ type: "error", error: errMsg })}\n\n`)
+          );
+        }
+
+        controller.close();
+      },
+    });
+
+    return sseResponse(readable);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Anthropic API error";
     console.error("[concierge-agent]", msg);
-    return NextResponse.json({ error: msg }, { status: 502 });
+    return sseErrorResponse(msg);
   }
 }
