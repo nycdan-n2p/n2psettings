@@ -259,7 +259,7 @@ function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => void })
   const { config, updateConfig } = useConcierge();
   const phones = config.scraped.phones;
 
-  const [step, setStep] = useState<PortingStep>("decide");
+  const [step, setStep] = useState<PortingStep>(phones.length > 0 ? "numbers" : "decide");
   const [selected, setSelected] = useState<Set<string>>(new Set(phones));
   const [manualNum, setManualNum] = useState("");
 
@@ -415,7 +415,9 @@ function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => void })
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Step 1 of 3 &mdash; Numbers to Port</p>
           {phones.length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-xs text-gray-500">Found on your website:</p>
+              <p className="text-sm text-gray-700">
+                I found {phones.length === 1 ? "this number" : "these numbers"} on your website &mdash; want to port {phones.length === 1 ? "it" : "them"} to net2phone?
+              </p>
               {phones.map((p) => (
                 <button key={p} onClick={() => toggle(p)}
                   className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg border text-left transition-all ${selected.has(p) ? "border-[#1a73e8] bg-[#e8f0fe]" : "border-[#dadce0] bg-white hover:bg-[#f8f9fa]"}`}
@@ -426,12 +428,13 @@ function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => void })
                   <span className="text-sm font-medium text-gray-800">{p}</span>
                 </button>
               ))}
+              <p className="text-xs text-gray-400">Toggle to select/deselect. You can also add more numbers below.</p>
             </div>
           )}
           <div className="flex gap-2">
             <input value={manualNum} onChange={(e) => setManualNum(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addManual()}
-              placeholder="Add a number manually, e.g. +12125551234"
+              placeholder="Add another number, e.g. +12125551234"
               aria-label="Manual phone number"
               className="flex-1 px-3 py-2 text-sm border border-[#dadce0] rounded-lg focus:outline-none focus:border-[#1a73e8]" />
             <button onClick={addManual} className="px-3 py-2 bg-[#f1f3f4] border border-[#dadce0] rounded-lg hover:bg-[#e8eaed]" aria-label="Add number">
@@ -450,10 +453,13 @@ function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => void })
             </div>
           )}
           <div className="flex gap-2 pt-1">
-            <button onClick={() => setStep("decide")} className="px-3 py-2 text-sm text-gray-500 border border-[#dadce0] rounded-lg hover:bg-[#f8f9fa]">Back</button>
+            <button onClick={handleSkip}
+              className="px-3 py-2 text-sm text-gray-500 border border-[#dadce0] rounded-lg hover:bg-[#f8f9fa]">
+              Skip porting
+            </button>
             <button onClick={handleNumbersNext} disabled={selected.size === 0}
               className="flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold bg-[#1a73e8] text-white rounded-lg hover:bg-[#1557b0] disabled:opacity-40 transition-colors">
-              Next <ArrowRight className="w-4 h-4" aria-hidden="true" />
+              Port {selected.size} number{selected.size !== 1 ? "s" : ""} <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
         </div>
