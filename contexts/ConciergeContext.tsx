@@ -54,6 +54,19 @@ export interface OnboardingUser {
   hardphoneModel?: string;
 }
 
+export interface PortingAddress {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  companyName: string;
+  address1: string;
+  address2: string;
+  city: string;
+  state: string;
+  zip: string;
+}
+
 export interface OnboardingData {
   name: string;
   companyName: string;
@@ -67,16 +80,31 @@ export interface OnboardingData {
   };
   holidays: { date: string; name: string }[];
   portingQueue: {
+    skipped: boolean;
     numbers: string[];
-    companyName: string;
-    address: string;
+    providerName: string;
+    accountNumber: string;
+    providerBtn: string;
+    pin: string;
+    targetPortDate: string;
+    contact: PortingAddress;
+    onboardId?: number;
+    signLink?: string;
+    status?: string;
   };
   users: OnboardingUser[];
   departments: string[];
   routingType: "ring_groups" | "call_queues";
   licensingVerified: boolean;
   hasHardphones: boolean;
+  phoneType: "hardphone" | "softphone" | "both";
 }
+
+const EMPTY_PORTING_CONTACT: PortingAddress = {
+  firstName: "", lastName: "", email: "", phone: "",
+  companyName: "", address1: "", address2: "",
+  city: "", state: "", zip: "",
+};
 
 export const EMPTY_CONFIG: OnboardingData = {
   name: "",
@@ -84,12 +112,22 @@ export const EMPTY_CONFIG: OnboardingData = {
   websiteUrl: "",
   scraped: { location: "", timezone: "", hours: {}, phones: [], address: "" },
   holidays: [],
-  portingQueue: { numbers: [], companyName: "", address: "" },
+  portingQueue: {
+    skipped: false,
+    numbers: [],
+    providerName: "",
+    accountNumber: "",
+    providerBtn: "",
+    pin: "",
+    targetPortDate: "",
+    contact: EMPTY_PORTING_CONTACT,
+  },
   users: [],
   departments: [],
   routingType: "ring_groups",
   licensingVerified: false,
   hasHardphones: false,
+  phoneType: "softphone",
 };
 
 // ── State & Actions ──────────────────────────────────────────────────────────

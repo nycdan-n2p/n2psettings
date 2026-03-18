@@ -33,7 +33,7 @@ const TOOLS: Anthropic.Tool[] = [
         patch: {
           type: "object",
           description:
-            "Partial OnboardingData object. Top-level keys: name, companyName, websiteUrl, scraped, holidays, portingQueue, users, departments, routingType, licensingVerified, hasHardphones.",
+            "Partial OnboardingData object. Top-level keys: name, companyName, websiteUrl, scraped, holidays, portingQueue (skipped, numbers, providerName, accountNumber, providerBtn, pin, targetPortDate, contact, onboardId, signLink), users, departments, routingType, licensingVerified, hasHardphones, phoneType (softphone|hardphone|both).",
         },
       },
       required: ["patch"],
@@ -160,13 +160,17 @@ function buildSystemPrompt(
 - Proactively present what you found (location, timezone, hours, phones) in a markdown table.
 - Frame it as "Here's what I found for [company] — does everything look right?" rather than asking open questions.
 - Allow the user to correct any field inline. Call update_config with any corrections.
-- Ask ONE question: "Should I load standard US public holidays into the schedule?"
-- Once confirmed (or declined), call update_config with holidays intent, then call advance_stage.`,
+- Then ask: "Should I load standard US public holidays into your schedule?"
+- WAIT for explicit confirmation or decline (yes/no/sure/skip). Do NOT advance until the user replies.
+- Once they reply: call update_config({ holidays: <loaded holidays or []> }), then call advance_stage.
+- CRITICAL: Do NOT call advance_stage until you have received a clear yes or no about holidays.`,
 
-    porting: `You are at the PORTING stage. Phone numbers found: ${JSON.stringify((config as { scraped?: { phones?: unknown[] } })?.scraped?.phones ?? [])}.
-- List the discovered phone numbers and ask which ones to port.
-- If none were found, explain and let the user enter numbers manually.
-- Once the user selects numbers (or skips), call update_config with portingQueue, then call advance_stage.`,
+    porting: `You are at the PORTING stage.
+- Briefly introduce: "The porting widget below will guide you through the 3-step process — or you can skip it to handle later."
+- The widget handles everything: number selection, provider details, billing address, and API submission.
+- If the user message starts with "[porting-done]": they completed the form. Extract summary, call update_config with portingQueue details, then call advance_stage.
+- If the user says skip or "skip porting": call update_config({ portingQueue: { ...config.portingQueue, skipped: true } }), then call advance_stage.
+- Do NOT ask for provider details in chat — the widget collects all of that.`,
 
     user_ingestion: `You are at the USER INGESTION stage.
 - Introduce the step: users can type names/emails in chat OR use the form widget below.
@@ -186,13 +190,18 @@ Step B — User assignments (ONLY after departments are answered, ONLY if users.
   Show a table of users and ask: "Which department should each person be in?"
   → When they answer, call update_config({ users: [...with department fields] }).
 
-Step C — Hardphones (ask last, wait for yes/no):
-  "Do your team members use physical desk phones?"
-  → If yes: ask for phone model and MAC address for each user.
-  → Call update_config({ hasHardphones: true/false }).
+Step C — Phone type (ask last, wait for answer):
+  "How will your team take calls? Options:
+    a) Softphone only (net2phone app on computer/mobile — no hardware needed)
+    b) Physical desk phones (hardphones — you'll need MAC addresses)
+    c) Both (some users on desk phones, some on app)"
+  → "Or: not decided yet — we can set up softphones now and add desk phones later."
+  → If softphone/not decided: call update_config({ hasHardphones: false, phoneType: "softphone" }).
+  → If hardphone: ask for model and MAC address for each user, then call update_config({ hasHardphones: true, phoneType: "hardphone", users: [...with macAddress/hardphoneModel] }).
+  → If both: ask which users want desk phones and their MAC addresses, call update_config({ hasHardphones: true, phoneType: "both", users: [...] }).
 
 After ALL THREE steps are answered, call advance_stage.
-Do NOT call advance_stage until you have confirmed departments, user assignments, AND hardphone status.`,
+Do NOT call advance_stage until you have confirmed departments, user assignments, AND phone type.`,
 
     licensing: `You are at the LICENSING stage.
 - Explain the difference: Ring Groups (included, rings all at once) vs Call Queues (requires license, callers wait in line).
