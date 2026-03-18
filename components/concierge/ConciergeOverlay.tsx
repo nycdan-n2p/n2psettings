@@ -127,14 +127,17 @@ export function ConciergeOverlay() {
       }
 
       if (name === "check_licensing") {
-        const ok = await checkLicensing(toolInput.feature as string);
+        const licToken = getAccessToken() ?? undefined;
+        const ok = await checkLicensing(toolInput.feature as string, licToken);
         return { result: { eligible: ok, feature: toolInput.feature }, loopState };
       }
 
       if (name === "apply_configuration") {
         if (!toolInput.confirm) return { result: { success: false, error: "User did not confirm." }, loopState };
-        const r = await applyConfiguration(configRef.current);
-        return { result: r, loopState };
+        const applyToken = getAccessToken();
+        if (!applyToken) return { result: { success: false, error: "Not authenticated — please log in again." }, loopState };
+        const result = await applyConfiguration(configRef.current, applyToken);
+        return { result, loopState };
       }
 
       // net2phone account tools

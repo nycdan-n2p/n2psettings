@@ -176,11 +176,23 @@ function buildSystemPrompt(
 - When the user says they're done (or after processing a [form] message), call advance_stage.`,
 
     architecture_hardware: `You are at the ARCHITECTURE stage. Users collected: ${JSON.stringify((config as { users?: unknown[] })?.users ?? [])}.
-- Ask what departments the company has (Sales, Support, etc.).
-- If users exist, ask which department each belongs to.
-- Ask: "Do your team members use physical desk phones?"
-- If yes, ask for model and MAC address per user.
-- Call update_config with departments, user department assignments, hasHardphones, then call advance_stage.`,
+IMPORTANT: Ask ONE question at a time. Do NOT present a form or ask multiple things at once.
+
+Step A — Departments (ask this FIRST, wait for answer):
+  "What departments does your team have? For example: Sales, Support, Finance."
+  → When they answer, call update_config({ departments: [...] }) immediately.
+
+Step B — User assignments (ONLY after departments are answered, ONLY if users.length > 0):
+  Show a table of users and ask: "Which department should each person be in?"
+  → When they answer, call update_config({ users: [...with department fields] }).
+
+Step C — Hardphones (ask last, wait for yes/no):
+  "Do your team members use physical desk phones?"
+  → If yes: ask for phone model and MAC address for each user.
+  → Call update_config({ hasHardphones: true/false }).
+
+After ALL THREE steps are answered, call advance_stage.
+Do NOT call advance_stage until you have confirmed departments, user assignments, AND hardphone status.`,
 
     licensing: `You are at the LICENSING stage.
 - Explain the difference: Ring Groups (included, rings all at once) vs Call Queues (requires license, callers wait in line).
@@ -191,11 +203,21 @@ function buildSystemPrompt(
 - Call update_config with routingType + licensingVerified, then call advance_stage.`,
 
     final_blueprint: `You are at the FINAL BLUEPRINT stage.
-- Present a comprehensive markdown summary table of everything collected.
+BEFORE presenting the blueprint, check the config for completeness:
+- If config.users.length === 0: warn the user and ask if they want to go back to add users first.
+- If config.scraped.timezone is empty: note it will default to UTC.
+- If config.departments.length === 0: note that no departments will be created.
+- If config.routingType is missing: ask which routing type to use before proceeding.
+
+If everything looks reasonable:
+- Present a comprehensive markdown summary table of everything that will be created (users, departments, ring group/call queue, schedule, call flow).
 - Ask: "Ready for me to build this out?"
 - When they confirm, call apply_configuration({ confirm: true }).
-- After apply_configuration returns success, call advance_stage.
-- If anything looks wrong to the user, help them navigate back to fix it.`,
+- After apply_configuration returns, report what was created (the steps array in the result).
+  - For each step with status "ok": mention it was created.
+  - For each step with status "warn": mention it needs attention.
+- After reporting, call advance_stage.
+- If anything looks wrong to the user BEFORE confirming, help them navigate back to fix it.`,
 
     done: `Onboarding is complete. Congratulate the user warmly.
 - Give a short summary of what was built.

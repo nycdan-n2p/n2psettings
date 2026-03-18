@@ -17,6 +17,7 @@ import {
   parseCSV,
   checkLicensing,
 } from "@/lib/api/concierge-backend";
+import { getAccessToken } from "@/lib/auth";
 
 // ── Shared ────────────────────────────────────────────────────────────────────
 
@@ -587,7 +588,7 @@ function LicensingWidget({ onMessages }: { onMessages: (msgs: string[]) => void 
     setChoice(type);
     if (type === "call_queues") {
       setChecking(true);
-      const ok = await checkLicensing("call_queues");
+      const ok = await checkLicensing("call_queues", getAccessToken() ?? undefined);
       setEligible(ok);
       setChecking(false);
     } else {
