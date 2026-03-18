@@ -727,11 +727,6 @@ ${usersRows || "| — | — | — |"}
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{blueprint}</ReactMarkdown>
       </div>
       <div className="px-5 py-4 border-t border-[#e8eaed] space-y-2">
-        {error && (
-          <p className="flex items-center gap-1.5 text-xs text-red-600">
-            <AlertCircle className="w-3.5 h-3.5" /> {error}
-          </p>
-        )}
         <button onClick={handleConfirm} disabled={applying}
           className="w-full flex items-center justify-center gap-2 py-3 text-sm font-semibold bg-[#1a73e8] text-white rounded-xl hover:bg-[#1557b0] disabled:opacity-50 transition-colors">
           {applying
