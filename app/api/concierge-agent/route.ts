@@ -192,6 +192,8 @@ Do NOT call advance_stage until you have confirmed departments, user assignments
 
     licensing: `You are at the CALL ROUTING stage. Walk through 3 sequential sub-steps. Ask ONE question at a time, wait for the answer, save with update_config, then move to the next sub-step.
 
+IMPORTANT: If you receive a message starting with "[routing]", the call routing WIDGET has ALREADY saved all data to config. Do NOT call update_config — the data is already persisted. Just acknowledge what was configured and move to the next sub-step. If all 3 sub-steps are done (welcome menu + routing type + after-hours), call advance_stage.
+
 **Sub-step 1 — Welcome Menu (auto-attendant):**
 - Ask: "When someone calls your main number, should they hear a menu? For example: 'Thank you for calling ${(config as { companyName?: string }).companyName || "your company"}. Press 1 for Sales, Press 2 for Support.' Most businesses use one."
 - If YES: ask what the greeting should say (suggest a default using the company name and their departments). Then ask what each key press should route to — for each DTMF key, collect: the key (1-9), the destination type (department, ring_group, voicemail, directory), and the destination name.

@@ -997,8 +997,8 @@ function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[]) => voi
     };
     updateConfig({ welcomeMenu: menu });
     const summary = menuEnabled
-      ? `Welcome menu enabled. Greeting: "${greetingText.slice(0, 60)}..." Options: ${menu.menuOptions.map((o) => `${o.key}\u2192${o.destinationName}`).join(", ")}`
-      : "Welcome menu disabled.";
+      ? `[routing] Welcome menu enabled. Greeting: "${greetingText.slice(0, 60)}..." Options: ${menu.menuOptions.map((o) => `${o.key}\u2192${o.destinationName}`).join(", ")}`
+      : "[routing] Welcome menu disabled.";
     onMessages([summary]);
     setStep("routing_type");
   };
@@ -1016,7 +1016,7 @@ function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[]) => voi
     const detail = routingChoice === "call_queues"
       ? ` (${STRATEGY_OPTIONS.find((s) => s.value === ringStrategy)?.label}, max wait ${maxWaitTime}s, capacity ${maxCapacity})`
       : tiered ? ` (${tiers.length} tiers)` : " (Ring All)";
-    onMessages([`Routing: ${label} "${groupName}"${detail}`]);
+    onMessages([`[routing] Routing: ${label} "${groupName}"${detail}`]);
     setStep("after_hours");
   };
 
@@ -1028,7 +1028,7 @@ function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[]) => voi
     };
     updateConfig({ afterHours: ah });
     const desc = afterAction === "voicemail" ? "Voicemail" : afterAction === "greeting" ? `Custom greeting: "${afterGreeting.slice(0, 40)}..."` : `Forward to ${afterForwardNum}`;
-    onMessages([`After-hours: ${desc}. Call routing setup complete.`]);
+    onMessages([`[routing] After-hours: ${desc}. Call routing setup complete.`]);
   };
 
   // ── Sub-step: Welcome Menu ─────────────────────────────────────────────────
