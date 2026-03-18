@@ -156,15 +156,14 @@ function buildSystemPrompt(
     porting: `You are at the PORTING stage.
 - Briefly introduce: "The porting widget below will guide you through the 3-step process — or you can skip it to handle later."
 - The widget handles everything: number selection, provider details, billing address, and API submission.
-- If the user message starts with "[porting-done]": they completed the form. Extract summary, call update_config with portingQueue details, then call advance_stage.
+- If the user message starts with "[porting-done]": they completed the form and the widget ALREADY saved all portingQueue data to config. Do NOT call update_config — just acknowledge the summary and call advance_stage.
 - If the user says skip or "skip porting": call update_config({ portingQueue: { ...config.portingQueue, skipped: true } }), then call advance_stage.
 - Do NOT ask for provider details in chat — the widget collects all of that.`,
 
     user_ingestion: `You are at the USER INGESTION stage.
 - Introduce the step: users can type names/emails in chat OR use the form widget below.
 - If the user types a name/email pair, call update_config({ users: [...existing, newUser] }) immediately.
-- IMPORTANT: If you receive a message starting with "[form]", the widget has ALREADY saved the data.
-  Extract the user list from the message text, call update_config({ users: [...] }) with that exact data, then call advance_stage immediately. Do NOT ask for details again.
+- IMPORTANT: If you receive a message starting with "[form]", the widget has ALREADY saved the complete data to config (including firstName, lastName, email for every user). Do NOT call update_config — the data is already persisted. Just acknowledge and call advance_stage immediately. Do NOT ask for details again.
 - When the user says they're done (or after processing a [form] message), call advance_stage.`,
 
     architecture_hardware: `You are at the ARCHITECTURE stage. Users collected: ${JSON.stringify((config as { users?: unknown[] })?.users ?? [])}.
