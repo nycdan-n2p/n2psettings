@@ -12,6 +12,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useApp } from "@/contexts/AppContext";
+import { useLocaleFormat } from "@/hooks/useLocaleFormat";
 import { qk } from "@/lib/query-keys";
 import { Loader } from "@/components/ui/Loader";
 import {
@@ -71,15 +72,18 @@ function formatTimeOnCalls(totalSeconds?: number): string {
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
 
-function formatChartDate(dateStr: string, preset: Preset): string {
-  const d = new Date(dateStr);
-  return preset === "7d" ? d.toLocaleDateString("en-US", { weekday: "short" }) : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
 export default function AnalyticsPage() {
   const { bootstrap } = useApp();
+  const { formatDate } = useLocaleFormat();
   const accountId = bootstrap?.account?.accountId ?? 0;
   const userId = bootstrap?.user?.userId ?? null;
+
+  const formatChartDate = (dateStr: string, preset: Preset): string => {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    if (preset === "7d") return d.toLocaleDateString(undefined, { weekday: "short" });
+    return formatDate(d);
+  };
   const [preset, setPreset] = useState<Preset>("7d");
   const [direction, setDirection] = useState<DirectionFilter>("all");
   const [analyzing, setAnalyzing] = useState(false);

@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Upload, Loader2, AlertCircle, Users, Phone, SkipForward, ShieldCheck, CheckSquare } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useConcierge, type QueueStrategy, type MenuOption, type OnboardingUser } from "@/contexts/ConciergeContext";
 import { getAccessToken } from "@/lib/auth";
 import { CardShell } from "./shared";
@@ -26,6 +27,7 @@ interface CdrAnalysisResult {
 }
 
 export function CdrWidget({ onMessages }: { onMessages: (msgs: string[]) => void }) {
+  const t = useTranslations("concierge");
   const { config, updateConfig } = useConcierge();
   const [step, setStep] = useState<CdrStep>(() => {
     if (config.cdrAnalysis?.analyzed) return "review";
@@ -178,33 +180,32 @@ export function CdrWidget({ onMessages }: { onMessages: (msgs: string[]) => void
             <Upload className="w-4 h-4 text-[#1a73e8]" aria-hidden="true" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-[#202124]">CDR Analysis</p>
-            <p className="text-xs text-gray-500">Optional but recommended</p>
+            <p className="text-sm font-semibold text-[#202124]">{t("cdr.askTitle")}</p>
+            <p className="text-xs text-gray-500">{t("cdr.askSubtitle")}</p>
           </div>
         </div>
         <p className="text-sm text-[#3c4043] mb-1">
-          Do you have a <strong>Call Detail Record (CDR)</strong> from your previous provider?
+          {t("cdr.askBodyMain")}
         </p>
         <p className="text-xs text-gray-500 mb-4">
-          A 2–3 day export helps me identify your agents, phone numbers, call patterns, and
-          recommend the best setup. Most providers can export this as a CSV.
+          {t("cdr.askBodySub")}
         </p>
         <div className="space-y-2">
           <button
             onClick={() => setStep("upload")}
             className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium bg-[#1a73e8] text-white rounded-xl hover:bg-[#1557b0] transition-colors"
           >
-            <Upload className="w-4 h-4" aria-hidden="true" /> Yes, upload my CDR now
+            <Upload className="w-4 h-4" aria-hidden="true" /> {t("cdr.uploadNow")}
           </button>
           <button
             onClick={handleSkip}
             className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium border border-[#e8eaed] text-[#3c4043] rounded-xl hover:bg-[#f1f3f4] transition-colors"
           >
-            <SkipForward className="w-4 h-4" aria-hidden="true" /> Skip, continue manually
+            <SkipForward className="w-4 h-4" aria-hidden="true" /> {t("cdr.skipButton")}
           </button>
         </div>
         <p className="text-xs text-gray-400 mt-3 text-center">
-          You can re-run onboarding later once you have the CDR.
+          {t("cdr.rerunNote")}
         </p>
       </CardShell>
     );
@@ -217,7 +218,7 @@ export function CdrWidget({ onMessages }: { onMessages: (msgs: string[]) => void
           <div className="p-2 bg-[#e8f0fe] rounded-lg">
             <Upload className="w-4 h-4 text-[#1a73e8]" aria-hidden="true" />
           </div>
-          <p className="text-sm font-semibold text-[#202124]">Upload your CDR</p>
+          <p className="text-sm font-semibold text-[#202124]">{t("cdr.uploadTitle")}</p>
         </div>
         <div
           ref={dropRef}
@@ -229,14 +230,14 @@ export function CdrWidget({ onMessages }: { onMessages: (msgs: string[]) => void
             dragging ? "border-[#1a73e8] bg-[#e8f0fe]" : "border-[#dadce0] hover:border-[#1a73e8] hover:bg-[#f8f9ff]"
           }`}
           role="button"
-          aria-label="Upload CSV file"
+          aria-label={t("cdr.uploadTitle")}
           tabIndex={0}
           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") fileInputRef.current?.click(); }}
         >
           <Upload className="w-8 h-8 text-[#1a73e8]" aria-hidden="true" />
           <div className="text-center">
-            <p className="text-sm font-medium text-[#202124]">Drop your CSV here or click to browse</p>
-            <p className="text-xs text-gray-400 mt-1">Supports .csv files from any provider</p>
+            <p className="text-sm font-medium text-[#202124]">{t("cdr.dropZoneText")}</p>
+            <p className="text-xs text-gray-400 mt-1">{t("cdr.dropZoneHint")}</p>
           </div>
           <input
             ref={fileInputRef}
@@ -256,7 +257,7 @@ export function CdrWidget({ onMessages }: { onMessages: (msgs: string[]) => void
           onClick={handleSkip}
           className="mt-3 w-full flex items-center justify-center gap-2 py-2 text-xs text-gray-400 hover:text-[#1a73e8] transition-colors"
         >
-          <SkipForward className="w-3.5 h-3.5" aria-hidden="true" /> Skip CDR analysis
+          <SkipForward className="w-3.5 h-3.5" aria-hidden="true" /> {t("cdr.skipButton")}
         </button>
       </CardShell>
     );
@@ -268,8 +269,8 @@ export function CdrWidget({ onMessages }: { onMessages: (msgs: string[]) => void
         <div className="flex flex-col items-center gap-4 py-6">
           <Loader2 className="w-8 h-8 text-[#1a73e8] animate-spin motion-reduce:animate-none" aria-hidden="true" />
           <div className="text-center">
-            <p className="text-sm font-semibold text-[#202124]">Analyzing your call history&hellip;</p>
-            <p className="text-xs text-gray-500 mt-1">Extracting agents, numbers, and patterns</p>
+            <p className="text-sm font-semibold text-[#202124]">{t("cdr.analyzingTitle")}</p>
+            <p className="text-xs text-gray-500 mt-1">{t("cdr.analyzingDescription")}</p>
           </div>
         </div>
       </CardShell>
@@ -287,15 +288,15 @@ export function CdrWidget({ onMessages }: { onMessages: (msgs: string[]) => void
           <ShieldCheck className="w-4 h-4 text-[#34a853]" aria-hidden="true" />
         </div>
         <div>
-          <p className="text-sm font-semibold text-[#202124]">CDR Analysis Complete</p>
-          <p className="text-xs text-gray-500">{analysis.agents.length} agent(s) &middot; {analysis.inboundNumbers.length} number(s) &middot; {analysis.queues.length} queue(s)</p>
+          <p className="text-sm font-semibold text-[#202124]">{t("cdr.reviewTitle")}</p>
+          <p className="text-xs text-gray-500">{analysis.agents.length} {t("cdr.agents").toLowerCase()} &middot; {analysis.inboundNumbers.length} {t("cdr.numbers").toLowerCase()} &middot; {analysis.queues.length} {t("cdr.queues").toLowerCase()}</p>
         </div>
       </div>
 
       {/* Agents */}
       {analysis.agents.length > 0 && (
         <div className="mb-3">
-          <p className="text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">Agents Found</p>
+          <p className="text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">{t("cdr.agents")}</p>
           <div className="flex flex-wrap gap-1.5">
             {analysis.agents.map((a, i) => (
               <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#e8f0fe] rounded-full text-xs text-[#1a73e8] font-medium">
@@ -309,7 +310,7 @@ export function CdrWidget({ onMessages }: { onMessages: (msgs: string[]) => void
       {/* Numbers */}
       {analysis.inboundNumbers.length > 0 && (
         <div className="mb-3">
-          <p className="text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">Inbound Numbers (Port Candidates)</p>
+          <p className="text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">{t("cdr.numbers")}</p>
           <div className="flex flex-wrap gap-1.5">
             {analysis.inboundNumbers.map((n, i) => (
               <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#fce8b2] rounded-full text-xs text-[#b06000] font-medium">
@@ -323,7 +324,7 @@ export function CdrWidget({ onMessages }: { onMessages: (msgs: string[]) => void
       {/* Insights */}
       {analysis.insights.length > 0 && (
         <div className="mb-3">
-          <p className="text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">Insights</p>
+          <p className="text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">{t("cdr.insights")}</p>
           <ul className="space-y-1">
             {analysis.insights.map((ins, i) => (
               <li key={i} className="flex items-start gap-1.5 text-xs text-[#3c4043]">
@@ -337,15 +338,15 @@ export function CdrWidget({ onMessages }: { onMessages: (msgs: string[]) => void
 
       {/* Recommendation */}
       <div className="mb-4 bg-[#e6f4ea] rounded-xl p-3 border border-[#ceead6]">
-        <p className="text-xs font-semibold text-[#34a853] mb-1">Recommended Setup</p>
+        <p className="text-xs font-semibold text-[#34a853] mb-1">{t("cdr.recommendations")}</p>
         <p className="text-xs text-[#3c4043]">
-          <strong>Routing:</strong> {rec.routingType === "call_queues" ? "Call Queues" : "Ring Groups"} &nbsp;|&nbsp;
-          <strong>Strategy:</strong> {rec.strategy.replace(/_/g, " ")} &nbsp;|&nbsp;
-          <strong>After-hours:</strong> {rec.afterHoursAction}
+          <strong>{t("cdr.routingType")}:</strong> {rec.routingType === "call_queues" ? "Call Queues" : "Ring Groups"} &nbsp;|&nbsp;
+          <strong>{t("cdr.strategy")}:</strong> {rec.strategy.replace(/_/g, " ")} &nbsp;|&nbsp;
+          <strong>{t("cdr.afterHours")}:</strong> {rec.afterHoursAction}
         </p>
         {rec.welcomeMenuEnabled && rec.suggestedGreeting && (
           <p className="text-xs text-[#3c4043] mt-1">
-            <strong>Welcome Menu:</strong> &ldquo;{rec.suggestedGreeting.slice(0, 80)}{rec.suggestedGreeting.length > 80 ? "\u2026" : ""}&rdquo;
+            <strong>{t("cdr.welcomeMenu")}:</strong> &ldquo;{rec.suggestedGreeting.slice(0, 80)}{rec.suggestedGreeting.length > 80 ? "\u2026" : ""}&rdquo;
           </p>
         )}
       </div>
@@ -355,13 +356,13 @@ export function CdrWidget({ onMessages }: { onMessages: (msgs: string[]) => void
           onClick={handleApprove}
           className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-semibold bg-[#34a853] text-white rounded-xl hover:bg-[#2d9149] transition-colors"
         >
-          <CheckSquare className="w-4 h-4" aria-hidden="true" /> Approve this setup
+          <CheckSquare className="w-4 h-4" aria-hidden="true" /> {t("cdr.approveButton")}
         </button>
         <button
           onClick={handleManual}
           className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium border border-[#e8eaed] text-[#3c4043] rounded-xl hover:bg-[#f1f3f4] transition-colors"
         >
-          Continue manually (keep data, fill in details myself)
+          {t("cdr.continueManually")}
         </button>
       </div>
     </CardShell>

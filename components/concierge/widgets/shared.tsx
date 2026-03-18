@@ -1,16 +1,18 @@
 "use client";
 
 import { RefreshCw, AlertCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useConcierge, type ConciergeStage } from "@/contexts/ConciergeContext";
 
-export function FixItButton({ targetStage, label = "Wait, let\u2019s fix that" }: { targetStage: ConciergeStage; label?: string }) {
+export function FixItButton({ targetStage, label }: { targetStage: ConciergeStage; label?: string }) {
+  const t = useTranslations("concierge");
   const { setStage } = useConcierge();
   return (
     <button
       onClick={() => setStage(targetStage)}
       className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-[#1a73e8] transition-colors mt-3"
     >
-      <RefreshCw className="w-3 h-3" aria-hidden="true" /> {label}
+      <RefreshCw className="w-3 h-3" aria-hidden="true" /> {label ?? t("errors.waitFixThat")}
     </button>
   );
 }

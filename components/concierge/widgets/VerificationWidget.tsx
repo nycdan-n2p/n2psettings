@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { Phone } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useConcierge } from "@/contexts/ConciergeContext";
 import { CardShell } from "./shared";
 
 export function VerificationWidget({ onMessages }: { onMessages: (msgs: string[]) => void }) {
+  const t = useTranslations("concierge");
   const { config, updateConfig } = useConcierge();
   const { scraped } = config;
 
@@ -31,7 +33,7 @@ export function VerificationWidget({ onMessages }: { onMessages: (msgs: string[]
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label htmlFor="verify-location" className="block text-xs font-medium text-gray-600 mb-1">Location</label>
+            <label htmlFor="verify-location" className="block text-xs font-medium text-gray-600 mb-1">{t("verification.locationLabel")}</label>
             <input
               id="verify-location"
               value={editLocation}
@@ -40,7 +42,7 @@ export function VerificationWidget({ onMessages }: { onMessages: (msgs: string[]
             />
           </div>
           <div>
-            <label htmlFor="verify-timezone" className="block text-xs font-medium text-gray-600 mb-1">Timezone</label>
+            <label htmlFor="verify-timezone" className="block text-xs font-medium text-gray-600 mb-1">{t("verification.timezoneLabel")}</label>
             <input
               id="verify-timezone"
               value={editTimezone}
@@ -51,7 +53,7 @@ export function VerificationWidget({ onMessages }: { onMessages: (msgs: string[]
         </div>
 
         <div>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Business Hours</p>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{t("verification.businessHours")}</p>
           <div className="space-y-1.5 bg-white border border-[#e8eaed] rounded-xl overflow-hidden">
             {days.map((day) => (
               <div key={day} className="flex items-center gap-3 px-3 py-1.5 border-b border-[#f1f3f4] last:border-0">
@@ -70,7 +72,7 @@ export function VerificationWidget({ onMessages }: { onMessages: (msgs: string[]
         {scraped.phones.length > 0 && (
           <div>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-              Phone Numbers Found
+              {t("verification.phoneNumbersFound")}
             </p>
             <div className="flex flex-wrap gap-2">
               {scraped.phones.map((p) => (
@@ -84,20 +86,20 @@ export function VerificationWidget({ onMessages }: { onMessages: (msgs: string[]
 
         <div className="pt-2 border-t border-[#f1f3f4]">
           <p className="text-sm font-medium text-gray-800 mb-3">
-            Should I auto-load public holidays into your schedule?
+            {t("verification.loadHolidaysPrompt")}
           </p>
           <div className="flex gap-2">
             <button
               onClick={() => handleHolidayChoice(true)}
               className="flex-1 py-2 text-sm font-medium border border-[#1a73e8] text-[#1a73e8] rounded-lg hover:bg-[#e8f0fe] transition-colors"
             >
-              Yes, load holidays
+              {t("verification.yesLoadHolidays")}
             </button>
             <button
               onClick={() => handleHolidayChoice(false)}
               className="flex-1 py-2 text-sm font-medium border border-[#dadce0] text-gray-600 rounded-lg hover:bg-[#f1f3f4] transition-colors"
             >
-              Skip for now
+              {t("verification.skipForNow")}
             </button>
           </div>
         </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CheckSquare, Square, Plus, Trash2, Clock, Upload, Loader2, AlertCircle, ShieldCheck } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useConcierge, type MenuOption, type QueueStrategy } from "@/contexts/ConciergeContext";
 import { checkLicensing } from "@/lib/api/concierge-backend";
 import { getAccessToken } from "@/lib/auth";
@@ -10,13 +11,7 @@ import { CardShell, FixItButton } from "./shared";
 
 type RoutingStep = "welcome_menu" | "routing_type" | "after_hours";
 
-const STRATEGY_OPTIONS: { value: QueueStrategy; label: string }[] = [
-  { value: "ring_all", label: "Ring All" },
-  { value: "round_robin", label: "Round Robin" },
-  { value: "longest_idle", label: "Longest Idle" },
-  { value: "linear", label: "Linear" },
-  { value: "fewest_calls", label: "Fewest Calls" },
-];
+const STRATEGY_KEYS = ["ring_all", "round_robin", "longest_idle", "linear", "fewest_calls"] as const;
 
 const DEST_TYPES = ["department", "ring_group", "voicemail", "directory", "user"] as const;
 
@@ -27,6 +22,9 @@ export function deriveRoutingStep(config: { welcomeMenu: { configured?: boolean 
 }
 
 export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[]) => void }) {
+  const t = useTranslations("concierge");
+  const tCommon = useTranslations("common");
+  const tAny = t as unknown as (k: string) => string;
   const { config, updateConfig } = useConcierge();
 
   const [step, setStep] = useState<RoutingStep>(() => deriveRoutingStep(config));
@@ -50,9 +48,9 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
   const [checking, setChecking] = useState(false);
   const [eligible, setEligible] = useState<boolean | null>(null);
   const [groupName, setGroupName] = useState(config.routingConfig.groupName || `${config.companyName || "Main"} Team`);
-  const [ringStrategy, setRingStrategy] = useState<QueueStrategy>(config.routingConfig.ringStrategy);
-  const [maxWaitTime, setMaxWaitTime] = useState(config.routingConfig.maxWaitTime || 300);
-  const [maxCapacity, setMaxCapacity] = useState(config.routingConfig.maxCapacity || 10);
+  const [ringStrategy, setRingStrategy] = useState<QueueStrategy>(config.routingConfig.ringStrategy as QueueStrategy);
+  const [maxWaitTime] = useState(config.routingConfig.maxWaitTime || 300);
+  const [maxCapacity] = useState(config.routingConfig.maxCapacity || 10);
   const [tiered, setTiered] = useState(config.routingConfig.tiers.length > 1);
   const [tiers, setTiers] = useState<{ userEmails: string[]; rings: number }[]>(
     config.routingConfig.tiers.length > 0
@@ -144,7 +142,7 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
     const label = routingChoice === "ring_groups" ? "Ring Groups" : "Call Queues";
     const schedLabel = scheduleType === "24_7" ? "24/7" : scheduleType === "business_hours" ? "Business hours" : `Custom (${customStart}-${customEnd})`;
     const detail = routingChoice === "call_queues"
-      ? ` (${STRATEGY_OPTIONS.find((s) => s.value === ringStrategy)?.label}, max wait ${maxWaitTime}s, capacity ${maxCapacity})`
+      ? ` (${ringStrategy}, max wait ${maxWaitTime}s, capacity ${maxCapacity})`
       : tiered ? ` (${tiers.length} tiers)` : " (Ring All)";
     onMessages([`[routing] Routing: ${label} "${groupName}"${detail}. Schedule: ${schedLabel}`]);
     setStep("after_hours");
@@ -163,20 +161,24 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
 
   // ── Sub-step: Welcome Menu ─────────────────────────────────────────────────
   if (step === "welcome_menu") {
+    const greetingOptions = [
+      { value: "tts" as const, key: "routing.textToSpeech" },
+      { value: "upload" as const, key: "routing.uploadCustom" },
+      { value: "none" as const, key: "common.no" },
+    ] as const;
     return (
       <CardShell>
         <div className="space-y-3">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Step 1 of 3 &mdash; Welcome Menu</p>
-          <p className="text-xs text-gray-500">An auto-attendant greets callers and routes them via key presses (Press 1 for Sales, etc.).</p>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("routing.welcomeMenuTitle")}</p>
 
           <div className="flex gap-2">
             <button onClick={() => setMenuEnabled(true)} aria-pressed={menuEnabled}
               className={`flex-1 py-2 text-sm font-medium rounded-lg border transition-all ${menuEnabled ? "border-[#1a73e8] bg-[#e8f0fe] text-[#1a73e8]" : "border-[#dadce0] text-gray-600 hover:bg-[#f8f9fa]"}`}>
-              Yes, use a welcome menu
+              {tCommon("yes")}
             </button>
             <button onClick={() => setMenuEnabled(false)} aria-pressed={!menuEnabled}
               className={`flex-1 py-2 text-sm font-medium rounded-lg border transition-all ${!menuEnabled ? "border-[#1a73e8] bg-[#e8f0fe] text-[#1a73e8]" : "border-[#dadce0] text-gray-600 hover:bg-[#f8f9fa]"}`}>
-              No, skip
+              {tCommon("no")}
             </button>
           </div>
 
@@ -184,26 +186,22 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
             <>
               {/* Greeting type */}
               <div>
-                <p className="text-xs font-medium text-gray-600 mb-1.5">Greeting</p>
+                <p className="text-xs font-medium text-gray-600 mb-1.5">{t("routing.greetingMethodLabel")}</p>
                 <div className="flex gap-2">
-                  {([
-                    { value: "tts" as const, label: "Text-to-Speech" },
-                    { value: "upload" as const, label: "Upload Custom" },
-                    { value: "none" as const, label: "No Greeting" },
-                  ]).map(({ value, label }) => (
+                  {greetingOptions.map(({ value, key }) => (
                     <button key={value} onClick={() => setGreetingType(value)}
                       aria-pressed={greetingType === value}
                       className={`flex-1 py-1.5 text-xs font-medium rounded-lg border transition-all ${
                         greetingType === value ? "border-[#1a73e8] bg-[#e8f0fe] text-[#1a73e8]" : "border-[#dadce0] text-gray-600 hover:bg-[#f8f9fa]"
                       }`}>
-                      {label}
+                      {tAny(key)}
                     </button>
                   ))}
                 </div>
               </div>
               {greetingType === "tts" && (
                 <div>
-                  <label htmlFor="greeting-text" className="block text-xs font-medium text-gray-600 mb-1">Greeting Text</label>
+                  <label htmlFor="greeting-text" className="block text-xs font-medium text-gray-600 mb-1">{t("routing.greetingTextLabel")}</label>
                   <textarea
                     id="greeting-text"
                     value={greetingText}
@@ -211,7 +209,6 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
                     rows={3}
                     className="w-full px-3 py-2 text-sm border border-[#dadce0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1a73e8] bg-white resize-none"
                   />
-                  <p className="text-xs text-gray-400 mt-1">We&apos;ll generate audio from this text when your system is built.</p>
                 </div>
               )}
               {greetingType === "upload" && (
@@ -223,7 +220,7 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
 
               {/* Menu Options (DTMF) */}
               <div>
-                <p className="text-xs font-medium text-gray-600 mb-2">Menu Options (DTMF keys)</p>
+                <p className="text-xs font-medium text-gray-600 mb-2">{t("routing.menuOptionsTitle")}</p>
                 <div className="space-y-2">
                   {menuOptions.map((opt, i) => (
                     <div key={i} className="flex items-center gap-2">
@@ -232,43 +229,42 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
                         onChange={(e) => updateMenuOption(i, { key: e.target.value })}
                         className="w-10 px-2 py-1.5 text-sm text-center border border-[#dadce0] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                         maxLength={1}
-                        aria-label={`Key for option ${i + 1}`}
+                        aria-label={`${t("routing.keyLabel")} ${i + 1}`}
                       />
                       <select
                         value={opt.destinationType}
                         onChange={(e) => updateMenuOption(i, { destinationType: e.target.value as MenuOption["destinationType"] })}
-                        aria-label={`Destination type for option ${i + 1}`}
+                        aria-label={`${t("routing.destinationTypeLabel")} ${i + 1}`}
                         className="w-28 text-xs px-2 py-1.5 border border-[#dadce0] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                       >
-                        {DEST_TYPES.map((t) => <option key={t} value={t}>{t.replace("_", " ")}</option>)}
+                        {DEST_TYPES.map((dt) => <option key={dt} value={dt}>{dt.replace("_", " ")}</option>)}
                       </select>
                       <input
                         value={opt.destinationName}
                         onChange={(e) => updateMenuOption(i, { destinationName: e.target.value })}
-                        placeholder="e.g. Sales"
-                        aria-label={`Destination name for option ${i + 1}`}
+                        placeholder={t("routing.destinationPlaceholder")}
+                        aria-label={`${t("routing.destinationNameLabel")} ${i + 1}`}
                         className="flex-1 px-2.5 py-1.5 text-sm border border-[#dadce0] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                       />
-                      <button onClick={() => removeMenuOption(i)} className="text-gray-300 hover:text-red-500" aria-label={`Remove option ${i + 1}`}>
+                      <button onClick={() => removeMenuOption(i)} className="text-gray-300 hover:text-red-500" aria-label={`${tCommon("remove")} ${i + 1}`}>
                         <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                       </button>
                     </div>
                   ))}
                 </div>
                 <button onClick={addMenuOption} className="flex items-center gap-1.5 text-xs text-[#1a73e8] hover:underline mt-2">
-                  <Plus className="w-3 h-3" aria-hidden="true" /> Add option
+                  <Plus className="w-3 h-3" aria-hidden="true" /> {t("routing.addMenuOption")}
                 </button>
               </div>
 
               {/* Business features */}
               <div>
-                <p className="text-xs font-medium text-gray-600 mb-2">Menu Settings</p>
                 <div className="space-y-2">
                   {([
-                    { key: "extDialing" as const, label: "Allow Extension Dialing", desc: "Callers can dial an extension directly", checked: extDialing, set: setExtDialing },
-                    { key: "playWait" as const, label: "Play \"Please wait while we connect your call\"", desc: "Play a hold message before connecting", checked: playWait, set: setPlayWait },
-                    { key: "barging" as const, label: "Allow Barging Through", desc: "Allow callers to interrupt the greeting", checked: barging, set: setBarging },
-                  ]).map(({ key, label, desc, checked, set }) => (
+                    { key: "extDialing" as const, labelKey: "routing.allowExtensionDialing", checked: extDialing, set: setExtDialing },
+                    { key: "playWait" as const, labelKey: "routing.playHoldMessage", checked: playWait, set: setPlayWait },
+                    { key: "barging" as const, labelKey: "routing.allowBarging", checked: barging, set: setBarging },
+                  ]).map(({ key, labelKey, checked, set }) => (
                     <label key={key} className="flex items-start gap-2.5 cursor-pointer">
                       <button
                         type="button"
@@ -281,10 +277,7 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
                           ? <CheckSquare className="w-4 h-4 text-[#1a73e8]" aria-hidden="true" />
                           : <Square className="w-4 h-4 text-gray-400" aria-hidden="true" />}
                       </button>
-                      <div>
-                        <p className="text-xs font-medium text-gray-700">{label}</p>
-                        <p className="text-xs text-gray-400">{desc}</p>
-                      </div>
+                      <p className="text-xs font-medium text-gray-700">{tAny(labelKey)}</p>
                     </label>
                   ))}
                 </div>
@@ -294,7 +287,7 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
 
           <button onClick={handleMenuNext}
             className="w-full py-2 text-sm font-medium bg-[#1a73e8] text-white rounded-lg hover:bg-[#1557b0] transition-colors">
-            Next
+            {tCommon("next")}
           </button>
           <FixItButton targetStage="architecture_hardware" />
         </div>
@@ -304,16 +297,17 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
 
   // ── Sub-step: Routing Type ─────────────────────────────────────────────────
   if (step === "routing_type") {
+    const routingOptions = [
+      { value: "ring_groups" as const, labelKey: "routing.ringGroupsOption", descKey: "routing.ringGroupsDesc" },
+      { value: "call_queues" as const, labelKey: "routing.callQueuesOption", descKey: "routing.callQueuesDesc" },
+    ] as const;
     return (
       <CardShell>
         <div className="space-y-3">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Step 2 of 3 &mdash; Routing Type</p>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("routing.routingTypeTitle")}</p>
 
-          <div className="space-y-2" role="radiogroup" aria-label="Routing type">
-            {([
-              { value: "ring_groups" as const, label: "Ring Groups", desc: "Included with all plans. Rings members simultaneously or in tiers." },
-              { value: "call_queues" as const, label: "Call Queues", desc: "Requires license. Callers wait in line. Multiple ring strategies." },
-            ]).map(({ value, label, desc }) => (
+          <div className="space-y-2" role="radiogroup" aria-label={t("routing.routingTypeTitle")}>
+            {routingOptions.map(({ value, labelKey, descKey }) => (
               <button key={value} onClick={() => handleRoutingChoice(value)}
                 role="radio" aria-checked={routingChoice === value}
                 className={`w-full flex items-start gap-3 p-3 rounded-xl border text-left transition-all ${
@@ -325,8 +319,8 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
                   {routingChoice === value && <div className="w-2 h-2 rounded-full bg-[#1a73e8]" />}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-800">{label}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
+                  <p className="text-sm font-medium text-gray-800">{tAny(labelKey)}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{tAny(descKey)}</p>
                 </div>
               </button>
             ))}
@@ -334,31 +328,29 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
 
           {routingChoice === "call_queues" && checking && (
             <p className="flex items-center gap-2 text-xs text-gray-500" role="status">
-              <Loader2 className="w-3.5 h-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" /> Checking license&hellip;
+              <Loader2 className="w-3.5 h-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" /> {t("routing.checkingLicense")}
             </p>
           )}
           {routingChoice === "call_queues" && eligible === false && !checking && (
             <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800" role="alert">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
-              <div>
-                <p className="font-semibold">Call Queue license not found</p>
-                <p className="mt-0.5">Contact your net2phone account manager to add this feature, or use Ring Groups instead.</p>
-              </div>
+              <p>{t("routing.licenseNotEligible")}</p>
             </div>
           )}
           {routingChoice === "call_queues" && eligible === true && !checking && (
             <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-xl text-xs text-green-800" role="status">
               <ShieldCheck className="w-4 h-4 shrink-0" aria-hidden="true" />
-              <p className="font-semibold">Call Queue license verified</p>
+              <p>{t("routing.licenseOk")}</p>
             </div>
           )}
 
           {/* Group/Queue name */}
           <div>
             <label htmlFor="group-name" className="block text-xs font-medium text-gray-600 mb-1">
-              {routingChoice === "ring_groups" ? "Ring Group Name" : "Call Queue Name"}
+              {routingChoice === "ring_groups" ? t("routing.ringGroupsOption") : t("routing.callQueuesOption")} {t("routing.groupNameLabel")}
             </label>
             <input id="group-name" value={groupName} onChange={(e) => setGroupName(e.target.value)}
+              placeholder={t("routing.groupNamePlaceholder")}
               className="w-full px-3 py-2 text-sm border border-[#dadce0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1a73e8] bg-white" />
           </div>
 
@@ -368,11 +360,11 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
               <div className="flex gap-2">
                 <button onClick={() => setTiered(false)} aria-pressed={!tiered}
                   className={`flex-1 py-2 text-xs font-medium rounded-lg border ${!tiered ? "border-[#1a73e8] bg-[#e8f0fe] text-[#1a73e8]" : "border-[#dadce0] text-gray-600 hover:bg-[#f8f9fa]"}`}>
-                  Ring All (simultaneous)
+                  {t("routing.strategyLabel")}
                 </button>
                 <button onClick={() => setTiered(true)} aria-pressed={tiered}
                   className={`flex-1 py-2 text-xs font-medium rounded-lg border ${tiered ? "border-[#1a73e8] bg-[#e8f0fe] text-[#1a73e8]" : "border-[#dadce0] text-gray-600 hover:bg-[#f8f9fa]"}`}>
-                  Tiered (escalation)
+                  {t("routing.tiersTitle")}
                 </button>
               </div>
               {tiered && (
@@ -380,22 +372,22 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
                   {tiers.map((tier, ti) => (
                     <div key={ti} className="p-3 bg-white border border-[#e8eaed] rounded-xl space-y-2">
                       <div className="flex items-center justify-between">
-                        <p className="text-xs font-semibold text-gray-600">Tier {ti + 1}</p>
+                        <p className="text-xs font-semibold text-gray-600">{t("routing.tier", { n: ti + 1 })}</p>
                         {tiers.length > 1 && (
-                          <button onClick={() => removeTier(ti)} className="text-gray-300 hover:text-red-500" aria-label={`Remove tier ${ti + 1}`}>
+                          <button onClick={() => removeTier(ti)} className="text-gray-300 hover:text-red-500" aria-label={`${tCommon("remove")} tier ${ti + 1}`}>
                             <Trash2 className="w-3 h-3" aria-hidden="true" />
                           </button>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <label className="text-xs text-gray-500 shrink-0">Rings:</label>
+                        <label className="text-xs text-gray-500 shrink-0">{t("routing.tierRingsLabel")}:</label>
                         <input type="number" min={1} max={20} value={tier.rings}
-                          onChange={(e) => setTiers((ts) => ts.map((t, i) => i === ti ? { ...t, rings: parseInt(e.target.value) || 3 } : t))}
+                          onChange={(e) => setTiers((ts) => ts.map((tr, i) => i === ti ? { ...tr, rings: parseInt(e.target.value) || 3 } : tr))}
                           aria-label={`Rings for tier ${ti + 1}`}
                           className="w-16 px-2 py-1 text-sm text-center border border-[#dadce0] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#1a73e8]" />
                       </div>
                       <div>
-                        <p className="text-xs text-gray-500 mb-1">Members:</p>
+                        <p className="text-xs text-gray-500 mb-1">{t("routing.tierUsersLabel")}:</p>
                         <div className="flex flex-wrap gap-1">
                           {config.users.map((u) => {
                             const userEmail = u.email ?? "";
@@ -403,10 +395,10 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
                             return (
                               <button key={u.email ?? `${u.firstName}-${u.lastName}`} onClick={() => {
                                 if (!userEmail) return;
-                                setTiers((ts) => ts.map((t, i) => {
-                                  if (i !== ti) return t;
-                                  const emails: string[] = inTier ? t.userEmails.filter((e) => e !== userEmail) : [...t.userEmails, userEmail];
-                                  return { ...t, userEmails: emails };
+                                setTiers((ts) => ts.map((tr, i) => {
+                                  if (i !== ti) return tr;
+                                  const emails: string[] = inTier ? tr.userEmails.filter((e) => e !== userEmail) : [...tr.userEmails, userEmail];
+                                  return { ...tr, userEmails: emails };
                                 }));
                               }}
                                 aria-pressed={inTier}
@@ -420,7 +412,7 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
                     </div>
                   ))}
                   <button onClick={addTier} className="flex items-center gap-1.5 text-xs text-[#1a73e8] hover:underline">
-                    <Plus className="w-3 h-3" aria-hidden="true" /> Add tier
+                    <Plus className="w-3 h-3" aria-hidden="true" /> {t("routing.addTier")}
                   </button>
                 </div>
               )}
@@ -431,25 +423,11 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
           {routingChoice === "call_queues" && eligible !== false && (
             <div className="space-y-2">
               <div>
-                <label htmlFor="queue-strategy" className="block text-xs font-medium text-gray-600 mb-1">Ring Strategy</label>
+                <label htmlFor="queue-strategy" className="block text-xs font-medium text-gray-600 mb-1">{t("routing.strategyLabel")}</label>
                 <select id="queue-strategy" value={ringStrategy} onChange={(e) => setRingStrategy(e.target.value as QueueStrategy)}
                   className="w-full px-3 py-2 text-sm border border-[#dadce0] rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#1a73e8]">
-                  {STRATEGY_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                  {STRATEGY_KEYS.map((s) => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
                 </select>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label htmlFor="max-wait" className="block text-xs font-medium text-gray-600 mb-1">Max Wait (sec)</label>
-                  <input id="max-wait" type="number" min={30} max={3600} value={maxWaitTime}
-                    onChange={(e) => setMaxWaitTime(parseInt(e.target.value) || 300)}
-                    className="w-full px-3 py-2 text-sm border border-[#dadce0] rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#1a73e8]" />
-                </div>
-                <div>
-                  <label htmlFor="max-cap" className="block text-xs font-medium text-gray-600 mb-1">Max Capacity</label>
-                  <input id="max-cap" type="number" min={1} max={100} value={maxCapacity}
-                    onChange={(e) => setMaxCapacity(parseInt(e.target.value) || 10)}
-                    className="w-full px-3 py-2 text-sm border border-[#dadce0] rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#1a73e8]" />
-                </div>
               </div>
             </div>
           )}
@@ -457,15 +435,14 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
           {/* Schedule / Time Blocks */}
           <div>
             <p className="text-xs font-medium text-gray-600 mb-1.5 flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5" aria-hidden="true" /> Schedule (Time Blocks)
+              <Clock className="w-3.5 h-3.5" aria-hidden="true" /> {t("routing.scheduleLabel")}
             </p>
-            <p className="text-xs text-gray-400 mb-2">When should this {routingChoice === "ring_groups" ? "ring group" : "queue"} be active?</p>
             <div className="space-y-2">
               {([
-                { value: "24_7" as const, label: "24/7 — Always active", desc: "Calls ring every day, all day (system default)" },
-                ...(hasBusinessHours ? [{ value: "business_hours" as const, label: "Business hours from website", desc: `Use the hours we scraped: ${Object.entries(config.scraped.hours).slice(0, 2).map(([d, h]) => `${d}: ${h}`).join(", ")}${Object.keys(config.scraped.hours).length > 2 ? "..." : ""}` }] : []),
-                { value: "custom" as const, label: "Custom schedule", desc: "Set specific days and hours" },
-              ]).map(({ value, label, desc }) => (
+                { value: "24_7" as const, label: "24/7" },
+                ...(hasBusinessHours ? [{ value: "business_hours" as const, label: `${t("routing.scheduleLabel")} ↗` }] : []),
+                { value: "custom" as const, label: t("routing.newSchedule") },
+              ]).map(({ value, label }) => (
                 <button key={value} onClick={() => setScheduleType(value)}
                   aria-pressed={scheduleType === value}
                   className={`w-full flex items-start gap-3 p-3 rounded-xl border text-left transition-all ${
@@ -476,37 +453,29 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
                   }`}>
                     {scheduleType === value && <div className="w-2 h-2 rounded-full bg-[#1a73e8]" />}
                   </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-800">{label}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{desc}</p>
-                  </div>
+                  <p className="text-xs font-medium text-gray-800">{label}</p>
                 </button>
               ))}
             </div>
             {scheduleType === "custom" && (
               <div className="mt-3 p-3 bg-white border border-[#e8eaed] rounded-xl space-y-2">
-                <div>
-                  <p className="text-xs font-medium text-gray-600 mb-1">Days</p>
-                  <div className="flex gap-1">
-                    {(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]).map((day, i) => (
-                      <button key={day} onClick={() => setCustomDays((d) => d.includes(i) ? d.filter((x) => x !== i) : [...d, i].sort())}
-                        aria-pressed={customDays.includes(i)}
-                        className={`w-9 h-8 text-xs font-medium rounded-lg border transition-all ${
-                          customDays.includes(i) ? "border-[#1a73e8] bg-[#e8f0fe] text-[#1a73e8]" : "border-[#dadce0] text-gray-500 hover:bg-[#f8f9fa]"
-                        }`}>
-                        {day}
-                      </button>
-                    ))}
-                  </div>
+                <div className="flex gap-1 flex-wrap">
+                  {(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]).map((day, i) => (
+                    <button key={day} onClick={() => setCustomDays((d) => d.includes(i) ? d.filter((x) => x !== i) : [...d, i].sort())}
+                      aria-pressed={customDays.includes(i)}
+                      className={`w-9 h-8 text-xs font-medium rounded-lg border transition-all ${
+                        customDays.includes(i) ? "border-[#1a73e8] bg-[#e8f0fe] text-[#1a73e8]" : "border-[#dadce0] text-gray-500 hover:bg-[#f8f9fa]"
+                      }`}>
+                      {day}
+                    </button>
+                  ))}
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label htmlFor="sched-start" className="block text-xs font-medium text-gray-600 mb-1">Start</label>
                     <input id="sched-start" type="time" value={customStart} onChange={(e) => setCustomStart(e.target.value)}
                       className="w-full px-2 py-1.5 text-sm border border-[#dadce0] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#1a73e8]" />
                   </div>
                   <div>
-                    <label htmlFor="sched-end" className="block text-xs font-medium text-gray-600 mb-1">End</label>
                     <input id="sched-end" type="time" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)}
                       className="w-full px-2 py-1.5 text-sm border border-[#dadce0] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#1a73e8]" />
                   </div>
@@ -516,11 +485,11 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
           </div>
 
           <div className="flex gap-2 pt-1">
-            <button onClick={() => setStep("welcome_menu")} className="px-3 py-2 text-sm text-gray-500 border border-[#dadce0] rounded-lg hover:bg-[#f8f9fa]">Back</button>
+            <button onClick={() => setStep("welcome_menu")} className="px-3 py-2 text-sm text-gray-500 border border-[#dadce0] rounded-lg hover:bg-[#f8f9fa]">{tCommon("back")}</button>
             <button onClick={handleRoutingNext}
               disabled={checking || (routingChoice === "call_queues" && eligible === false) || !groupName.trim()}
               className="flex-1 py-2 text-sm font-medium bg-[#1a73e8] text-white rounded-lg hover:bg-[#1557b0] disabled:opacity-40 transition-colors">
-              Next
+              {tCommon("next")}
             </button>
           </div>
         </div>
@@ -529,18 +498,18 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
   }
 
   // ── Sub-step: After-hours ──────────────────────────────────────────────────
+  const afterOptions = [
+    { value: "voicemail" as const, labelKey: "routing.voicemail" },
+    { value: "greeting" as const, labelKey: "routing.playGreeting" },
+    { value: "forward" as const, labelKey: "routing.afterHoursTitle" },
+  ] as const;
   return (
     <CardShell>
       <div className="space-y-3">
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Step 3 of 3 &mdash; After-Hours Behavior</p>
-        <p className="text-xs text-gray-500">What should happen when someone calls outside business hours?</p>
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("routing.afterHoursTitle")}</p>
 
-        <div className="space-y-2" role="radiogroup" aria-label="After-hours action">
-          {([
-            { value: "voicemail" as const, label: "Go to voicemail", desc: "Most common. Callers leave a message." },
-            { value: "greeting" as const, label: "Play a custom greeting", desc: "A recorded message with no voicemail option." },
-            { value: "forward" as const, label: "Forward to a number", desc: "Route to a mobile or answering service." },
-          ]).map(({ value, label, desc }) => (
+        <div className="space-y-2" role="radiogroup" aria-label={t("routing.afterHoursAction")}>
+          {afterOptions.map(({ value, labelKey }) => (
             <button key={value} onClick={() => setAfterAction(value)}
               role="radio" aria-checked={afterAction === value}
               className={`w-full flex items-start gap-3 p-3 rounded-xl border text-left transition-all ${
@@ -551,26 +520,23 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
               }`}>
                 {afterAction === value && <div className="w-2 h-2 rounded-full bg-[#1a73e8]" />}
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-800">{label}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
-              </div>
+              <p className="text-sm font-medium text-gray-800">{tAny(labelKey)}</p>
             </button>
           ))}
         </div>
 
         {afterAction === "greeting" && (
           <div>
-            <label htmlFor="after-greeting" className="block text-xs font-medium text-gray-600 mb-1">Greeting Text</label>
+            <label htmlFor="after-greeting" className="block text-xs font-medium text-gray-600 mb-1">{t("routing.afterHoursGreeting")}</label>
             <textarea id="after-greeting" value={afterGreeting} onChange={(e) => setAfterGreeting(e.target.value)}
-              rows={2} placeholder="e.g. We are currently closed. Please call back during business hours."
+              rows={2} placeholder={t("routing.afterHoursPlaceholder")}
               className="w-full px-3 py-2 text-sm border border-[#dadce0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1a73e8] bg-white resize-none" />
           </div>
         )}
 
         {afterAction === "forward" && (
           <div>
-            <label htmlFor="after-forward" className="block text-xs font-medium text-gray-600 mb-1">Forward To Number</label>
+            <label htmlFor="after-forward" className="block text-xs font-medium text-gray-600 mb-1">{t("routing.afterHoursAction")}</label>
             <input id="after-forward" type="tel" value={afterForwardNum} onChange={(e) => setAfterForwardNum(e.target.value)}
               placeholder="+1 (555) 123-4567"
               className="w-full px-3 py-2 text-sm border border-[#dadce0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1a73e8] bg-white" />
@@ -578,11 +544,11 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
         )}
 
         <div className="flex gap-2 pt-1">
-          <button onClick={() => setStep("routing_type")} className="px-3 py-2 text-sm text-gray-500 border border-[#dadce0] rounded-lg hover:bg-[#f8f9fa]">Back</button>
+          <button onClick={() => setStep("routing_type")} className="px-3 py-2 text-sm text-gray-500 border border-[#dadce0] rounded-lg hover:bg-[#f8f9fa]">{tCommon("back")}</button>
           <button onClick={handleAfterHoursNext}
             disabled={(afterAction === "greeting" && !afterGreeting.trim()) || (afterAction === "forward" && !afterForwardNum.trim())}
             className="flex-1 py-2 text-sm font-medium bg-[#1a73e8] text-white rounded-lg hover:bg-[#1557b0] disabled:opacity-40 transition-colors">
-            Continue
+            {t("routing.finishRouting")}
           </button>
         </div>
         <FixItButton targetStage="architecture_hardware" />

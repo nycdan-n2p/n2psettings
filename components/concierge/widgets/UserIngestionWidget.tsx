@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Users, Upload, Plus, Trash2, Loader2, AlertCircle, CheckCircle2, XCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useConcierge, type OnboardingUser } from "@/contexts/ConciergeContext";
 import { parseCSV } from "@/lib/api/concierge-backend";
 import { validateUser } from "@/lib/utils/validation";
@@ -48,25 +49,26 @@ export function useEmailValidation(email: string, debounceMs = 600) {
 }
 
 export function EmailBadge({ status, hint }: { status: EmailStatus; hint: string }) {
+  const t = useTranslations("concierge");
   if (status === "idle") return null;
   if (status === "checking") return (
     <span className="inline-flex items-center gap-1 text-xs text-gray-400">
-      <Loader2 className="w-3 h-3 animate-spin motion-reduce:animate-none" aria-hidden="true" /> checking…
+      <Loader2 className="w-3 h-3 animate-spin motion-reduce:animate-none" aria-hidden="true" /> {t("users.emailChecking")}
     </span>
   );
   if (status === "available") return (
     <span className="inline-flex items-center gap-1 text-xs text-[#34a853]" role="status">
-      <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" /> Available
+      <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" /> {t("users.emailAvailable")}
     </span>
   );
   if (status === "taken") return (
     <span className="inline-flex items-center gap-1 text-xs text-red-600" role="alert">
-      <XCircle className="w-3.5 h-3.5" aria-hidden="true" /> Already registered
+      <XCircle className="w-3.5 h-3.5" aria-hidden="true" /> {t("users.emailTaken")}
     </span>
   );
   if (status === "warn") return (
     <span className="inline-flex items-center gap-1 text-xs text-amber-600" role="status" title={hint}>
-      <AlertCircle className="w-3 h-3" aria-hidden="true" /> Unverified
+      <AlertCircle className="w-3 h-3" aria-hidden="true" /> {t("users.emailUnverified")}
     </span>
   );
   return null;
@@ -87,13 +89,14 @@ export function UserRow({ user, index, onUpdate, onRemove }: {
       hasValue ? "border-[#dadce0] text-gray-700" : "border-amber-300 bg-amber-50 text-amber-800 placeholder:text-amber-400"
     }`;
 
+  const t = useTranslations("concierge");
   return (
     <tr className="bg-white group">
       <td className="px-2 py-1.5">
         <input
           value={user.firstName}
           onChange={(e) => onUpdate(index, "firstName", e.target.value)}
-          placeholder="First name"
+          placeholder={t("users.firstName")}
           aria-label={`First name for row ${index + 1}`}
           className={inputCls(!!user.firstName)}
         />
@@ -102,7 +105,7 @@ export function UserRow({ user, index, onUpdate, onRemove }: {
         <input
           value={user.lastName ?? ""}
           onChange={(e) => onUpdate(index, "lastName", e.target.value)}
-          placeholder="Last name"
+          placeholder={t("users.lastName")}
           aria-label={`Last name for row ${index + 1}`}
           className={inputCls(!!user.lastName)}
         />
@@ -139,6 +142,7 @@ export function UserRow({ user, index, onUpdate, onRemove }: {
 }
 
 export function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[]) => void }) {
+  const t = useTranslations("concierge");
   const { config, updateConfig } = useConcierge();
   // "choose" → pick method; "edit" → editable table (both manual and post-CSV)
   const [mode, setMode]     = useState<"choose" | "edit">(config.users.length ? "edit" : "choose");
@@ -163,7 +167,7 @@ export function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[
     const v = validateUser({ firstName: newFirst, lastName: newLast, email: newEmail });
     if (!v.valid) { setValidationErrors(v.errors); return; }
     if (newEmailStatus === "taken") {
-      setValidationErrors(["This email is already registered. Use a different one."]);
+      setValidationErrors([t("users.takenError")]);
       return;
     }
     setValidationErrors([]);
@@ -203,14 +207,14 @@ export function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[
   if (mode === "choose") {
     return (
       <CardShell>
-        <p className="text-sm text-gray-600 mb-3">How would you like to add your team?</p>
+        <p className="text-sm text-gray-600 mb-3">{t("users.howToAdd")}</p>
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => setMode("edit")}
             className="flex flex-col items-center gap-2 p-4 border border-[#dadce0] rounded-xl hover:border-[#1a73e8] hover:bg-[#e8f0fe] transition-all group"
           >
             <Users className="w-6 h-6 text-gray-400 group-hover:text-[#1a73e8]" aria-hidden="true" />
-            <span className="text-sm font-medium text-gray-700 group-hover:text-[#1a73e8]">Manual Entry</span>
+            <span className="text-sm font-medium text-gray-700 group-hover:text-[#1a73e8]">{t("users.manualEntry")}</span>
           </button>
           <button
             onClick={() => fileRef.current?.click()}
@@ -219,7 +223,7 @@ export function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[
             {csvLoading
               ? <Loader2 className="w-6 h-6 animate-spin text-[#1a73e8]" aria-hidden="true" />
               : <Upload className="w-6 h-6 text-gray-400 group-hover:text-[#1a73e8]" aria-hidden="true" />}
-            <span className="text-sm font-medium text-gray-700 group-hover:text-[#1a73e8]">Upload CSV</span>
+            <span className="text-sm font-medium text-gray-700 group-hover:text-[#1a73e8]">{t("users.uploadCsv")}</span>
           </button>
         </div>
         {csvError && (
@@ -237,7 +241,7 @@ export function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[
   return (
     <CardShell>
       <div className="flex items-center justify-between mb-3">
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Team Members</p>
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("users.teamMembers")}</p>
         <button
           onClick={() => fileRef.current?.click()}
           className="flex items-center gap-1 text-xs text-[#1a73e8] hover:underline"
@@ -245,7 +249,7 @@ export function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[
           {csvLoading
             ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
             : <Upload className="w-3 h-3" aria-hidden="true" />}
-          Import CSV
+          {t("users.importCsv")}
         </button>
       </div>
       <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleCSV} aria-label="Upload CSV file" />
@@ -255,17 +259,17 @@ export function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[
           {missingFields.length > 0 && (
             <p className="flex items-start gap-1.5 text-xs text-amber-600 mb-2" role="alert">
               <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
-              {missingFields.length} user{missingFields.length !== 1 ? "s" : ""} still need{missingFields.length === 1 ? "s" : ""} an email address. Click the cell to fill it in.
+              {t("users.missingEmailsCount", { count: missingFields.length })}
             </p>
           )}
           <div className="mb-3 rounded-xl overflow-hidden border border-[#e8eaed]">
             <table className="w-full text-xs" aria-label="Team members">
               <thead>
                 <tr className="bg-[#f8f9fa]">
-                  <th className="px-2 py-2 text-left font-semibold text-gray-500 w-[22%]">First</th>
-                  <th className="px-2 py-2 text-left font-semibold text-gray-500 w-[22%]">Last</th>
-                  <th className="px-2 py-2 text-left font-semibold text-gray-500">Email</th>
-                  <th className="px-2 py-2 w-6"><span className="sr-only">Remove</span></th>
+                  <th className="px-2 py-2 text-left font-semibold text-gray-500 w-[22%]">{t("users.firstName")}</th>
+                  <th className="px-2 py-2 text-left font-semibold text-gray-500 w-[22%]">{t("users.lastName")}</th>
+                  <th className="px-2 py-2 text-left font-semibold text-gray-500">{t("users.emailAddress")}</th>
+                  <th className="px-2 py-2 w-6"><span className="sr-only">{t("common.remove")}</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#f1f3f4]">
@@ -280,13 +284,13 @@ export function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[
 
       {/* Add new row */}
       <div className="grid grid-cols-3 gap-2 mb-1">
-        <input placeholder="First name" value={newFirst} onChange={(e) => setNewFirst(e.target.value)}
+        <input placeholder={t("users.firstName")} value={newFirst} onChange={(e) => setNewFirst(e.target.value)}
           aria-label="New user first name"
           className="px-2.5 py-1.5 text-sm border border-[#dadce0] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1a73e8] bg-white" />
-        <input placeholder="Last name" value={newLast} onChange={(e) => setNewLast(e.target.value)}
+        <input placeholder={t("users.lastName")} value={newLast} onChange={(e) => setNewLast(e.target.value)}
           aria-label="New user last name"
           className="px-2.5 py-1.5 text-sm border border-[#dadce0] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1a73e8] bg-white" />
-        <input placeholder="Email" value={newEmail}
+        <input placeholder={t("users.emailAddress")} value={newEmail}
           onChange={(e) => { setNewEmail(e.target.value); setValidationErrors([]); }}
           onKeyDown={(e) => e.key === "Enter" && addRow()}
           aria-label="New user email"
@@ -301,17 +305,17 @@ export function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[
 
       <button onClick={addRow} disabled={addDisabled}
         className="flex items-center gap-1.5 text-sm text-[#1a73e8] hover:underline disabled:opacity-40 mb-4">
-        <Plus className="w-3.5 h-3.5" aria-hidden="true" /> Add person
+        <Plus className="w-3.5 h-3.5" aria-hidden="true" /> {t("users.addPerson")}
       </button>
 
       <button onClick={handleConfirm} disabled={users.length === 0 || missingFields.length > 0}
         className="w-full py-2 text-sm font-medium bg-[#1a73e8] text-white rounded-lg hover:bg-[#1557b0] disabled:opacity-40 transition-colors"
-        title={missingFields.length > 0 ? "Fill in missing emails before continuing" : undefined}
+        title={missingFields.length > 0 ? t("users.missingEmails") : undefined}
       >
-        Continue with {users.length} user{users.length !== 1 ? "s" : ""}
+        {t("users.confirmUsers", { count: users.length })}
       </button>
       {missingFields.length > 0 && (
-        <p className="text-xs text-center text-gray-400 mt-1.5">Fill in all email addresses to continue</p>
+        <p className="text-xs text-center text-gray-400 mt-1.5">{t("users.missingEmails")}</p>
       )}
       <FixItButton targetStage="porting" />
     </CardShell>

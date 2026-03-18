@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { Play } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
+import { useLocaleFormat } from "@/hooks/useLocaleFormat";
 import { qk } from "@/lib/query-keys";
 import { Loader } from "@/components/ui/Loader";
 import { VoicemailDetailModal } from "@/components/voicemail/VoicemailDetailModal";
@@ -12,6 +13,7 @@ import { fetchVoicemails, type VoicemailItem } from "@/lib/api/voicemails";
 
 export default function VoicemailPage() {
   const { bootstrap } = useApp();
+  const { formatDateTime } = useLocaleFormat();
   const accountId = bootstrap?.account?.accountId ?? 0;
   const userId = bootstrap?.user?.userId ?? 0;
   const [selectedVoicemail, setSelectedVoicemail] = useState<VoicemailItem | null>(null);
@@ -69,9 +71,7 @@ export default function VoicemailPage() {
                       {vm.from?.callerId ?? vm.from?.number ?? "Unknown"}
                     </p>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      {vm.callDate
-                        ? new Date(vm.callDate).toLocaleString()
-                        : "—"}
+                      {vm.callDate ? formatDateTime(vm.callDate) : "—"}
                       {vm.duration != null ? ` · ${vm.duration}s` : ""}
                     </p>
                   </div>

@@ -25,6 +25,7 @@ import {
   ChevronDown, X, Globe, ChevronRight, ChevronLeft,
   CheckSquare, Square, AlertCircle,
 } from "lucide-react";
+import { useLocaleFormat } from "@/hooks/useLocaleFormat";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const WEEKDAYS = [
@@ -99,11 +100,10 @@ function formatWeekdays(days: number[]): string {
   return selected.join(" / ");
 }
 
-function formatDateRange(dates: string[]): string {
+function formatDateRange(dates: string[], formatDate: (d: string) => string): string {
   if (!dates.length) return "—";
-  const fmt = (d: string) => new Date(d).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
-  if (dates.length === 1) return fmt(dates[0]);
-  return `${fmt(dates[0])} – ${fmt(dates[dates.length - 1])}`;
+  if (dates.length === 1) return formatDate(dates[0]);
+  return `${formatDate(dates[0])} – ${formatDate(dates[dates.length - 1])}`;
 }
 
 function usedByTotal(s: Schedule): number {
@@ -114,11 +114,12 @@ function usedByTotal(s: Schedule): number {
     (u.callQueues?.length ?? 0);
 }
 
-function formatRuleSummary(rule: ScheduleRule): { label: string; detail: string } {
+function formatRuleSummary(rule: ScheduleRule, formatDate?: (d: string) => string): { label: string; detail: string } {
+  const fallbackFmt = (d: string) => new Date(d).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
   const label = rule.days.weekDays?.length
     ? formatWeekdays(rule.days.weekDays)
     : rule.days.dates?.length
-    ? formatDateRange(rule.days.dates)
+    ? formatDateRange(rule.days.dates, formatDate ?? fallbackFmt)
     : "—";
 
   const allDay = rule.time.start === "12:00 AM" && rule.time.end === "11:59 PM";
@@ -585,7 +586,8 @@ function holidayDraftToApiRule(d: HolidayDraft): ScheduleRule {
   };
 }
 
-function formatHolidayDate(dateStr: string): string {
+function formatHolidayDate(dateStr: string, formatDate?: (d: string) => string): string {
+  if (formatDate) return formatDate(`${dateStr}T12:00:00`);
   const d = new Date(`${dateStr}T12:00:00`);
   return d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
 }
@@ -603,6 +605,7 @@ function HolidayModal({
   isPending: boolean;
   timezones: { abbreviation: string; name: string }[];
 }) {
+  const { formatDate } = useLocaleFormat();
   const currentYear = new Date().getFullYear();
   const [step, setStep] = useState<HolidayStep>("region");
   const [selectedRegion, setSelectedRegion] = useState<HolidayRegion | null>(null);
@@ -834,7 +837,7 @@ function HolidayModal({
                         {d.holiday.localName !== d.holiday.name && (
                           <p className="text-xs text-gray-400">{d.holiday.name}</p>
                         )}
-                        <p className="text-xs text-gray-400 mt-0.5">{formatHolidayDate(d.holiday.date)}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{formatHolidayDate(d.holiday.date, formatDate)}</p>
                       </div>
 
                       {/* Status controls */}
@@ -953,7 +956,7 @@ function HolidayModal({
                 <div key={d.holiday.date} className="flex items-center justify-between px-4 py-2.5 border-b border-[#f1f3f4] last:border-0">
                   <div>
                     <span className="text-sm font-medium text-gray-800">{d.holiday.localName}</span>
-                    <span className="text-xs text-gray-400 ml-2">{formatHolidayDate(d.holiday.date)}</span>
+                    <span className="text-xs text-gray-400 ml-2">{formatHolidayDate(d.holiday.date, formatDate)}</span>
                   </div>
                   <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                     d.status === "closed"
@@ -993,6 +996,7 @@ function HolidayModal({
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function SchedulesPage() {
   const { bootstrap } = useApp();
+  const { formatDate } = useLocaleFormat();
   const accountId = bootstrap?.account?.accountId ?? 0;
   const queryClient = useQueryClient();
 
@@ -1145,7 +1149,7 @@ export default function SchedulesPage() {
                     ) : (
                       <div className="space-y-2">
                         {rules.slice(0, 2).map((r, i) => {
-                          const summary = formatRuleSummary(r);
+                          const summary = formatRuleSummary(r, formatDate);
                           return (
                             <div key={i} className="rounded-lg bg-[#f8f9fa] px-3 py-2 border border-[#eef1f4]">
                               <p className="text-sm font-medium text-gray-800 truncate">{summary.label}</p>

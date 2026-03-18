@@ -8,6 +8,7 @@ import {
   Mic, BarChart2, PhoneIncoming, PhoneOutgoing, Phone, Voicemail,
 } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
+import { useLocaleFormat } from "@/hooks/useLocaleFormat";
 import { qk } from "@/lib/query-keys";
 import { Loader } from "@/components/ui/Loader";
 import { VoicemailDetailModal } from "@/components/voicemail/VoicemailDetailModal";
@@ -149,20 +150,9 @@ function VoicemailRow({
     setCurrentTime(val);
   };
 
+  const { formatRelativeDate } = useLocaleFormat();
   const callerName = vm.from?.callerId ?? vm.from?.name ?? vm.from?.number ?? "Unknown";
-  const callDate = vm.callDate ? new Date(vm.callDate) : null;
-  const now = new Date();
-  const isToday = callDate?.toDateString() === now.toDateString();
-  const isYesterday = callDate?.toDateString() === new Date(now.getTime() - 86400000).toDateString();
-  const dateStr = !callDate
-    ? "—"
-    : isToday
-    ? `Today, ${callDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
-    : isYesterday
-    ? `Yesterday, ${callDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
-    : callDate.toLocaleDateString([], { month: "short", day: "numeric" }) +
-      ", " +
-      callDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const dateStr = vm.callDate ? formatRelativeDate(vm.callDate) : "—";
 
   const initials = getInitials(callerName);
   const colorClass = avatarColor(callerName);
@@ -347,24 +337,14 @@ function RecordingRow({
     a.click();
   };
 
+  const { formatRelativeDate } = useLocaleFormat();
   const callerName =
     cdr.from?.userDisplayName ?? cdr.from?.callerId ?? cdr.from?.number ?? "Unknown";
   const callerNumber = cdr.from?.number ?? cdr.from?.callerId ?? "";
   const destName =
     cdr.to?.userDisplayName ?? cdr.to?.callerId ?? cdr.to?.number ?? "—";
   const isInbound = cdr.direction === 0;
-  const callDate = new Date(cdr.callDate);
-  const now = new Date();
-  const isToday = callDate.toDateString() === now.toDateString();
-  const isYesterday =
-    callDate.toDateString() === new Date(now.getTime() - 86400000).toDateString();
-  const dateStr = isToday
-    ? `Today, ${callDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
-    : isYesterday
-    ? `Yesterday, ${callDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
-    : callDate.toLocaleDateString([], { month: "short", day: "numeric" }) +
-      ", " +
-      callDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const dateStr = formatRelativeDate(cdr.callDate);
 
   const progress = audioDuration > 0 ? (currentTime / audioDuration) * 100 : 0;
   const initials = getInitials(callerName);
@@ -629,6 +609,7 @@ function RecordingsTab({
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function CallsPage() {
   const { bootstrap } = useApp();
+  const { formatDateTime, formatRelativeDate } = useLocaleFormat();
   const accountId = bootstrap?.account?.accountId ?? 0;
   const userId = bootstrap?.user?.userId ?? 0;
   const [tab, setTab] = useState<Tab>("all");
@@ -672,7 +653,7 @@ export default function CallsPage() {
     } catch {
       const headers = ["Date", "From", "To", "Result", "Duration"];
       const rows = cdrs.map((c) => [
-        new Date(c.callDate).toLocaleString(),
+        formatDateTime(c.callDate),
         c.from?.callerId ?? c.from?.number ?? "",
         c.to?.userDisplayName ?? c.to?.number ?? "",
         c.callResult,
@@ -720,10 +701,7 @@ export default function CallsPage() {
     {
       accessorKey: "callDate",
       header: "Date",
-      cell: ({ row }) => {
-        const d = new Date(row.original.callDate);
-        return `${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
-      },
+      cell: ({ row }) => formatRelativeDate(row.original.callDate),
     },
     {
       id: "from",

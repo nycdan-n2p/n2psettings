@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Loader2, ShieldCheck } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useTranslations } from "next-intl";
 import { useConcierge } from "@/contexts/ConciergeContext";
 import { CardShell, FixItButton } from "./shared";
 
@@ -13,6 +14,7 @@ export function FinalBlueprintWidget({
 }: {
   onMessages: (msgs: string[]) => void;
 }) {
+  const t = useTranslations("concierge");
   const { config } = useConcierge();
   const [applying, setApplying] = useState(false);
 
@@ -93,8 +95,8 @@ ${usersRows || "| \u2014 | \u2014 | \u2014 |"}
   return (
     <CardShell className="!p-0 overflow-hidden">
       <div className="px-5 py-4 border-b border-[#e8eaed] bg-[#f8f9fa]">
-        <p className="text-sm font-semibold text-gray-800">Your Setup Blueprint</p>
-        <p className="text-xs text-gray-500 mt-0.5">Review everything below before we build it out.</p>
+        <p className="text-sm font-semibold text-gray-800">{t("blueprint.title")}</p>
+        <p className="text-xs text-gray-500 mt-0.5">{t("blueprint.subtitle")}</p>
       </div>
       <div className="px-5 py-4 max-h-72 overflow-y-auto prose prose-sm max-w-none [&_table]:w-full [&_table]:text-xs [&_th]:bg-[#f8f9fa] [&_th]:px-3 [&_th]:py-1.5 [&_th]:text-left [&_th]:font-semibold [&_th]:text-gray-600 [&_td]:px-3 [&_td]:py-1.5 [&_td]:border-t [&_td]:border-[#f1f3f4] [&_table]:border [&_table]:border-[#e8eaed] [&_table]:rounded-lg [&_table]:overflow-hidden [&_h2]:text-base [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:text-gray-700">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{blueprint}</ReactMarkdown>
@@ -103,10 +105,10 @@ ${usersRows || "| \u2014 | \u2014 | \u2014 |"}
         <button onClick={handleConfirm} disabled={applying}
           className="w-full flex items-center justify-center gap-2 py-3 text-sm font-semibold bg-[#1a73e8] text-white rounded-xl hover:bg-[#1557b0] disabled:opacity-50 transition-colors">
           {applying
-            ? <><Loader2 className="w-4 h-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> Building your system&hellip;</>
-            : <><ShieldCheck className="w-4 h-4" aria-hidden="true" /> Confirm &amp; Build</>}
+            ? <><Loader2 className="w-4 h-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> {t("blueprint.building")}</>
+            : <><ShieldCheck className="w-4 h-4" aria-hidden="true" /> {t("blueprint.confirmButton")}</>}
         </button>
-        <FixItButton targetStage="licensing" label="Go back to call routing" />
+        <FixItButton targetStage="licensing" label={t("blueprint.goBackRouting")} />
       </div>
     </CardShell>
   );
