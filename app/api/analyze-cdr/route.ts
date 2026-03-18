@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit, getClientKey } from "@/lib/server/rate-limit";
 import { extractAnthropicText } from "@/lib/server/type-guards";
 
+// CDR analysis can take up to 2 minutes for large files.
+export const maxDuration = 120;
+
 const client = new Anthropic();
 
 // Truncate CDR to a safe token limit (~800 rows max)

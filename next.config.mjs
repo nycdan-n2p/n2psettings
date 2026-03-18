@@ -23,18 +23,23 @@ const nextConfig = {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=(), payment=()",
           },
-          // Content Security Policy — allows same-origin + Anthropic + net2phone APIs.
-          // 'unsafe-inline' is kept for Next.js inline styles; tighten further once a nonce is wired in.
+          // Content Security Policy
+          // 'unsafe-inline' is required by Next.js for its inline <script> bootstrap and CSS-in-JS.
+          // 'unsafe-eval' is NOT needed for Next.js 14 builds and has been removed.
+          // Future hardening: wire a per-request nonce so 'unsafe-inline' can be dropped too.
           {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "script-src 'self' 'unsafe-inline'",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob:",
-              "font-src 'self' data:",
+              "img-src 'self' data: blob: https://*.net2phone.com",
+              "font-src 'self' data: https://fonts.gstatic.com",
               "connect-src 'self' https://*.net2phone.com https://api.n2p.io https://api.anthropic.com https://date.nager.at",
+              "frame-src 'none'",
               "frame-ancestors 'self'",
+              "base-uri 'self'",
+              "form-action 'self'",
             ].join("; "),
           },
         ],

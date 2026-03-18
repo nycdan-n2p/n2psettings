@@ -58,6 +58,9 @@ async function refreshAccessToken(): Promise<string | null> {
 function createApiClient(baseURL: string): AxiosInstance {
   const client = axios.create({
     baseURL,
+    // 30 s default — prevents hanging requests from blocking the UI indefinitely.
+    // Individual call sites can override this via config.timeout.
+    timeout: 30_000,
     headers: {
       "Content-Type": "application/json",
       "x-accept-version": "v1.1",

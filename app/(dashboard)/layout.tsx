@@ -14,31 +14,46 @@ import { useEffect, useState } from "react";
 import { hasAuth } from "@/lib/auth";
 import { Sparkles, X } from "lucide-react";
 
-// ── Temporary test banner ─────────────────────────────────────────────────────
-// Remove this component once you're done testing the Concierge flow.
+// ── First-time setup banner ───────────────────────────────────────────────────
+// Shown only when onboarding has never been started (no persisted state).
+// Dismissed permanently via localStorage so it never reappears.
 
-function ConciergeTestBanner() {
-  const { open } = useConcierge();
-  const [dismissed, setDismissed] = useState(false);
+const BANNER_DISMISSED_KEY = "n2p_onboarding_banner_dismissed";
 
-  if (dismissed) return null;
+function FirstTimeSetupBanner() {
+  const { open, stage } = useConcierge();
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    // Don't show if already dismissed or if onboarding is/was in progress
+    const dismissed = localStorage.getItem(BANNER_DISMISSED_KEY) === "1";
+    const inProgress = stage !== "welcome_scrape";
+    setVisible(!dismissed && !inProgress);
+  }, [stage]);
+
+  function dismiss() {
+    localStorage.setItem(BANNER_DISMISSED_KEY, "1");
+    setVisible(false);
+  }
+
+  if (!visible) return null;
 
   return (
-    <div className="flex items-center justify-between px-4 py-2 bg-amber-50 border-b border-amber-200 shrink-0">
-      <div className="flex items-center gap-2 text-sm text-amber-800">
-        <Sparkles className="w-4 h-4 shrink-0 text-amber-600" />
-        <span>First-time setup?</span>
+    <div className="flex items-center justify-between px-4 py-2 bg-[#e8f0fe] border-b border-[#c5d8fb] shrink-0">
+      <div className="flex items-center gap-2 text-sm text-[#1a56b0]">
+        <Sparkles className="w-4 h-4 shrink-0 text-[#1a73e8]" aria-hidden="true" />
+        <span>New account? Get set up in minutes.</span>
         <button
-          onClick={open}
-          className="font-semibold text-amber-900 underline hover:no-underline"
+          onClick={() => { open(); dismiss(); }}
+          className="font-semibold underline hover:no-underline"
         >
-          Start Concierge Onboarding →
+          Start guided setup →
         </button>
       </div>
       <button
-        onClick={() => setDismissed(true)}
-        className="p-1 rounded hover:bg-amber-100 text-amber-500"
-        aria-label="Dismiss"
+        onClick={dismiss}
+        className="p-1 rounded hover:bg-[#c5d8fb] text-[#1a73e8] transition-colors"
+        aria-label="Dismiss setup banner"
       >
         <X className="w-4 h-4" />
       </button>
@@ -107,7 +122,7 @@ export default function DashboardLayout({
       <AssistantProvider>
         <div className="min-h-screen flex flex-col bg-[#f8f9fa]">
           <TopBar />
-          <ConciergeTestBanner />
+          <FirstTimeSetupBanner />
           <div className="flex flex-1 overflow-hidden">
             <Sidebar />
             <main className="flex-1 overflow-auto p-6">

@@ -4,6 +4,9 @@ import { checkSsrf } from "@/lib/server/ssrf-guard";
 import { checkRateLimit, getClientKey } from "@/lib/server/rate-limit";
 import { extractAnthropicText } from "@/lib/server/type-guards";
 
+// Website fetch + AI analysis; 60s is ample but allow headroom.
+export const maxDuration = 60;
+
 const client = new Anthropic();
 
 // ── HTML → text: strip tags, collapse whitespace, trim to a safe length ───────

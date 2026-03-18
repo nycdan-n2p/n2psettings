@@ -36,18 +36,6 @@ export const STAGE_ORDER: ConciergeStage[] = [
   "done",
 ];
 
-export const STAGE_LABELS: Record<ConciergeStage, string> = {
-  welcome_scrape:         "Welcome",
-  verification_holidays:  "Verify & Holidays",
-  cdr_analysis:           "CDR Analysis",
-  porting:                "Porting",
-  user_ingestion:         "Users",
-  architecture_hardware:  "Architecture",
-  licensing:              "Call Routing",
-  final_blueprint:        "Review & Build",
-  done:                   "Done",
-};
-
 // ── Data model ───────────────────────────────────────────────────────────────
 
 export interface OnboardingUser {

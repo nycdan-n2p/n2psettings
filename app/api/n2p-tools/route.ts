@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeN2PTool } from "@/lib/mcp/server";
+
+// MCP tool chains (e.g. apply_configuration) can span multiple sequential API calls.
+export const maxDuration = 60;
 import { adaptForMCP, type AdaptResult } from "@/lib/n2p-tools/adapter";
 import { claimsFromAuthHeader, tokenFromAuthHeader } from "@/lib/server/jwt";
 import {

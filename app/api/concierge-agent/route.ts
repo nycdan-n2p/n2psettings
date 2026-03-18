@@ -327,6 +327,10 @@ function sseErrorResponse(message: string) {
 
 // ── Route ─────────────────────────────────────────────────────────────────────
 
+// Allow up to 5 minutes on Vercel Pro/Enterprise; Hobby tier cap is 60s.
+// SSE streaming keeps the connection alive for the full duration of the AI turn.
+export const maxDuration = 300;
+
 const MAX_MESSAGES = 200;
 const MAX_BODY_BYTES = 2_000_000; // 2 MB
 
