@@ -201,6 +201,44 @@ export async function fetchAssignmentTargets(accountId: number): Promise<{
   return { users, departments, ringGroups, welcomeMenus, specialExtensions, callQueues };
 }
 
+// ── Available numbers search ──────────────────────────────────────────────────
+
+export interface AvailableNumber {
+  number: string;
+  type: "local" | "tollFree";
+  areaCode?: string;
+  rateCenter?: string;
+  state?: string;
+}
+
+export async function searchAvailableNumbers(
+  accountId: number,
+  areaCode: string,
+  type: "local" | "tollFree"
+): Promise<AvailableNumber[]> {
+  const api = await getApiClient();
+  try {
+    const res = await api.get<V1Response<AvailableNumber[]>>(
+      `/accounts/${accountId}/phonenumbers/available?areaCode=${encodeURIComponent(areaCode)}&type=${type}`
+    );
+    const data = res.data.data;
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function swapPhoneNumber(
+  accountId: number,
+  oldNumber: string,
+  newNumber: string
+): Promise<void> {
+  const api = await getApiClient();
+  await api.post(`/accounts/${accountId}/phonenumbers/${oldNumber}/swap`, {
+    newNumber,
+  });
+}
+
 // ── Helper ────────────────────────────────────────────────────────────────────
 
 /** Format an E.164 number string like "18005551234" → "(800) 555-1234" */

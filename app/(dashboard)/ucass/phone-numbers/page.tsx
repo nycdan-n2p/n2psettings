@@ -12,11 +12,14 @@ import {
   fetchCallerIdOptions,
   fetchAssignmentTargets,
   updatePhoneNumber,
+  searchAvailableNumbers,
+  swapPhoneNumber,
   formatPhoneNumber,
   type PhoneNumber,
   type CallerIdMode,
   type AssignDest,
   type DestType,
+  type AvailableNumber,
 } from "@/lib/api/phone-numbers";
 
 // ── Destination type config ─────────────────────────────────────────────────
@@ -410,6 +413,176 @@ function CallerIdSection({
   );
 }
 
+// ── Edit Number Modal ────────────────────────────────────────────────────────
+
+function EditNumberModal({
+  phoneNumber,
+  accountId,
+  onClose,
+}: {
+  phoneNumber: PhoneNumber;
+  accountId: number;
+  onClose: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const num = phoneNumber.number ?? phoneNumber.phoneNumber ?? "";
+  const formatted = formatPhoneNumber(num);
+
+  const [areaCode, setAreaCode] = useState("");
+  const [numberType, setNumberType] = useState<"local" | "tollFree">("local");
+  const [searched, setSearched] = useState(false);
+  const [selected, setSelected] = useState<AvailableNumber | null>(null);
+  const [results, setResults] = useState<AvailableNumber[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState("");
+
+  const swapMutation = useMutation({
+    mutationFn: () => swapPhoneNumber(accountId, num, selected!.number),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: qk.phoneNumbers.all(accountId) });
+      onClose();
+    },
+  });
+
+  const handleSearch = async () => {
+    if (!areaCode.trim()) return;
+    setSearching(true);
+    setSearchError("");
+    setSelected(null);
+    setSearched(false);
+    try {
+      const data = await searchAvailableNumbers(accountId, areaCode.trim(), numberType);
+      setResults(data);
+      setSearched(true);
+      if (data.length === 0) setSearchError("No numbers found for this area code. Try another.");
+    } catch {
+      setSearchError("Failed to search numbers. Please try again.");
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+      <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center gap-4 px-6 pt-6 pb-5">
+          <div className="w-14 h-14 rounded-full bg-[#e3f2fd] flex items-center justify-center shrink-0">
+            <Phone className="w-7 h-7 text-[#1565c0]" fill="currentColor" />
+          </div>
+          <h2 className="flex-1 text-xl font-bold text-[#202124]">Edit {formatted}</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="px-6 pb-6 space-y-5">
+          {/* Change to label */}
+          <div>
+            <p className="text-sm text-gray-500 mb-2">Change to</p>
+
+            {/* Number type toggle */}
+            <div className="flex rounded-full border border-[#dadce0] p-0.5 mb-3 w-fit">
+              {(["local", "tollFree"] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => { setNumberType(t); setSearched(false); setResults([]); setSelected(null); }}
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                    numberType === t
+                      ? "bg-[#1a73e8] text-white shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  {t === "local" ? "Local" : "Toll Free"}
+                </button>
+              ))}
+            </div>
+
+            {/* Area code search */}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={areaCode}
+                onChange={(e) => setAreaCode(e.target.value.replace(/\D/g, "").slice(0, 3))}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                placeholder="By area code: eg. 516, 718.."
+                className="flex-1 px-3 py-2.5 text-sm border-b border-[#dadce0] focus:outline-none focus:border-[#1a73e8] bg-transparent placeholder-gray-400 transition-colors"
+                maxLength={3}
+              />
+              <button
+                onClick={handleSearch}
+                disabled={!areaCode.trim() || searching}
+                className="px-3 py-2 text-[#1a73e8] hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-40"
+              >
+                {searching ? (
+                  <div className="w-4 h-4 border-2 border-[#1a73e8] border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Search className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Search error */}
+          {searchError && (
+            <p className="text-sm text-red-500">{searchError}</p>
+          )}
+
+          {/* Results list */}
+          {searched && results.length > 0 && (
+            <div className="border border-[#dadce0] rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+              {results.map((r) => (
+                <button
+                  key={r.number}
+                  onClick={() => setSelected(selected?.number === r.number ? null : r)}
+                  className={`w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-gray-50 border-b border-[#f1f3f4] last:border-0 transition-colors ${
+                    selected?.number === r.number ? "bg-blue-50" : ""
+                  }`}
+                >
+                  <span className="font-medium text-[#202124]">{formatPhoneNumber(r.number.replace(/^\+1/, ""))}</span>
+                  <div className="flex items-center gap-2">
+                    {r.rateCenter && <span className="text-xs text-gray-400">{r.rateCenter}</span>}
+                    {selected?.number === r.number && (
+                      <span className="w-5 h-5 rounded-full bg-[#1a73e8] flex items-center justify-center">
+                        <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 12 12"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </span>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {swapMutation.isError && (
+            <p className="text-sm text-red-500">Failed to change number. Please try again.</p>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex gap-3 px-6 pb-6 justify-start">
+          <button
+            onClick={() => swapMutation.mutate()}
+            disabled={!selected || swapMutation.isPending}
+            className={`px-6 py-2.5 text-sm font-bold rounded-full transition-colors ${
+              selected && !swapMutation.isPending
+                ? "bg-[#1a73e8] text-white hover:bg-[#1557b0]"
+                : "bg-gray-200 text-gray-400 cursor-not-allowed"
+            }`}
+          >
+            {swapMutation.isPending ? "CHANGING…" : "CHANGE"}
+          </button>
+          <button
+            onClick={onClose}
+            className="px-6 py-2.5 text-sm font-bold text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            CANCEL
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Page ────────────────────────────────────────────────────────────────
 
 export default function PhoneNumbersPage() {
@@ -419,6 +592,7 @@ export default function PhoneNumbersPage() {
 
   const [search, setSearch] = useState("");
   const [callerIdTarget, setCallerIdTarget] = useState<PhoneNumber | null>(null);
+  const [editTarget, setEditTarget] = useState<PhoneNumber | null>(null);
 
   const { data: numbers = [], isLoading } = useQuery({
     queryKey: qk.phoneNumbers.all(accountId),
@@ -521,14 +695,15 @@ export default function PhoneNumbersPage() {
           </div>
         ) : (
           <div className="divide-y divide-[#f1f3f4]">
-            {filtered.map((num) => (
-              <PhoneNumberRow
-                key={num.number}
-                phoneNumber={num}
-                accountId={accountId}
-                onAssign={(dest) => handleAssign(num, dest)}
-                onCallerIdClick={() => setCallerIdTarget(num)}
-              />
+              {filtered.map((num) => (
+                <PhoneNumberRow
+                  key={num.number}
+                  phoneNumber={num}
+                  accountId={accountId}
+                  onAssign={(dest) => handleAssign(num, dest)}
+                  onCallerIdClick={() => setCallerIdTarget(num)}
+                  onEditClick={() => setEditTarget(num)}
+                />
             ))}
           </div>
         )}
@@ -542,6 +717,15 @@ export default function PhoneNumbersPage() {
           onClose={() => setCallerIdTarget(null)}
         />
       )}
+
+      {/* Edit number modal */}
+      {editTarget && (
+        <EditNumberModal
+          phoneNumber={editTarget}
+          accountId={accountId}
+          onClose={() => setEditTarget(null)}
+        />
+      )}
     </div>
   );
 }
@@ -551,11 +735,13 @@ function PhoneNumberRow({
   accountId,
   onAssign,
   onCallerIdClick,
+  onEditClick,
 }: {
   phoneNumber: PhoneNumber;
   accountId: number;
   onAssign: (dest: AssignDest | null) => void;
   onCallerIdClick: () => void;
+  onEditClick: () => void;
 }) {
   const num = phoneNumber.number ?? phoneNumber.phoneNumber ?? "";
   const formatted = formatPhoneNumber(num);
@@ -599,6 +785,7 @@ function PhoneNumberRow({
           <Radio className="w-4 h-4" />
         </button>
         <button
+          onClick={onEditClick}
           className="w-8 h-8 rounded-full border border-[#dadce0] flex items-center justify-center text-gray-400 hover:text-[#1a73e8] hover:border-[#1a73e8] transition-colors"
           title="Edit"
         >
