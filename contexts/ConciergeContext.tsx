@@ -153,6 +153,7 @@ export interface OnboardingData {
   };
   users: OnboardingUser[];
   departments: string[];
+  assignmentsDone: boolean;
   routingType: "ring_groups" | "call_queues";
   licensingVerified: boolean;
   hasHardphones: boolean;
@@ -187,6 +188,7 @@ export const EMPTY_CONFIG: OnboardingData = {
   },
   users: [],
   departments: [],
+  assignmentsDone: false,
   routingType: "ring_groups",
   licensingVerified: false,
   hasHardphones: false,

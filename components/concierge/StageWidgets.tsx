@@ -907,9 +907,10 @@ function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[]) => v
 
 type ArchStep = "departments" | "assign" | "phones" | "hardphone_details";
 
-function deriveArchStep(config: { departments: string[]; phoneType: string; hasHardphones: boolean }): ArchStep {
+function deriveArchStep(config: { departments: string[]; assignmentsDone?: boolean; phoneType: string; hasHardphones: boolean }): ArchStep {
   if (config.hasHardphones) return "hardphone_details";
-  if (config.phoneType && config.phoneType !== "softphone") return "phones";
+  if (config.phoneType) return "phones";
+  if (config.assignmentsDone) return "phones";
   if (config.departments.length > 0) return "assign";
   return "departments";
 }
@@ -932,8 +933,9 @@ function ArchitectureWidget({ onMessages }: { onMessages: (msgs: string[]) => vo
   };
 
   const handleDeptsNext = () => {
-    updateConfig({ departments: depts });
-    if (depts.length > 0 && config.users.length > 0) {
+    const skipAssign = depts.length === 0 || config.users.length === 0;
+    updateConfig({ departments: depts, assignmentsDone: skipAssign ? true : false });
+    if (!skipAssign) {
       onMessages([`[arch] Departments: ${depts.join(", ")}`]);
       setStep("assign");
     } else {
@@ -943,7 +945,7 @@ function ArchitectureWidget({ onMessages }: { onMessages: (msgs: string[]) => vo
   };
 
   const handleAssignNext = () => {
-    updateConfig({ users });
+    updateConfig({ users, assignmentsDone: true });
     const summary = users.map((u) => `${u.firstName} ${u.lastName} \u2192 ${u.department || "Unassigned"}`).join("; ");
     onMessages([`[arch] User assignments: ${summary}`]);
     setStep("phones");
