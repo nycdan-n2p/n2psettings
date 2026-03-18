@@ -160,12 +160,11 @@ The app ships with full multi-language support powered by [`next-intl`](https://
 ### How It Works
 
 **Locale detection order:**
-1. URL prefix — `/es/ucass/...` routes to Spanish
-2. `NEXT_LOCALE` cookie — set when the user picks a language from the selector
-3. Browser `Accept-Language` header
-4. Default locale (`en`) — English users see no prefix (`/ucass/...`)
+1. `NEXT_LOCALE` cookie — set when the user picks a language from the selector
+2. Browser `Accept-Language` header
+3. Default locale (`en`)
 
-**Routing strategy:** `"as-needed"` prefix — the default locale (`en`) uses no prefix, so all existing `/ucass/*` bookmarks and links continue to work unchanged. Non-English locales are prefixed: `/es/ucass/...`, `/fr-CA/ucass/...`, `/pt-BR/ucass/...`.
+**Routing strategy:** `"never"` prefix — locale is determined solely by cookie or `Accept-Language` header; URLs are **never** rewritten with a locale segment. All routes remain at their canonical paths (`/ucass/...`) for every language. This avoids 404s that would otherwise occur if the middleware redirected to `/es/ucass/...` paths that have no corresponding pages in the app directory.
 
 **Key files:**
 
@@ -173,7 +172,7 @@ The app ships with full multi-language support powered by [`next-intl`](https://
 i18n/
 ├── config.ts       # Locale list, default locale, lang tags
 ├── request.ts      # Server-side getRequestConfig (loads messages per locale)
-└── routing.ts      # defineRouting with localePrefix: "as-needed"
+└── routing.ts      # defineRouting with localePrefix: "never"
 
 messages/
 ├── en.json         # English (base / source of truth)
@@ -289,7 +288,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ### Changing the UI language locally
 
-The language picker (globe icon in the top bar) switches the locale at runtime and sets a `NEXT_LOCALE` cookie. Alternatively, navigate directly to `/es`, `/fr-CA`, or `/pt-BR` to test a specific locale without touching the cookie.
+The language picker (globe icon in the top bar) switches the locale at runtime and sets a `NEXT_LOCALE` cookie — no URL change occurs. To test a specific locale without the UI, set the cookie directly in DevTools → Application → Cookies → `NEXT_LOCALE` (values: `en`, `es`, `fr-CA`, `pt-BR`), then reload.
 
 ---
 
