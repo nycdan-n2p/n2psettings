@@ -8,7 +8,7 @@ const TOOLS: Anthropic.Tool[] = [
   {
     name: "get_account_summary",
     description:
-      "Get the current account overview: total DIDs, available numbers, and max user seats. Call this at the start of a session.",
+      "Get the current account overview: total DIDs, available numbers, and max user seats. Call this at the start of a session or when assessing capacity.",
     input_schema: { type: "object", properties: {}, required: [] },
   },
   {
@@ -86,6 +86,18 @@ const TOOLS: Anthropic.Tool[] = [
     },
   },
   {
+    name: "create_ring_group",
+    description:
+      "Create a new ring group. After creation, use set_ring_group_members or add_user_to_ring_group to add members.",
+    input_schema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Ring group name, e.g. 'Sales Team'." },
+      },
+      required: ["name"],
+    },
+  },
+  {
     name: "add_user_to_ring_group",
     description:
       "Add an existing user to a ring group. Use search_users to get the userId if needed.",
@@ -98,12 +110,69 @@ const TOOLS: Anthropic.Tool[] = [
       required: ["ringGroupId", "userId"],
     },
   },
+  {
+    name: "set_ring_group_members",
+    description:
+      "Set all members of a ring group at once (replaces existing members). Use for bulk assignment.",
+    input_schema: {
+      type: "object",
+      properties: {
+        ringGroupId: { type: "string", description: "Ring group ID." },
+        userIds: {
+          type: "array",
+          items: { type: "number" },
+          description: "Array of user IDs to set as members.",
+        },
+      },
+      required: ["ringGroupId", "userIds"],
+    },
+  },
+  {
+    name: "set_ring_group_tiers",
+    description:
+      "Configure tiered escalation on a ring group. Each tier has a set of users and a ring count before escalating to the next tier.",
+    input_schema: {
+      type: "object",
+      properties: {
+        ringGroupId: { type: "string", description: "Ring group ID." },
+        tiers: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              tier: { type: "number", description: "Tier number (1, 2, 3...)." },
+              rings: { type: "number", description: "Number of rings before escalating." },
+              userIds: {
+                type: "array",
+                items: { type: "number" },
+                description: "User IDs in this tier.",
+              },
+            },
+          },
+          description: "Array of tier configs.",
+        },
+      },
+      required: ["ringGroupId", "tiers"],
+    },
+  },
 
   // ── Call queues ──────────────────────────────────────────────────────────────
   {
     name: "list_call_queues",
     description: "List all call queues on the account.",
     input_schema: { type: "object", properties: {}, required: [] },
+  },
+  {
+    name: "create_call_queue",
+    description:
+      "Create a new call queue. After creation, use set_call_queue_agents to add agents and update_call_queue to configure strategy.",
+    input_schema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Call queue name, e.g. 'Support Queue'." },
+      },
+      required: ["name"],
+    },
   },
   {
     name: "add_user_to_call_queue",
@@ -118,12 +187,59 @@ const TOOLS: Anthropic.Tool[] = [
       required: ["queueId", "userId"],
     },
   },
+  {
+    name: "set_call_queue_agents",
+    description:
+      "Set all agents of a call queue at once (replaces existing agents). Use for bulk assignment.",
+    input_schema: {
+      type: "object",
+      properties: {
+        queueId: { type: "string", description: "Call queue ID." },
+        userIds: {
+          type: "array",
+          items: { type: "number" },
+          description: "Array of user IDs to set as agents.",
+        },
+      },
+      required: ["queueId", "userIds"],
+    },
+  },
+  {
+    name: "update_call_queue",
+    description:
+      "Update call queue settings: ring strategy, max wait time, max capacity.",
+    input_schema: {
+      type: "object",
+      properties: {
+        queueId: { type: "string", description: "Call queue ID." },
+        ring_strategy_type: {
+          type: "string",
+          enum: ["ring_all", "round_robin", "longest_idle", "linear", "fewest_calls"],
+          description: "How calls are distributed to agents.",
+        },
+        max_wait_time_seconds: { type: "number", description: "Max seconds a caller waits in queue (e.g. 300)." },
+        max_capacity: { type: "number", description: "Max callers allowed in the queue (e.g. 10)." },
+      },
+      required: ["queueId"],
+    },
+  },
 
   // ── Departments ──────────────────────────────────────────────────────────────
   {
     name: "list_departments",
     description: "List all departments on the account.",
     input_schema: { type: "object", properties: {}, required: [] },
+  },
+  {
+    name: "create_department",
+    description: "Create a new department on the account.",
+    input_schema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Department name, e.g. 'Sales'." },
+      },
+      required: ["name"],
+    },
   },
   {
     name: "assign_user_to_department",
@@ -137,6 +253,73 @@ const TOOLS: Anthropic.Tool[] = [
       },
       required: ["userId", "deptId"],
     },
+  },
+
+  // ── Welcome menus (virtual assistants / auto-attendants) ───────────────────
+  {
+    name: "list_virtual_assistants",
+    description: "List all welcome menus (auto-attendants / virtual assistants) on the account.",
+    input_schema: { type: "object", properties: {}, required: [] },
+  },
+  {
+    name: "create_virtual_assistant",
+    description:
+      "Create a new welcome menu (auto-attendant). After creation, use generate_tts_greeting for the greeting and set_menu_options for DTMF key routing.",
+    input_schema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Menu name, e.g. 'Main Menu'." },
+      },
+      required: ["name"],
+    },
+  },
+  {
+    name: "generate_tts_greeting",
+    description:
+      "Generate a text-to-speech greeting audio for a welcome menu.",
+    input_schema: {
+      type: "object",
+      properties: {
+        virtualAssistantId: { type: "string", description: "Welcome menu ID." },
+        text: { type: "string", description: "Greeting text, e.g. 'Thank you for calling Acme. Press 1 for Sales...'" },
+      },
+      required: ["virtualAssistantId", "text"],
+    },
+  },
+  {
+    name: "set_menu_options",
+    description:
+      "Set DTMF key routing options on a welcome menu. Maps key presses to destinations (departments, ring groups, voicemail, directory, users).",
+    input_schema: {
+      type: "object",
+      properties: {
+        virtualAssistantId: { type: "string", description: "Welcome menu ID." },
+        options: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              key: { type: "string", description: "DTMF key (1-9, 0, *, #)." },
+              destinationType: {
+                type: "string",
+                enum: ["department", "ring_group", "call_queue", "voicemail", "directory", "user"],
+              },
+              destinationName: { type: "string", description: "Name of the destination." },
+            },
+          },
+          description: "Array of DTMF key-to-destination mappings.",
+        },
+      },
+      required: ["virtualAssistantId", "options"],
+    },
+  },
+
+  // ── Licensing ──────────────────────────────────────────────────────────────
+  {
+    name: "list_licenses",
+    description:
+      "List all licenses on the account. Use to check if a feature like Call Queues is available before creating one.",
+    input_schema: { type: "object", properties: {}, required: [] },
   },
 
   // ── Analytics ────────────────────────────────────────────────────────────────
@@ -237,8 +420,8 @@ const TOOLS: Anthropic.Tool[] = [
             destination: {
               type: "object",
               properties: {
-                type: { type: "string", enum: ["ring_group", "department"] },
-                name: { type: "string", description: "Name of ring group or department." },
+                type: { type: "string", enum: ["ring_group", "department", "virtual_assistant", "call_queue"] },
+                name: { type: "string", description: "Name of ring group, department, welcome menu, or call queue." },
               },
             },
           },
@@ -250,8 +433,9 @@ const TOOLS: Anthropic.Tool[] = [
             destination: {
               type: "object",
               properties: {
-                type: { type: "string", enum: ["ring_group", "department"] },
+                type: { type: "string", enum: ["ring_group", "department", "voicemail", "external"] },
                 name: { type: "string" },
+                number: { type: "string", description: "For external forwarding, the phone number." },
               },
             },
           },
@@ -269,17 +453,17 @@ const TOOLS: Anthropic.Tool[] = [
     },
   },
 
-  // ── Support knowledge ───────────────────────────────────────────────────────
+  // ── Support knowledge (fallback) ───────────────────────────────────────────
   {
     name: "search_support",
     description:
-      "Search net2phone support articles for product questions, how-to guides, and troubleshooting. Use when the user asks how to do something, about a feature, or needs help with setup.",
+      "Search net2phone support articles. ONLY use this as a LAST RESORT when the user asks about something you cannot do directly with tools — such as billing, SIP trunking details, or advanced features not covered by your other tools.",
     input_schema: {
       type: "object",
       properties: {
         query: {
           type: "string",
-          description: "Search query, e.g. 'call forwarding', 'web calling', 'voicemail setup'",
+          description: "Search query, e.g. 'SIP trunking', 'billing', 'E911 setup'",
         },
       },
       required: ["query"],
@@ -287,52 +471,77 @@ const TOOLS: Anthropic.Tool[] = [
   },
 ];
 
-// ─── System prompt ────────────────────────────────────────────────────────────
+// ─── System prompt builder ───────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are an AI assistant for net2phone UCaaS account administrators. You help with onboarding and account management via a chat interface.
+function buildSystemPrompt(onboardingSummary?: string): string {
+  const onboardingContext = onboardingSummary
+    ? `\n\n## Onboarding context\nThe admin just completed the Setup Concierge onboarding. Here is what was configured:\n${onboardingSummary}\n\nWhen starting a new session right after onboarding:\n- Greet them warmly and acknowledge the onboarding they just completed.\n- Proactively mention any gaps or next steps, for example:\n  - If no users were added: "I see we didn't add any team members during setup — want to add some now?"\n  - If porting was skipped: "Number porting was skipped — want to start that process?"\n  - If no welcome menu: "You don't have a welcome menu yet — want me to set one up?"\n  - If only softphones: "Everyone is on softphones — if you get desk phones later, I can help configure those."\n- Don't repeat all the details — just highlight what's actionable.\n`
+    : "";
 
-## Capabilities
-- **Create users**: Collect name + email (extension auto-suggested, phone optional)
-- **Assign numbers**: Show available DIDs and let admin pick
-- **Ring groups**: List groups and add users to them
-- **Call queues**: List queues and add agents
-- **Departments**: List departments and assign users
-- **Bulk users**: If the admin uploads a CSV, process each row sequentially using create_user
-- **Call stats**: Pull analytics for individual users or the whole account
-- **Support knowledge**: When the user asks how to do something, about a feature, or needs help, use search_support to find relevant articles from support.net2phone.com
+  return `You are the **net2phone Sidekick** — an AI assistant for UCaaS account administrators. You can **do** almost everything an admin needs, not just answer questions.
 
-## Workflow for adding a single user
-1. Greet and call get_account_summary (once per session)
-2. Collect first name, last name, email
-3. Call get_next_extension → suggest it
-4. Ask about phone number → call get_available_numbers → let them pick or skip
-5. Call create_user
-6. Offer to add to ring group / call queue / department
-7. Ask if more people to add
+## Core principle: ACTION FIRST
+When the admin asks "how do I add a ring group?" or "I need to set up a call queue" — **DO IT FOR THEM**. Don't search support articles. You have the tools to create ring groups, call queues, welcome menus, departments, users, and full call flows directly.
 
-## Workflow for bulk CSV
-When you receive a list of users (from a CSV upload), process them one by one with create_user. Before starting, show the full list and ask for confirmation. Report success/failure after each.
+Only use search_support as a **last resort** for topics you genuinely cannot handle with tools — such as billing questions, SIP trunking specifics, E911 compliance, or advanced features not covered by your tools.
 
-## Workflow for group/queue/department operations
-- If admin says "add John to Sales ring group": call search_users("John") to get userId, call list_ring_groups to find Sales, then add_user_to_ring_group
-- If admin says "show me call stats for Jane": call search_users("Jane") to get userId, then get_user_call_stats
+## What you can do (use these tools!)
+- **Users**: Create users (get_next_extension → create_user), assign phone numbers, search existing users
+- **Ring groups**: Create (create_ring_group), list, add members, set tiers with escalation (set_ring_group_tiers)
+- **Call queues**: Create (create_call_queue), list, add agents, configure strategy/wait/capacity (update_call_queue)
+- **Departments**: Create (create_department), list, assign users
+- **Welcome menus**: Create auto-attendants (create_virtual_assistant), generate TTS greetings, set DTMF key routing (set_menu_options)
+- **Call flows**: Build complete call routing (build_call_flow) — schedule-based routing, after-hours, no-answer overflow
+- **Schedules**: Create time-based schedules for routing
+- **Licensing**: Check available licenses (list_licenses) before creating call queues
+- **Analytics**: User and account call statistics
+- **Bulk CSV**: Process uploaded CSVs to create users in batch
 
-## Workflow for support/product questions
-- When the user asks "how do I set up call forwarding?", "what is web calling?", "help with voicemail", or similar: call search_support with a relevant query, then summarize the results and include links to the articles.
+## Workflow: Adding users
+1. Ask for name and email (or accept CSV upload)
+2. Call get_next_extension for a suggested extension
+3. Optionally offer a phone number (get_available_numbers)
+4. Call create_user
+5. Offer to assign to a department, ring group, or call queue
+6. Ask if there are more users to add
+7. Check license capacity (get_account_summary) if adding many users
 
-## Workflow for call flow requests
-When the user describes a call routing setup (e.g. "main number to XYZ during work hours, ABC after hours, no answer to voicemail"):
-1. Clarify: main number (or "main"), work hours (e.g. Mon-Fri 9-5), destinations (ring groups or departments by name), overflow (voicemail if no answer).
-2. Call list_ring_groups and list_departments to verify the names exist.
-3. Call build_call_flow with the structured request: workHours.destination (type + name), afterHours.destination, optional workHours.schedule (weekDays: [], start, end), optional noAnswer (type: voicemail).
-4. Summarize what was created. If manual steps are returned (e.g. assign main number), explain them clearly.
+## Workflow: Creating a ring group
+1. Ask for a name (suggest based on department if known)
+2. Call create_ring_group
+3. Ask who should be in it — search_users to find them
+4. Call add_user_to_ring_group or set_ring_group_members
+5. Ask: "Should all members ring at once, or do you want tiered escalation?"
+6. If tiered: collect tier structure, call set_ring_group_tiers
+
+## Workflow: Creating a call queue
+1. Check licensing: call list_licenses — if no queue license, explain and suggest ring groups instead
+2. Ask for a name, ring strategy, max wait, max capacity
+3. Call create_call_queue, then update_call_queue with settings
+4. Ask who should be agents, search and add them
+
+## Workflow: Setting up a welcome menu
+1. Ask: "What should callers hear?" — suggest a greeting based on company/departments
+2. Call create_virtual_assistant
+3. Call generate_tts_greeting with the greeting text
+4. Ask about DTMF routing — "Press 1 for Sales, Press 2 for Support..."
+5. Call set_menu_options with the key mappings
+6. Offer to wire it into a call flow (build_call_flow)
+
+## Workflow: Call flow
+1. Clarify: main number, work hours, destinations, after-hours behavior
+2. Verify ring groups/departments exist (list them)
+3. Call build_call_flow
+4. Summarize and explain any manual steps
 
 ## Style
-- Be brief and direct. No walls of bullet points.
+- Be brief and direct. 2–4 sentences per response max unless showing data.
+- Use markdown tables for lists of users, groups, queues, etc.
 - Format phone numbers as +1 (XXX) XXX-XXXX.
-- Format call durations as m:ss.
-- After completing an action, confirm with a short summary and ask what's next.
-- If a tool returns an error, explain it simply and ask if the admin wants to retry or skip.`;
+- After completing an action, confirm with a short summary and ask "What's next?"
+- If a tool error occurs, explain simply and offer to retry or try an alternative.
+- Be proactive: when you see remaining license seats, mention them. When you create a ring group, offer to wire it into a call flow.${onboardingContext}`;
+}
 
 // ─── Route ────────────────────────────────────────────────────────────────────
 
@@ -345,7 +554,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: { messages: Anthropic.MessageParam[] };
+  let body: { messages: Anthropic.MessageParam[]; onboardingSummary?: string };
   try {
     body = await req.json();
   } catch {
@@ -358,7 +567,7 @@ export async function POST(req: NextRequest) {
     const response = await client.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 1024,
-      system: SYSTEM_PROMPT,
+      system: buildSystemPrompt(body.onboardingSummary),
       tools: TOOLS,
       messages: body.messages,
     });

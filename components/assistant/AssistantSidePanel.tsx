@@ -28,7 +28,7 @@ export function AssistantSidePanel() {
       <div
         className="fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-50 flex flex-col border-l border-gray-200"
         role="dialog"
-        aria-label="N2P Assistant"
+        aria-label="N2P Sidekick"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white shrink-0">
@@ -37,8 +37,8 @@ export function AssistantSidePanel() {
               <Bot className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-base font-medium text-gray-900">N2P Assistant</h2>
-              <p className="text-xs text-gray-500">Add users, ring groups, stats</p>
+              <h2 className="text-base font-medium text-gray-900">N2P Sidekick</h2>
+              <p className="text-xs text-gray-500">Create users, groups, queues, menus &amp; more</p>
             </div>
           </div>
           <div className="flex items-center gap-1">

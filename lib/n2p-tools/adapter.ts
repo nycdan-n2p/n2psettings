@@ -151,6 +151,62 @@ export function adaptForMCP(
       };
     }
 
+    case "create_ring_group":
+      return { tool: "create_ring_group", args: { ...base, name: input.name } };
+
+    case "set_ring_group_members":
+      return {
+        tool: "set_ring_group_members",
+        args: { ...base, ring_group_id: input.ringGroupId, user_ids: input.userIds },
+      };
+
+    case "set_ring_group_tiers":
+      return {
+        tool: "set_ring_group_tiers",
+        args: { ...base, ring_group_id: input.ringGroupId, tiers: input.tiers },
+      };
+
+    case "create_call_queue":
+      return { tool: "create_call_queue", args: { ...base, name: input.name } };
+
+    case "set_call_queue_agents":
+      return {
+        tool: "set_call_queue_agents",
+        args: { ...base, queue_id: input.queueId, user_ids: input.userIds },
+      };
+
+    case "update_call_queue": {
+      const qArgs: Record<string, unknown> = { ...base, queue_id: input.queueId };
+      if (input.ring_strategy_type) qArgs.ring_strategy_type = input.ring_strategy_type;
+      if (input.max_wait_time_seconds !== undefined) qArgs.max_wait_time_seconds = input.max_wait_time_seconds;
+      if (input.max_capacity !== undefined) qArgs.max_capacity = input.max_capacity;
+      return { tool: "update_call_queue", args: qArgs };
+    }
+
+    case "create_department":
+      return { tool: "create_department", args: { ...base, name: input.name } };
+
+    case "list_virtual_assistants":
+      return { tool: "list_virtual_assistants", args: { ...base } };
+
+    case "create_virtual_assistant":
+      return { tool: "create_virtual_assistant", args: { ...base, name: input.name } };
+
+    case "generate_tts_greeting":
+      return {
+        tool: "generate_tts_greeting",
+        args: { ...base, virtual_assistant_id: input.virtualAssistantId, text: input.text },
+      };
+
+    case "set_menu_options":
+      return {
+        tool: "set_menu_options",
+        args: { ...base, virtual_assistant_id: input.virtualAssistantId, options: input.options },
+      };
+
+    case "list_licenses":
+      return { tool: "list_licenses", args: { ...base } };
+
     case "search_support":
       return { tool: "search_support", args: { query: input.query } };
 

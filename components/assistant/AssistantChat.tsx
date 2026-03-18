@@ -68,24 +68,87 @@ const TOOL_LABELS: Record<string, string> = {
   search_users: "Searching users",
   create_user: "Creating user account",
   list_ring_groups: "Loading ring groups",
+  get_ring_group: "Loading ring group details",
+  create_ring_group: "Creating ring group",
   add_user_to_ring_group: "Adding user to ring group",
+  set_ring_group_members: "Setting ring group members",
+  set_ring_group_tiers: "Configuring ring group tiers",
   list_call_queues: "Loading call queues",
+  create_call_queue: "Creating call queue",
   add_user_to_call_queue: "Adding user to call queue",
+  set_call_queue_agents: "Setting call queue agents",
+  update_call_queue: "Updating call queue settings",
   list_departments: "Loading departments",
+  create_department: "Creating department",
   assign_user_to_department: "Assigning user to department",
+  list_virtual_assistants: "Loading welcome menus",
+  create_virtual_assistant: "Creating welcome menu",
+  generate_tts_greeting: "Generating greeting audio",
+  set_menu_options: "Setting menu options",
+  list_licenses: "Checking licenses",
   get_user_call_stats: "Fetching call statistics",
   get_account_call_stats: "Fetching account analytics",
   search_support: "Searching support articles",
-  get_ring_group: "Loading ring group details",
   create_schedule: "Creating schedule",
   build_call_flow: "Building call flow",
 };
 
-const INITIAL_MESSAGE: DisplayMessage = {
-  id: "init",
-  role: "assistant",
-  text: "Hi! I'm the N2P Assistant. I can help you:\n\n• Add new users and assign phone numbers\n• Add users to ring groups, call queues, or departments\n• Pull call stats for any user or the whole account\n• Answer product questions and find support articles\n• Bulk-create users from a CSV (click the 📎 icon)\n\nWhat would you like to do?",
-};
+function getOnboardingData(): Record<string, unknown> | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem("n2p_concierge_state");
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed?.config ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function buildOnboardingSummary(config: Record<string, unknown>): string | undefined {
+  if (!config) return undefined;
+  const lines: string[] = [];
+  if (config.companyName) lines.push(`Company: ${config.companyName}`);
+  const scraped = config.scraped as Record<string, unknown> | undefined;
+  if (scraped?.timezone) lines.push(`Timezone: ${scraped.timezone}`);
+  if (scraped?.location) lines.push(`Location: ${scraped.location}`);
+  const users = config.users as Array<Record<string, string>> | undefined;
+  lines.push(`Users created: ${users?.length ?? 0}`);
+  const depts = config.departments as string[] | undefined;
+  lines.push(`Departments: ${depts?.length ? depts.join(", ") : "none"}`);
+  const routing = config.routingType as string | undefined;
+  const rc = config.routingConfig as Record<string, unknown> | undefined;
+  lines.push(`Routing: ${routing === "call_queues" ? "Call Queues" : "Ring Groups"}${rc?.groupName ? ` ("${rc.groupName}")` : ""}`);
+  const wm = config.welcomeMenu as Record<string, unknown> | undefined;
+  lines.push(`Welcome menu: ${wm?.enabled ? "enabled" : "not set up"}`);
+  const ah = config.afterHours as Record<string, unknown> | undefined;
+  lines.push(`After-hours: ${ah?.action ?? "voicemail"}`);
+  const pq = config.portingQueue as Record<string, unknown> | undefined;
+  const portNums = pq?.numbers as string[] | undefined;
+  lines.push(`Porting: ${pq?.skipped ? "skipped" : portNums?.length ? `${portNums.length} number(s)` : "not configured"}`);
+  const holidays = config.holidays as Array<unknown> | undefined;
+  lines.push(`Holidays: ${holidays?.length ? `${holidays.length} loaded` : "none"}`);
+  const phoneType = config.phoneType as string | undefined;
+  lines.push(`Phone type: ${phoneType ?? "softphone"}`);
+  return lines.join("\n");
+}
+
+function getInitialMessage(onboardingConfig: Record<string, unknown> | null): DisplayMessage {
+  if (onboardingConfig && onboardingConfig.companyName) {
+    const users = (onboardingConfig.users as Array<unknown>)?.length ?? 0;
+    const company = onboardingConfig.companyName as string;
+    return {
+      id: "init",
+      role: "assistant",
+      text: `Welcome back! I\u2019m the N2P Sidekick. I can see you just finished setting up **${company}** through the onboarding concierge.\n\nI have all the same capabilities and more \u2014 I can create users, ring groups, call queues, welcome menus, departments, and full call flows.\n\n${users === 0 ? "I notice you haven\u2019t added any team members yet \u2014 want to start there?" : "What would you like to work on next?"}`,
+    };
+  }
+  return {
+    id: "init",
+    role: "assistant",
+    text: "Hi! I\u2019m the N2P Sidekick. I can:\n\n\u2022 Create users, ring groups, call queues, departments\n\u2022 Set up welcome menus with greetings and DTMF routing\n\u2022 Build complete call flows (work hours, after-hours, overflow)\n\u2022 Assign phone numbers and manage your team\n\u2022 Pull call stats and analytics\n\u2022 Bulk-create users from a CSV (click the \uD83D\uDCCE icon)\n\nWhat would you like to do?",
+  };
+}
 
 function UserBubble({ text }: { text: string }) {
   return (
@@ -153,7 +216,12 @@ function ToolBadge({ text, done }: { text: string; done?: boolean }) {
 }
 
 export function AssistantChat({ compact = false }: { compact?: boolean }) {
-  const [displayMessages, setDisplayMessages] = useState<DisplayMessage[]>([INITIAL_MESSAGE]);
+  const onboardingConfig = useRef(getOnboardingData());
+  const onboardingSummary = useRef(buildOnboardingSummary(onboardingConfig.current ?? {}));
+
+  const [displayMessages, setDisplayMessages] = useState<DisplayMessage[]>(() => [
+    getInitialMessage(onboardingConfig.current),
+  ]);
   const [apiMessages, setApiMessages] = useState<ApiMessage[]>([]);
   const [input, setInput] = useState("");
   const [isAgentRunning, setIsAgentRunning] = useState(false);
@@ -201,7 +269,10 @@ export function AssistantChat({ compact = false }: { compact?: boolean }) {
           const res = await fetch("/api/onboarding-agent", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ messages }),
+            body: JSON.stringify({
+              messages,
+              onboardingSummary: onboardingSummary.current,
+            }),
           });
           response = await res.json();
         } catch {
@@ -415,7 +486,9 @@ export function AssistantChat({ compact = false }: { compact?: boolean }) {
   };
 
   const handleReset = () => {
-    setDisplayMessages([INITIAL_MESSAGE]);
+    onboardingConfig.current = getOnboardingData();
+    onboardingSummary.current = buildOnboardingSummary(onboardingConfig.current ?? {});
+    setDisplayMessages([getInitialMessage(onboardingConfig.current)]);
     setApiMessages([]);
     setInput("");
     inputRef.current?.focus();
@@ -426,9 +499,9 @@ export function AssistantChat({ compact = false }: { compact?: boolean }) {
       {!compact && (
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-medium text-gray-900">N2P Assistant</h1>
+            <h1 className="text-2xl font-medium text-gray-900">N2P Sidekick</h1>
             <p className="text-sm text-gray-500 mt-0.5">
-              Add users · Assign numbers · Ring groups · Call queues · Departments · Stats
+              Create users · Ring groups · Call queues · Welcome menus · Departments · Call flows
             </p>
           </div>
           <button
