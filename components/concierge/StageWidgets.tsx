@@ -449,8 +449,11 @@ function ArchitectureWidget({ onMessages }: { onMessages: (msgs: string[]) => vo
 
   const handleContinue = () => {
     updateConfig({ departments: depts, hasHardphones: !!hasPhones, users });
+    const userSummary = users.map((u) =>
+      `${u.firstName} ${u.lastName} → ${u.department || "Unassigned"}${u.hardphoneModel ? ` (${u.hardphoneModel})` : ""}`
+    ).join("; ");
     // Let AI call advance_stage — no direct advance() to avoid race with driveLoop
-    onMessages([`${depts.length} department${depts.length !== 1 ? "s" : ""}: ${depts.join(", ")}. Hardphones: ${hasPhones ? "Yes" : "No"}`]);
+    onMessages([`Departments: ${depts.join(", ")}. Hardphones: ${hasPhones ? "Yes" : "No"}. Users: ${userSummary}`]);
   };
 
   return (
@@ -487,20 +490,23 @@ function ArchitectureWidget({ onMessages }: { onMessages: (msgs: string[]) => vo
           )}
         </div>
 
-        {/* Assign users to depts */}
+        {/* Assign users to depts — each user gets their own row with name + dropdown */}
         {depts.length > 0 && users.length > 0 && (
           <div>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
               <Users className="w-3.5 h-3.5" /> Assign Users to Departments
             </p>
-            <div className="space-y-1.5 max-h-40 overflow-y-auto">
+            <div className="rounded-xl border border-[#e8eaed] overflow-hidden max-h-52 overflow-y-auto">
               {users.map((u, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <span className="text-xs text-gray-700 w-36 truncate shrink-0">{u.firstName} {u.lastName}</span>
+                <div key={i} className="flex items-center gap-3 px-3 py-2 border-b border-[#f1f3f4] last:border-0 bg-white">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-gray-800 truncate">{u.firstName} {u.lastName}</p>
+                    <p className="text-xs text-gray-400 truncate">{u.email}</p>
+                  </div>
                   <select
                     value={u.department ?? ""}
                     onChange={(e) => setUsers((us) => us.map((x, xi) => xi === i ? { ...x, department: e.target.value } : x))}
-                    className="flex-1 text-xs px-2 py-1 border border-[#dadce0] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                    className="w-36 shrink-0 text-xs px-2 py-1.5 border border-[#dadce0] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                   >
                     <option value="">— Unassigned —</option>
                     {depts.map((d) => <option key={d} value={d}>{d}</option>)}
@@ -533,22 +539,25 @@ function ArchitectureWidget({ onMessages }: { onMessages: (msgs: string[]) => vo
         {/* Hardphone config per user */}
         {hasPhones && users.length > 0 && (
           <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Model & MAC Address</p>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Hardphone Details</p>
+            <div className="rounded-xl border border-[#e8eaed] overflow-hidden max-h-52 overflow-y-auto">
               {users.map((u, i) => (
-                <div key={i} className="grid grid-cols-[1fr_auto_auto] gap-2 items-center">
-                  <span className="text-xs text-gray-700 truncate">{u.firstName} {u.lastName}</span>
+                <div key={i} className="flex items-center gap-2 px-3 py-2 border-b border-[#f1f3f4] last:border-0 bg-white">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-gray-800 truncate">{u.firstName} {u.lastName}</p>
+                    <p className="text-xs text-gray-400 truncate">{u.email}</p>
+                  </div>
                   <input
                     placeholder="Model (e.g. T46U)"
                     value={u.hardphoneModel ?? ""}
                     onChange={(e) => setUsers((us) => us.map((x, xi) => xi === i ? { ...x, hardphoneModel: e.target.value } : x))}
-                    className="w-28 text-xs px-2 py-1 border border-[#dadce0] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                    className="w-24 shrink-0 text-xs px-2 py-1.5 border border-[#dadce0] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                   />
                   <input
-                    placeholder="MAC (xx:xx:xx…)"
+                    placeholder="MAC address"
                     value={u.macAddress ?? ""}
                     onChange={(e) => setUsers((us) => us.map((x, xi) => xi === i ? { ...x, macAddress: e.target.value } : x))}
-                    className="w-36 text-xs px-2 py-1 border border-[#dadce0] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                    className="w-32 shrink-0 text-xs px-2 py-1.5 border border-[#dadce0] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                   />
                 </div>
               ))}
