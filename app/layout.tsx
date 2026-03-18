@@ -10,7 +10,9 @@ export const metadata: Metadata = {
   title: "net2phone Settings",
   description: "net2phone admin settings console",
   icons: {
-    icon: "https://settings.net2phone.com/favicon.png?v=2",
+    // Proxied through /api/favicon so CSP img-src 'self' is satisfied
+    // without requiring an external domain in the content security policy.
+    icon: "/api/favicon",
   },
 };
 
