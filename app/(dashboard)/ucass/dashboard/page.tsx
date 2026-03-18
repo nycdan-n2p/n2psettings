@@ -10,6 +10,7 @@ import { fetchPhoneNumbers } from "@/lib/api/phone-numbers";
 import { qk } from "@/lib/query-keys";
 import { Phone, Users, Building2, Hash, PhoneCall, ListOrdered, Voicemail } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 interface StatCardProps {
   label: string;
@@ -45,6 +46,7 @@ function StatCard({ label, value, sub, href, icon: Icon, color = "text-[#1a73e8]
 
 export default function DashboardPage() {
   const { bootstrap } = useApp();
+  const t = useTranslations("dashboard");
   const account = bootstrap?.account;
   const user = bootstrap?.user;
   const plans = bootstrap?.plans ?? [];
@@ -117,7 +119,7 @@ export default function DashboardPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-medium text-gray-900">Dashboard</h1>
+        <h1 className="text-2xl font-medium text-gray-900">{t("title")}</h1>
         <p className="text-sm text-gray-500 mt-1">
           {account?.company ?? "Your account"} · Last 7 days
         </p>
@@ -126,31 +128,31 @@ export default function DashboardPage() {
       {/* Call analytics */}
       <div className="mb-8">
         <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
-          Call Activity (7 days)
+          {t("callActivity")}
         </h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
-            label="Total Calls"
+            label={t("totalCalls")}
             value={accountStats?.totalCalls ?? "—"}
             icon={Phone}
             href="/ucass/call-history"
           />
           <StatCard
-            label="Answered"
+            label={t("answered")}
             value={accountStats?.answeredCalls ?? "—"}
             icon={PhoneCall}
             color="text-green-600"
             href="/ucass/call-history"
           />
           <StatCard
-            label="Missed"
+            label={t("missed")}
             value={accountStats?.missedCalls ?? "—"}
             icon={Phone}
             color="text-red-500"
             href="/ucass/call-history"
           />
           <StatCard
-            label="Unread Voicemails"
+            label={t("unreadVoicemails")}
             value={unread}
             icon={Voicemail}
             color="text-orange-500"
@@ -162,31 +164,31 @@ export default function DashboardPage() {
       {/* Account overview */}
       <div className="mb-8">
         <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
-          Account
+          {t("account")}
         </h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
-            label="Team Members"
+            label={t("teamMembers")}
             value={memberCount ?? "—"}
             sub={teamMembersSub}
             icon={Users}
             href="/ucass/team-members"
           />
           <StatCard
-            label="Plan"
+            label={t("plan")}
             value={planLabel}
-            sub={nextBilling ? `Next billing: ${nextBilling}` : undefined}
+            sub={nextBilling ? `${t("nextBilling")}: ${nextBilling}` : undefined}
             icon={ListOrdered}
           />
           <StatCard
-            label="Phone Numbers"
+            label={t("phoneNumbers")}
             value={phoneCount ?? "—"}
             sub="DIDs and extensions"
             icon={Hash}
             href="/ucass/phone-numbers"
           />
           <StatCard
-            label="Departments"
+            label={t("departments")}
             value={deptCount ?? "—"}
             sub="Call routing groups"
             icon={Building2}

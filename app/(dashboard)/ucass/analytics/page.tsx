@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import { useApp } from "@/contexts/AppContext";
 import { useLocaleFormat } from "@/hooks/useLocaleFormat";
+import { useTranslations } from "next-intl";
 import { qk } from "@/lib/query-keys";
 import { Loader } from "@/components/ui/Loader";
 import {
@@ -73,6 +74,7 @@ const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
 
 export default function AnalyticsPage() {
+  const t = useTranslations("analytics");
   const { bootstrap } = useApp();
   const { formatDate } = useLocaleFormat();
   const accountId = bootstrap?.account?.accountId ?? 0;
@@ -258,7 +260,7 @@ export default function AnalyticsPage() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">
-          Call Analytics
+          {t("title")}
         </h1>
         <p className="text-sm text-gray-500 mt-1">
           {bootstrap?.account?.company ?? "Account"} · Insights from call history

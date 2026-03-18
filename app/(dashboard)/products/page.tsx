@@ -1,15 +1,15 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import Link from "next/link";
 import { PRODUCTS } from "@/lib/config/products";
 
 export default function ProductsPage() {
+  const t = useTranslations("productsPage");
   return (
     <div>
-      <h1 className="text-2xl font-medium text-gray-900 mb-2">Products</h1>
-      <p className="text-gray-600 mb-8">
-        Select a product to manage its settings.
-      </p>
+      <h1 className="text-2xl font-medium text-gray-900 mb-2">{t("title")}</h1>
+      <p className="text-gray-600 mb-8">{t("subtitle")}</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {PRODUCTS.map((product) => {

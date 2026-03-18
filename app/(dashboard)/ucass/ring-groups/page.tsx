@@ -1,4 +1,6 @@
 "use client";
+import { useTranslations } from "next-intl";
+// i18n applied
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -182,6 +184,7 @@ function RingGroupMembersPopover({
 const EMPTY_FORM: CreateRingGroupPayload = { name: "", extension: "" };
 
 export default function RingGroupsPage() {
+  const t = useTranslations("ringGroupsPage");
   const { bootstrap } = useApp();
   const accountId = bootstrap?.account?.accountId ?? 0;
   const queryClient = useQueryClient();
@@ -222,11 +225,11 @@ export default function RingGroupsPage() {
   };
 
   const columns: ColumnDef<RingGroup>[] = [
-    { accessorKey: "name", header: "Name" },
-    { accessorKey: "extension", header: "Extension", cell: ({ row }) => row.original.extension ?? "—" },
+    { accessorKey: "name", header: t("colName") },
+    { accessorKey: "extension", header: t("colExt"), cell: ({ row }) => row.original.extension ?? "—" },
     {
       id: "members",
-      header: "Members",
+      header: t("colMembers"),
       accessorFn: (row) => row.lines?.length ?? 0,
       cell: ({ row }) => <RingGroupMembersPopover ringGroup={row.original} accountId={accountId} />,
     },
@@ -257,7 +260,7 @@ export default function RingGroupsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-medium text-gray-900">Ring Groups</h1>
+          <h1 className="text-2xl font-medium text-gray-900">{t("title")}</h1>
           <p className="text-sm text-gray-500 mt-1">{groups.length} groups</p>
         </div>
         <button
@@ -269,33 +272,33 @@ export default function RingGroupsPage() {
       </div>
 
       {isLoading ? (
-        <div className="py-12 flex justify-center"><Loader variant="inline" label="Loading ring groups..." /></div>
+        <div className="py-12 flex justify-center"><Loader variant="inline" label={t("loading")} /></div>
       ) : (
-        <DataTable columns={columns} data={groups} searchPlaceholder="Search ring groups..." />
+        <DataTable columns={columns} data={groups} searchPlaceholder={t("search")} />
       )}
 
-      <Modal isOpen={modalOpen} onClose={closeModal} title="Add Ring Group">
+      <Modal isOpen={modalOpen} onClose={closeModal} title={t("addTitle")}>
         <form onSubmit={handleSubmit}>
           <TextInput
-            label="Name"
+            label={t("labelName")}
             value={form.name}
             onChange={(v) => setForm((f) => ({ ...f, name: v }))}
-            placeholder="e.g. Sales Team"
+            placeholder={t("placeholderName")}
             required
           />
           <TextInput
-            label="Extension"
+            label={t("labelExt")}
             value={form.extension ?? ""}
             onChange={(v) => setForm((f) => ({ ...f, extension: v }))}
-            placeholder="e.g. 5000"
+            placeholder={t("placeholderExt")}
           />
           {addMutation.isError && (
-            <p className="text-sm text-red-600 mb-2">{(addMutation.error as Error)?.message ?? "Failed to create"}</p>
+            <p className="text-sm text-red-600 mb-2">{(addMutation.error as Error)?.message ?? t("failedToCreate")}</p>
           )}
           <div className="flex justify-end gap-2 mt-4">
             <button type="button" onClick={closeModal} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancel</button>
             <button type="submit" disabled={addMutation.isPending} className="px-4 py-2 text-sm font-medium text-white bg-[#1a73e8] rounded-md hover:bg-[#1557b0] disabled:opacity-50">
-              {addMutation.isPending ? "Creating..." : "Add"}
+              {addMutation.isPending ? t("creating") : t("addButton")}
             </button>
           </div>
         </form>
@@ -305,7 +308,7 @@ export default function RingGroupsPage() {
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
-        title="Delete Ring Group"
+        title={t("deleteTitle")}
         message={`Delete ring group "${deleteTarget?.name}"?`}
       />
     </div>

@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -20,6 +21,7 @@ import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import { Pencil, Trash2 } from "lucide-react";
 
 export default function VirtualFaxPage() {
+  const t = useTranslations("virtualFaxPage");
   const { bootstrap } = useApp();
   const accountId = bootstrap?.account?.accountId ?? 0;
   const queryClient = useQueryClient();
@@ -122,15 +124,15 @@ export default function VirtualFaxPage() {
   };
 
   const columns: ColumnDef<VirtualFax>[] = [
-    { accessorKey: "phoneNumber", header: "Number" },
+    { accessorKey: "phoneNumber", header: t("colNumber") },
     {
       accessorKey: "incoming",
-      header: "Incoming",
+      header: t("colIncoming"),
       cell: ({ row }) => row.original.incoming?.join(", ") ?? "—",
     },
     {
       accessorKey: "outgoing",
-      header: "Outgoing",
+      header: t("colOutgoing"),
       cell: ({ row }) => row.original.outgoing?.join(", ") ?? "—",
     },
     {
@@ -159,7 +161,7 @@ export default function VirtualFaxPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-medium text-gray-900 mb-6">Virtual Fax</h1>
+      <h1 className="text-2xl font-medium text-gray-900 mb-6">{t("title")}</h1>
       <p className="text-gray-600 mb-6">
         Manage virtual fax numbers and email routing.
       </p>
@@ -177,18 +179,18 @@ export default function VirtualFaxPage() {
         <DataTable
           columns={columns}
           data={faxes}
-          searchPlaceholder="Search fax numbers..."
+          searchPlaceholder={t("search")}
         />
       )}
 
       <Modal
         isOpen={modalOpen}
         onClose={closeModal}
-        title={editingFax ? "Edit fax" : "Add fax number"}
+        title={editingFax ? t("editTitle") : t("addTitle")}
       >
         <form onSubmit={handleSubmit}>
           <TextInput
-            label="Phone number"
+            label={t("labelPhoneNumber")}
             value={formNumber}
             onChange={setFormNumber}
             placeholder="e.g. 15167582967"
@@ -210,7 +212,7 @@ export default function VirtualFaxPage() {
           />
           <div className="mb-4 flex items-center gap-2">
             <Toggle checked={formEncrypt} onChange={setFormEncrypt} />
-            <span className="text-sm text-gray-700">Encrypt</span>
+            <span className="text-sm text-gray-700">{t("labelEncrypt")}</span>
           </div>
           <div className="flex justify-end gap-2 mt-4">
             <button
@@ -225,7 +227,7 @@ export default function VirtualFaxPage() {
               disabled={addMutation.isPending || updateMutation.isPending}
               className="px-4 py-2 text-sm font-medium text-white bg-[#1a73e8] rounded-md hover:bg-[#1557b0] disabled:opacity-50"
             >
-              {editingFax ? "Save" : "Add"}
+              {editingFax ? t("common_save") : t("addButton")}
             </button>
           </div>
         </form>
@@ -237,7 +239,7 @@ export default function VirtualFaxPage() {
         onConfirm={() =>
           deleteTarget && deleteMutation.mutate(deleteTarget.phoneNumber)
         }
-        title="Delete fax number"
+        title={t("deleteTitle")}
         message={`Remove ${deleteTarget?.phoneNumber} from virtual fax?`}
       />
     </div>

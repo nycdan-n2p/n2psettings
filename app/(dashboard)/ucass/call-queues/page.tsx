@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -158,6 +159,7 @@ function CallQueueAgentsPopover({
 const EMPTY_FORM: CreateCallQueuePayload = { name: "", extension: "", strategy: "round-robin" };
 
 export default function CallQueuesPage() {
+  const t = useTranslations("callQueuesPage");
   const { bootstrap } = useApp();
   const accountId = bootstrap?.account?.accountId ?? 0;
   const queryClient = useQueryClient();
@@ -192,7 +194,7 @@ export default function CallQueuesPage() {
   const columns: ColumnDef<CallQueue>[] = [
     {
       accessorKey: "name",
-      header: "Name",
+      header: t("colName"),
       cell: ({ row }) => (
         <button
           onClick={() => router.push(`/ucass/call-queues/${row.original.id}`)}
@@ -204,12 +206,12 @@ export default function CallQueuesPage() {
     },
     {
       accessorKey: "extension",
-      header: "Extension",
+      header: t("colExt"),
       cell: ({ row }) => row.original.extension ?? "—",
     },
     {
       id: "agents",
-      header: "Agents",
+      header: t("colAgents"),
       accessorFn: (row) => row.agents_count ?? 0,
       cell: ({ row }) => <CallQueueAgentsPopover queue={row.original} accountId={accountId} />,
     },
@@ -245,7 +247,7 @@ export default function CallQueuesPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-medium text-gray-900">Call Queues</h1>
+          <h1 className="text-2xl font-medium text-gray-900">{t("title")}</h1>
           <p className="text-sm text-gray-500 mt-1">{queues.length} queues</p>
         </div>
         <button
@@ -258,14 +260,14 @@ export default function CallQueuesPage() {
 
       {isLoading ? (
         <div className="py-12 flex justify-center">
-          <Loader variant="inline" label="Loading call queues..." />
+          <Loader variant="inline" label={t("loading")} />
         </div>
       ) : (
-        <DataTable columns={columns} data={queues} searchPlaceholder="Search call queues..." />
+        <DataTable columns={columns} data={queues} searchPlaceholder={t("search")} />
       )}
 
       {/* Add modal */}
-      <Modal isOpen={addModalOpen} onClose={() => { setAddModalOpen(false); setForm({ ...EMPTY_FORM }); }} title="Add Call Queue">
+      <Modal isOpen={addModalOpen} onClose={() => { setAddModalOpen(false); setForm({ ...EMPTY_FORM }); }} title={t("addTitle")}>
         <form onSubmit={(e) => { e.preventDefault(); addMutation.mutate(form); }}>
           <TextInput
             label="Name"
@@ -296,7 +298,7 @@ export default function CallQueuesPage() {
           </div>
           {addMutation.isError && (
             <p className="text-sm text-red-600 mb-2">
-              {(addMutation.error as Error)?.message ?? "Failed to create queue"}
+              {(addMutation.error as Error)?.message ?? t("failedToCreate")}
             </p>
           )}
           <div className="flex justify-end gap-2 mt-4">
@@ -312,7 +314,7 @@ export default function CallQueuesPage() {
               disabled={addMutation.isPending}
               className="px-4 py-2 text-sm font-medium text-white bg-[#1a73e8] rounded-md hover:bg-[#1557b0] disabled:opacity-50"
             >
-              {addMutation.isPending ? "Creating..." : "Create"}
+              {addMutation.isPending ? t("creating") : t("addButton")}
             </button>
           </div>
         </form>
@@ -322,7 +324,7 @@ export default function CallQueuesPage() {
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
-        title="Delete Call Queue"
+        title={t("deleteTitle")}
         message={`Delete call queue "${deleteTarget?.name}"? This cannot be undone.`}
       />
     </div>

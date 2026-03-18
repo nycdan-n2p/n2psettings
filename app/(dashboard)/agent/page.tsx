@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useEffect, useState } from "react";
 import { loadEnv } from "@/lib/env";
@@ -7,6 +8,7 @@ import { ProductHeader } from "@/components/layout/ProductHeader";
 const DEFAULT_AGENT_URL = "https://agent.net2phone.com";
 
 export default function AgentProductPage() {
+  const t = useTranslations("productPages");
   const [agentUrl, setAgentUrl] = useState(DEFAULT_AGENT_URL);
 
   useEffect(() => {
@@ -21,10 +23,10 @@ export default function AgentProductPage() {
     <div>
       <ProductHeader
         productId="agent"
-        status="ON for everyone"
+        status={t("statusOnForEveryone")}
       />
       <p className="text-gray-600 mb-6">
-        Configure your AI assistant for calls and messaging.
+        {t("agentSubtitle")}
       </p>
 
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">

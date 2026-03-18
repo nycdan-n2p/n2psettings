@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -42,6 +43,7 @@ const LANGUAGES = [
 ];
 
 export default function VirtualAssistantPage() {
+  const t = useTranslations("virtualAssistantPage");
   const { bootstrap } = useApp();
   const accountId = bootstrap?.account?.accountId ?? 0;
   const queryClient = useQueryClient();
@@ -110,7 +112,7 @@ export default function VirtualAssistantPage() {
   const columns: ColumnDef<WelcomeMenu>[] = [
     {
       id: "name",
-      header: "NAME",
+      header: t("colName"),
       accessorFn: (r) => r.name ?? "",
       cell: ({ row }) => {
         const m = row.original;
@@ -124,15 +126,15 @@ export default function VirtualAssistantPage() {
         );
       },
     },
-    { accessorKey: "extension", header: "EXT", cell: ({ row }) => row.original.extension ?? "—" },
+    { accessorKey: "extension", header: t("colExt"), cell: ({ row }) => row.original.extension ?? "—" },
     {
       id: "numbersAssigned",
-      header: "NUMBERS ASSIGNED",
+      header: t("colNumbers"),
       cell: ({ row }) => {
         const m = row.original;
         const numbers = numbersByMenuId.get(m.id) ?? [];
         if (numbers.length === 0) {
-          return <span className="text-gray-400">Unassigned</span>;
+          return <span className="text-gray-400">{t("unassigned")}</span>;
         }
         const first = numbers[0];
         return (
@@ -198,12 +200,12 @@ export default function VirtualAssistantPage() {
       </div>
 
       {isLoading ? (
-        <div className="py-12 flex justify-center"><Loader variant="inline" label="Loading welcome menus..." /></div>
+        <div className="py-12 flex justify-center"><Loader variant="inline" label={t("loading")} /></div>
       ) : (
-        <DataTable columns={columns} data={menus} searchPlaceholder="Search" />
+        <DataTable columns={columns} data={menus} searchPlaceholder={t("search")} />
       )}
 
-      <Modal isOpen={modalOpen} onClose={closeModal} title="Add Welcome Menu">
+      <Modal isOpen={modalOpen} onClose={closeModal} title={t("addTitle")}>
         <form onSubmit={handleSubmit}>
           <TextInput
             label="Name"
@@ -229,12 +231,12 @@ export default function VirtualAssistantPage() {
             </select>
           </div>
           {addMutation.isError && (
-            <p className="text-sm text-red-600 mb-2">{(addMutation.error as Error)?.message ?? "Failed to save"}</p>
+            <p className="text-sm text-red-600 mb-2">{(addMutation.error as Error)?.message ?? t("failedToSave")}</p>
           )}
           <div className="flex justify-end gap-2 mt-4">
             <button type="button" onClick={closeModal} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancel</button>
             <button type="submit" disabled={addMutation.isPending} className="px-4 py-2 text-sm font-medium text-white bg-[#1a73e8] rounded-md hover:bg-[#1557b0] disabled:opacity-50">
-              {addMutation.isPending ? "Creating..." : "Add"}
+              {addMutation.isPending ? t("creating") : t("addButton")}
             </button>
           </div>
         </form>
@@ -244,7 +246,7 @@ export default function VirtualAssistantPage() {
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
-        title="Delete Welcome Menu"
+        title={t("deleteTitle")}
         message={`Delete welcome menu "${deleteTarget?.name}"?`}
       />
     </div>

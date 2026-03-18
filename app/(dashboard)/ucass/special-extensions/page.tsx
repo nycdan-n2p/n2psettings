@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -21,13 +22,13 @@ import { TextInput } from "@/components/settings/TextInput";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import { Pencil, Trash2, Phone } from "lucide-react";
 
-const TYPE_OPTIONS = [
-  { value: "Fax", label: "Fax" },
-  { value: "Paging", label: "Pager" },
-  { value: "Ringer", label: "Ringer" },
-  { value: "Intercom", label: "Intercom" },
-  { value: "Park", label: "Park" },
-];
+const TYPE_OPTIONS_KEYS = [
+  { value: "Fax", key: "typeFax" },
+  { value: "Paging", key: "typePager" },
+  { value: "Ringer", key: "typeRinger" },
+  { value: "Intercom", key: "typeIntercom" },
+  { value: "Park", key: "typePark" },
+] as const;
 
 function formatPhone(num: string): string {
   const d = (num || "").replace(/\D/g, "");
@@ -43,6 +44,8 @@ function formatPhone(num: string): string {
 const EMPTY_FORM: CreateSpecialExtensionPayload = { name: "", type: "Fax", extension: "" };
 
 export default function SpecialExtensionsPage() {
+  const t = useTranslations("specialExtensionsPage");
+  const TYPE_OPTIONS = TYPE_OPTIONS_KEYS.map((o) => ({ value: o.value, label: t(o.key) }));
   const { bootstrap } = useApp();
   const accountId = bootstrap?.account?.accountId ?? 0;
   const queryClient = useQueryClient();
@@ -135,7 +138,7 @@ export default function SpecialExtensionsPage() {
       cell: ({ row }) => {
         const ext = row.original;
         const phone = ext.phoneNumber as string | undefined;
-        if (!phone) return <span className="text-gray-400">Unassigned</span>;
+        if (!phone) return <span className="text-gray-400">{t("unassigned")}</span>;
         return (
           <div className="flex items-center gap-2">
             <Phone className="w-4 h-4 text-[#1a73e8] shrink-0" />
@@ -179,11 +182,11 @@ export default function SpecialExtensionsPage() {
         </button>
       </div>
       {isLoading ? (
-        <div className="py-12 flex justify-center"><Loader variant="inline" label="Loading special extensions..." /></div>
+        <div className="py-12 flex justify-center"><Loader variant="inline" label={t("loading")} /></div>
       ) : (
-        <DataTable columns={columns} data={extensions} searchPlaceholder="Search" />
+        <DataTable columns={columns} data={extensions} searchPlaceholder={t("search")} />
       )}
-      <Modal isOpen={modalOpen} onClose={closeModal} title={editing ? "Edit Special Extension" : "Add Special Extension"}>
+      <Modal isOpen={modalOpen} onClose={closeModal} title={editing ? t("editTitle") : t("addTitle")}>
         <form onSubmit={handleSubmit}>
           <TextInput label="Name" value={form.name} onChange={(v) => setForm((f) => ({ ...f, name: v }))} placeholder="e.g. Main Fax" required />
           <div className="mb-4">
@@ -202,7 +205,7 @@ export default function SpecialExtensionsPage() {
               onChange={(e) => setForm((f) => ({ ...f, phoneNumber: e.target.value || undefined }))}
               className="w-full px-3 py-2 border border-[#dadce0] rounded-md text-sm"
             >
-              <option value="">Unassigned</option>
+              <option value="">{t("unassignedOption")}</option>
               {editing && form.phoneNumber && !assignableNumbers.some((n) => n.phoneNumber === form.phoneNumber) && (
                 <option value={form.phoneNumber}>{formatPhone(form.phoneNumber)} (current)</option>
               )}
@@ -212,15 +215,15 @@ export default function SpecialExtensionsPage() {
             </select>
           </div>
           {(addMutation.isError || updateMutation.isError) && (
-            <p className="text-sm text-red-600 mb-2">{((addMutation.error || updateMutation.error) as Error)?.message ?? "Failed to save"}</p>
+            <p className="text-sm text-red-600 mb-2">{((addMutation.error || updateMutation.error) as Error)?.message ?? t("failedToSave")}</p>
           )}
           <div className="flex justify-end gap-2 mt-4">
             <button type="button" onClick={closeModal} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancel</button>
-            <button type="submit" disabled={isMutating} className="px-4 py-2 text-sm font-medium text-white bg-[#1a73e8] rounded-md hover:bg-[#1557b0] disabled:opacity-50">{isMutating ? "Saving..." : editing ? "Save" : "Add"}</button>
+            <button type="submit" disabled={isMutating} className="px-4 py-2 text-sm font-medium text-white bg-[#1a73e8] rounded-md hover:bg-[#1557b0] disabled:opacity-50">{isMutating ? t("saving") : editing ? t("common_save") : t("addButton")}</button>
           </div>
         </form>
       </Modal>
-      <ConfirmDialog isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id!)} title="Delete Special Extension" message={`Delete special extension "${deleteTarget?.name}"?`} />
+      <ConfirmDialog isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id!)} title={t("deleteTitle")} message={`Delete special extension "${deleteTarget?.name}"?`} />
     </div>
   );
 }

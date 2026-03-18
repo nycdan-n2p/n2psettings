@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -79,6 +80,7 @@ const PAGE_SIZE = 10;
 
 // ── Orders tab ────────────────────────────────────────────────────────────────
 function OrdersTab({ accountId }: { accountId: number }) {
+  const t = useTranslations("devicesPage");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [expanded, setExpanded] = useState<number | null>(null);
@@ -108,7 +110,7 @@ function OrdersTab({ accountId }: { accountId: number }) {
   if (isLoading) {
     return (
       <div className="py-16 flex justify-center">
-        <Loader variant="inline" label="Loading orders…" />
+        <Loader variant="inline" label={t("loadingOrders")} />
       </div>
     );
   }
@@ -123,7 +125,7 @@ function OrdersTab({ accountId }: { accountId: number }) {
             type="text"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-            placeholder="Search orders…"
+            placeholder={t("searchOrders")}
             className="w-full pl-9 pr-3 py-2 border border-[#dadce0] rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#1a73e8] bg-gray-50"
           />
         </div>
@@ -134,19 +136,19 @@ function OrdersTab({ accountId }: { accountId: number }) {
         <div className="py-16 flex flex-col items-center gap-3 text-gray-400">
           <Package className="w-10 h-10 text-gray-300" />
           <p className="text-sm font-medium text-gray-500">
-            {search ? "No orders match your search" : "No active orders"}
+            {search ? t("noOrdersSearch") : t("noOrders")}
           </p>
         </div>
       ) : (
         <>
           {/* Column headers */}
           <div className="grid grid-cols-[160px_1fr_1fr_140px_140px_120px] gap-4 px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wide border-b border-[#f1f3f4]">
-            <span>Order ID</span>
-            <span>Contact</span>
-            <span>Ship To</span>
-            <span>Carrier</span>
-            <span>Submitted</span>
-            <span>Status</span>
+            <span>{t("colOrderId")}</span>
+            <span>{t("colContact")}</span>
+            <span>{t("colShipTo")}</span>
+            <span>{t("colCarrier")}</span>
+            <span>{t("colSubmitted")}</span>
+            <span>{t("colStatus")}</span>
           </div>
 
           <div className="divide-y divide-[#f1f3f4]">
@@ -293,6 +295,7 @@ function OrdersTab({ accountId }: { accountId: number }) {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function DevicesPage() {
+  const t = useTranslations("devicesPage");
   const { bootstrap } = useApp();
   const accountId = bootstrap?.account?.accountId ?? 0;
   const queryClient = useQueryClient();
@@ -404,7 +407,7 @@ export default function DevicesPage() {
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-medium text-gray-900">Devices</h1>
+          <h1 className="text-2xl font-medium text-gray-900">{t("title")}</h1>
           <p className="text-sm text-gray-500 mt-1">
             Manage all physical devices on your account.
           </p>
@@ -440,16 +443,16 @@ export default function DevicesPage() {
               type="text"
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-              placeholder="Search devices…"
+              placeholder={t("searchDevices")}
               className="w-full pl-9 pr-3 py-2 border border-[#dadce0] rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#1a73e8] bg-gray-50"
             />
           </div>
           <div className="flex items-center gap-4 text-sm text-gray-600">
-            <span>Total: <strong className="text-gray-900">{totalCount}</strong></span>
+            <span>{t("total")}: <strong className="text-gray-900">{totalCount}</strong></span>
             <span className="text-gray-300">|</span>
-            <span>Active: <strong className="text-green-600">{activeCount}</strong></span>
+            <span>{t("active")}: <strong className="text-green-600">{activeCount}</strong></span>
             <span className="text-gray-300">|</span>
-            <span>Unassigned: <strong className="text-amber-600">{unassignedCount}</strong></span>
+            <span>{t("unassigned")}: <strong className="text-amber-600">{unassignedCount}</strong></span>
           </div>
         </div>
       )}
@@ -457,8 +460,8 @@ export default function DevicesPage() {
       {/* Tabs */}
       <div className="border-b border-gray-200 mb-0">
         <nav className="flex gap-6">
-          <button type="button" onClick={() => setTab("devices")} className={tabClass("devices")}>Devices</button>
-          <button type="button" onClick={() => setTab("orders")} className={tabClass("orders")}>Orders</button>
+          <button type="button" onClick={() => setTab("devices")} className={tabClass("devices")}>{t("tabDevices")}</button>
+          <button type="button" onClick={() => setTab("orders")} className={tabClass("orders")}>{t("tabOrders")}</button>
         </nav>
       </div>
 
@@ -488,12 +491,12 @@ export default function DevicesPage() {
             {/* Rows */}
             {isLoading ? (
               <div className="py-16 flex justify-center">
-                <Loader variant="inline" label="Loading devices…" />
+                <Loader variant="inline" label={t("loadingDevices")} />
               </div>
             ) : pageItems.length === 0 ? (
               <div className="py-16 flex flex-col items-center gap-3 text-gray-400">
                 <Monitor className="w-10 h-10 text-gray-300" />
-                <p className="text-sm font-medium text-gray-500">{search ? "No devices match your search" : "No devices found"}</p>
+                <p className="text-sm font-medium text-gray-500">{search ? "No devices match your search" : t("noDevices")}</p>
               </div>
             ) : (
               <div className="divide-y divide-gray-100">
@@ -570,15 +573,15 @@ export default function DevicesPage() {
                             onClick={() => handleReboot(device.macId)}
                             disabled={isRebooting}
                             className="text-xs text-[#1a73e8] hover:underline disabled:opacity-50 mr-1"
-                            title="Reboot device"
+                            title={t("rebootDevice")}
                           >
-                            {isRebooting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : "Reboot"}
+                            {isRebooting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : t("reboot")}
                           </button>
                         )}
                         <button
                           onClick={() => setDeleteTarget(device)}
                           className="w-7 h-7 rounded-full flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
-                          title="Remove device"
+                          title={t("removeDevice")}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -618,7 +621,7 @@ export default function DevicesPage() {
       </div>
 
       {/* Add Device Modal */}
-      <Modal isOpen={addOpen} onClose={() => setAddOpen(false)} title="Add Desk Phone">
+      <Modal isOpen={addOpen} onClose={() => setAddOpen(false)} title={t("addTitle")}>
         <form onSubmit={(e) => { e.preventDefault(); addMutation.mutate(form); }}>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1.5">MAC Address <span className="text-red-500">*</span></label>
@@ -635,13 +638,13 @@ export default function DevicesPage() {
               className="w-full px-3 py-2 border border-[#dadce0] rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#1a73e8]" />
           </div>
           {addMutation.isError && (
-            <p className="text-sm text-red-600 mb-3">{(addMutation.error as Error)?.message ?? "Failed to add device"}</p>
+            <p className="text-sm text-red-600 mb-3">{(addMutation.error as Error)?.message ?? t("failedToAdd")}</p>
           )}
           <div className="flex justify-end gap-2 mt-5">
             <button type="button" onClick={() => setAddOpen(false)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancel</button>
             <button type="submit" disabled={addMutation.isPending}
               className="px-4 py-2 text-sm font-medium text-white bg-[#1a73e8] rounded-md hover:bg-[#1557b0] disabled:opacity-50">
-              {addMutation.isPending ? "Adding…" : "Add Device"}
+              {addMutation.isPending ? t("adding") : t("addDevice")}
             </button>
           </div>
         </form>
@@ -651,7 +654,7 @@ export default function DevicesPage() {
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.macId)}
-        title="Remove Device"
+        title={t("deleteTitle")}
         message={`Remove device ${deleteTarget ? fmtMac(deleteTarget.macId) : ""}? This cannot be undone.`}
       />
     </div>

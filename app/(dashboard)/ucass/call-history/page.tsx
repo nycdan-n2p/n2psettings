@@ -9,9 +9,11 @@ import { fetchCallHistory, formatDuration, type CDR } from "@/lib/api/call-histo
 import { qk } from "@/lib/query-keys";
 import { Loader } from "@/components/ui/Loader";
 import type { ColumnDef } from "@tanstack/react-table";
+import { useTranslations } from "next-intl";
 
 export default function CallHistoryPage() {
   const { bootstrap } = useApp();
+  const t = useTranslations("callHistory");
   const accountId = bootstrap?.account?.accountId ?? 0;
   const userId = bootstrap?.user?.userId ?? 0;
   const [cursor, setCursor] = useState<string | null>(null);
@@ -29,59 +31,51 @@ export default function CallHistoryPage() {
   const columns: ColumnDef<CDR>[] = [
     {
       accessorKey: "callDate",
-      header: "Date",
-      cell: ({ row }) =>
-        new Date(row.original.callDate).toLocaleString(),
+      header: t("colDate"),
+      cell: ({ row }) => new Date(row.original.callDate).toLocaleString(),
       sortingFn: (rowA, rowB) =>
-        new Date(rowA.original.callDate).getTime() -
-        new Date(rowB.original.callDate).getTime(),
+        new Date(rowA.original.callDate).getTime() - new Date(rowB.original.callDate).getTime(),
     },
     {
       id: "from",
       accessorFn: (row) => row.from?.callerId ?? row.from?.number ?? "",
-      header: "From",
-      cell: ({ row }) =>
-        row.original.from?.callerId ?? row.original.from?.number ?? "—",
+      header: t("colFrom"),
+      cell: ({ row }) => row.original.from?.callerId ?? row.original.from?.number ?? "—",
     },
     {
       id: "to",
       accessorFn: (row) => row.to?.userDisplayName ?? row.to?.number ?? "",
-      header: "To",
-      cell: ({ row }) =>
-        row.original.to?.userDisplayName ?? row.original.to?.number ?? "—",
+      header: t("colTo"),
+      cell: ({ row }) => row.original.to?.userDisplayName ?? row.original.to?.number ?? "—",
     },
     {
       accessorKey: "direction",
-      header: "Direction",
+      header: t("colDirection"),
       cell: ({ row }) =>
-        row.original.direction === 0 ? "Inbound" : row.original.direction === 1 ? "Outbound" : "—",
+        row.original.direction === 0 ? t("inbound") : row.original.direction === 1 ? t("outbound") : "—",
     },
-    { accessorKey: "callResult", header: "Result" },
+    { accessorKey: "callResult", header: t("colResult") },
     {
       accessorKey: "duration",
-      header: "Duration",
+      header: t("colDuration"),
       cell: ({ row }) => formatDuration(row.original.duration),
     },
   ];
 
   return (
     <div>
-      <h1 className="text-2xl font-medium text-gray-900 mb-6">
-        Call History
-      </h1>
-      <p className="text-gray-600 mb-6">
-        View call detail records and recordings.
-      </p>
+      <h1 className="text-2xl font-medium text-gray-900 mb-6">{t("title")}</h1>
+      <p className="text-gray-600 mb-6">{t("subtitle")}</p>
       {isLoading ? (
         <div className="py-8 flex justify-center">
-          <Loader variant="inline" label="Loading calls..." />
+          <Loader variant="inline" label={t("loading")} />
         </div>
       ) : (
         <>
           <DataTable
             columns={columns}
             data={cdrs}
-            searchPlaceholder="Search calls..."
+            searchPlaceholder={t("search")}
             initialSorting={[{ id: "callDate", desc: true }]}
           />
           {(prevCursor || nextCursor) && (
@@ -91,14 +85,14 @@ export default function CallHistoryPage() {
                 disabled={!prevCursor}
                 className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 border border-[#dadce0] rounded-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <ChevronLeft className="w-4 h-4" /> Previous
+                <ChevronLeft className="w-4 h-4" /> {t("previous")}
               </button>
               <button
                 onClick={() => setCursor(nextCursor)}
                 disabled={!nextCursor}
                 className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 border border-[#dadce0] rounded-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                Next <ChevronRight className="w-4 h-4" />
+                {t("next")} <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           )}

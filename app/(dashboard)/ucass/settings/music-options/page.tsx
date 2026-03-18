@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -35,6 +36,7 @@ function SunoGenerator({
   accountId: number;
   onUploaded: () => void;
 }) {
+  const t = useTranslations("musicOptionsPage");
   const [prompt, setPrompt] = useState("");
   const [style, setStyle] = useState("instrumental, corporate, upbeat");
   const [instrumental, setInstrumental] = useState(true);
@@ -111,7 +113,7 @@ function SunoGenerator({
       setPlaying(false);
       onUploaded();
     } catch (err: unknown) {
-      setUploadError(err instanceof Error ? err.message : "Upload failed");
+      setUploadError(err instanceof Error ? err.message : t("upload"));
     } finally {
       setUploading(false);
     }
@@ -315,7 +317,7 @@ function SunoGenerator({
               disabled={generating || !prompt.trim()}
               className="text-xs text-purple-600 hover:underline disabled:opacity-50"
             >
-              {generating ? "Generating…" : "↺ Re-generate"}
+              {generating ? t("generating") : t("regenerate")}
             </button>
           )}
         </>
@@ -326,6 +328,7 @@ function SunoGenerator({
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function MusicOptionsPage() {
+  const t = useTranslations("musicOptionsPage");
   const { bootstrap } = useApp();
   const accountId = bootstrap?.account?.accountId ?? 0;
   const queryClient = useQueryClient();
@@ -373,7 +376,7 @@ export default function MusicOptionsPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-medium text-gray-900">Music Options</h1>
+        <h1 className="text-2xl font-medium text-gray-900">{t("title")}</h1>
         <p className="text-sm text-gray-500 mt-1">
           Upload and manage music-on-hold audio files for your call queues.
         </p>
@@ -422,12 +425,12 @@ export default function MusicOptionsPage() {
             className="flex items-center gap-2 px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium disabled:opacity-50"
           >
             <Upload className="w-4 h-4" />
-            {uploadMutation.isPending ? "Uploading..." : "Upload"}
+            {uploadMutation.isPending ? t("uploading") : "Upload"}
           </button>
         </form>
         {uploadMutation.isError && (
           <p className="text-sm text-red-600 mt-2">
-            {(uploadMutation.error as Error)?.message ?? "Upload failed"}
+            {(uploadMutation.error as Error)?.message ?? t("upload")}
           </p>
         )}
       </div>
@@ -439,7 +442,7 @@ export default function MusicOptionsPage() {
       </h2>
       {isLoading ? (
         <div className="py-8 flex justify-center">
-          <Loader variant="inline" label="Loading music options..." />
+          <Loader variant="inline" label={t("loading")} />
         </div>
       ) : options.length === 0 ? (
         <div className="py-4 space-y-1">
@@ -474,7 +477,7 @@ export default function MusicOptionsPage() {
                 <button
                   onClick={() => setDeleteTarget(opt)}
                   className="p-1.5 rounded hover:bg-red-50 text-red-400 hover:text-red-600 transition-colors"
-                  title="Delete"
+                  title={t("common_delete")}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -488,7 +491,7 @@ export default function MusicOptionsPage() {
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
-        title="Delete Music Option"
+        title={t("deleteTitle")}
         message={`Delete "${deleteTarget?.name}"? It will no longer be available as hold music.`}
       />
     </div>

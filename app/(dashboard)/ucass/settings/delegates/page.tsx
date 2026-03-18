@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -19,6 +20,7 @@ import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import { Pencil, Trash2 } from "lucide-react";
 
 export default function DelegatesPage() {
+  const t = useTranslations("delegatesPage");
   const { bootstrap } = useApp();
   const accountId = bootstrap?.account?.accountId ?? 0;
   const queryClient = useQueryClient();
@@ -107,10 +109,10 @@ export default function DelegatesPage() {
   };
 
   const columns: ColumnDef<Delegate>[] = [
-    { accessorKey: "name", header: "Name" },
-    { accessorKey: "email", header: "Email" },
-    { accessorKey: "type", header: "Type" },
-    { accessorKey: "status", header: "Status" },
+    { accessorKey: "name", header: t("colName") },
+    { accessorKey: "email", header: t("colEmail") },
+    { accessorKey: "type", header: t("colType") },
+    { accessorKey: "status", header: t("colStatus") },
     {
       id: "actions",
       header: "",
@@ -137,7 +139,7 @@ export default function DelegatesPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-medium text-gray-900 mb-6">Delegates</h1>
+      <h1 className="text-2xl font-medium text-gray-900 mb-6">{t("title")}</h1>
       <p className="text-gray-600 mb-6">
         Partner access and delegate management.
       </p>
@@ -155,25 +157,25 @@ export default function DelegatesPage() {
         <DataTable
           columns={columns}
           data={delegates}
-          searchPlaceholder="Search delegates..."
+          searchPlaceholder={t("search")}
         />
       )}
 
       <Modal
         isOpen={modalOpen}
         onClose={closeModal}
-        title={editingDelegate ? "Edit delegate" : "Add delegate"}
+        title={editingDelegate ? t("editTitle") : t("addTitle")}
       >
         <form onSubmit={handleSubmit}>
           <TextInput
-            label="Name"
+            label={t("labelName")}
             value={formName}
             onChange={setFormName}
-            placeholder="Full name"
+            placeholder={t("labelName")}
             required
           />
           <TextInput
-            label="Email"
+            label={t("labelEmail")}
             value={formEmail}
             onChange={setFormEmail}
             type="email"
@@ -189,8 +191,8 @@ export default function DelegatesPage() {
               onChange={(e) => setFormType(e.target.value)}
               className="w-full px-3 py-2 border border-[#dadce0] rounded-md text-sm"
             >
-              <option value="client">Client</option>
-              <option value="admin">Admin</option>
+              <option value="client">{t("typeClient")}</option>
+              <option value="admin">{t("typeAdmin")}</option>
             </select>
           </div>
           <div className="flex justify-end gap-2 mt-4">
@@ -206,7 +208,7 @@ export default function DelegatesPage() {
               disabled={addMutation.isPending || updateMutation.isPending}
               className="px-4 py-2 text-sm font-medium text-white bg-[#1a73e8] rounded-md hover:bg-[#1557b0] disabled:opacity-50"
             >
-              {editingDelegate ? "Save" : "Add"}
+              {editingDelegate ? t("common_save") : t("addButton")}
             </button>
           </div>
         </form>
@@ -216,7 +218,7 @@ export default function DelegatesPage() {
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
-        title="Delete delegate"
+        title={t("deleteTitle")}
         message={`Remove ${deleteTarget?.name} from delegates?`}
       />
     </div>

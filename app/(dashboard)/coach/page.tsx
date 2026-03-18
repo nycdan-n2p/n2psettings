@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useEffect, useState } from "react";
 import { loadEnv } from "@/lib/env";
@@ -7,6 +8,7 @@ import { ProductHeader } from "@/components/layout/ProductHeader";
 const DEFAULT_COACH_URL = "https://coachai.net2phone.com";
 
 export default function CoachProductPage() {
+  const t = useTranslations("productPages");
   const [coachUrl, setCoachUrl] = useState(DEFAULT_COACH_URL);
 
   useEffect(() => {
@@ -21,10 +23,10 @@ export default function CoachProductPage() {
     <div>
       <ProductHeader
         productId="coach"
-        status="ON for everyone"
+        status={t("statusOnForEveryone")}
       />
       <p className="text-gray-600 mb-6">
-        AI coaching and analytics settings.
+        {t("coachSubtitle")}
       </p>
 
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">

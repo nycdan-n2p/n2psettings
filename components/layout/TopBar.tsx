@@ -22,6 +22,7 @@ import { LocaleSelector } from "@/components/ui/LocaleSelector";
 
 export function TopBar() {
   const t = useTranslations("topbar");
+  const te = useTranslations("topbarExtra");
   const { bootstrap } = useApp();
   const { open: openAssistant } = useAssistant();
   const { open: openConcierge } = useConcierge();
@@ -62,8 +63,8 @@ export function TopBar() {
         <button
           onClick={openConcierge}
           className="p-2 rounded-full hover:bg-white/20 transition-colors"
-          title="Setup Wizard"
-          aria-label="Open setup wizard"
+          title={te("setupWizard")}
+          aria-label={te("setupWizard")}
         >
           <Sparkles className="w-5 h-5" />
         </button>
@@ -104,7 +105,7 @@ export function TopBar() {
             </div>
             <div className="border-b border-gray-100">
               <p className="px-3 pt-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">
-                Apps &amp; Integrations
+                {te("appsIntegrations")}
               </p>
               <div className="grid grid-cols-3 gap-1 px-2 pb-2">
                 {INTEGRATIONS.map((integration) => {
@@ -130,14 +131,14 @@ export function TopBar() {
             </div>
             <div className="border-b border-gray-100 px-3 py-2 space-y-1">
               <p className="px-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">
-                Help
+                {te("help")}
               </p>
               <button
                 onClick={() => { openConcierge(); (document.activeElement as HTMLElement)?.blur(); }}
                 className="w-full flex items-center gap-2 text-sm text-gray-700 hover:bg-gray-50 -mx-2 px-2 py-1.5 rounded text-left"
               >
                 <Sparkles className="w-4 h-4 shrink-0 text-[#1a73e8]" />
-                Setup Wizard
+                {te("setupWizard")}
               </button>
               <button
                 onClick={() => { openAssistant(); (document.activeElement as HTMLElement)?.blur(); }}
@@ -163,7 +164,7 @@ export function TopBar() {
                 rel="noopener noreferrer"
                 className="block text-sm text-gray-700 hover:bg-gray-50 -mx-2 px-2 py-1 rounded"
               >
-                Terms of Service
+                {te("termsOfService")}
               </a>
               <a
                 href="https://www.net2phone.com/privacy-policy"
@@ -171,7 +172,7 @@ export function TopBar() {
                 rel="noopener noreferrer"
                 className="block text-sm text-gray-700 hover:bg-gray-50 -mx-2 px-2 py-1 rounded"
               >
-                Privacy Policy
+                {te("privacyPolicy")}
               </a>
             </div>
             <button

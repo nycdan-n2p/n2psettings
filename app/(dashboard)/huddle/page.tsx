@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useEffect, useState } from "react";
 import { loadEnv } from "@/lib/env";
@@ -7,6 +8,7 @@ import { ProductHeader } from "@/components/layout/ProductHeader";
 const DEFAULT_HUDDLE_URL = "https://huddle.net2phone.com";
 
 export default function HuddleProductPage() {
+  const t = useTranslations("productPages");
   const [huddleUrl, setHuddleUrl] = useState(DEFAULT_HUDDLE_URL);
 
   useEffect(() => {
@@ -21,10 +23,10 @@ export default function HuddleProductPage() {
     <div>
       <ProductHeader
         productId="huddle"
-        status="ON for everyone"
+        status={t("statusOnForEveryone")}
       />
       <p className="text-gray-600 mb-6">
-        Video conferencing and collaboration settings.
+        {t("huddleSubtitle")}
       </p>
 
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { Play } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useApp } from "@/contexts/AppContext";
 import { useLocaleFormat } from "@/hooks/useLocaleFormat";
 import { qk } from "@/lib/query-keys";
@@ -14,6 +15,8 @@ import { fetchVoicemails, type VoicemailItem } from "@/lib/api/voicemails";
 export default function VoicemailPage() {
   const { bootstrap } = useApp();
   const { formatDateTime } = useLocaleFormat();
+  const t = useTranslations("voicemailPage");
+  const tc = useTranslations("common");
   const accountId = bootstrap?.account?.accountId ?? 0;
   const userId = bootstrap?.user?.userId ?? 0;
   const [selectedVoicemail, setSelectedVoicemail] = useState<VoicemailItem | null>(null);
@@ -26,33 +29,31 @@ export default function VoicemailPage() {
 
   const items = data?.items ?? [];
   const totalCount = data?.totalCount ?? 0;
+  const unreadCount = bootstrap?.unreadVoicemailCount ?? 0;
 
   return (
     <div>
-      <h1 className="text-2xl font-medium text-gray-900 mb-6">Voicemail</h1>
+      <h1 className="text-2xl font-medium text-gray-900 mb-6">{t("title")}</h1>
       <p className="text-gray-600 mb-6">
-        Voicemail inbox and messages. You have {bootstrap?.unreadVoicemailCount ?? 0} unread.
+        {t("subtitle", { count: unreadCount })}
       </p>
 
       <div className="mb-6 flex gap-4">
-        <Link
-          href="/ucass/settings/voicemail"
-          className="text-[#1a73e8] hover:underline font-medium text-sm"
-        >
-          Voicemail settings →
+        <Link href="/ucass/settings/voicemail" className="text-[#1a73e8] hover:underline font-medium text-sm">
+          {t("settingsLink")}
         </Link>
       </div>
 
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <h2 className="text-lg font-medium text-gray-900">Inbox ({totalCount} messages)</h2>
+          <h2 className="text-lg font-medium text-gray-900">{t("inbox", { count: totalCount })}</h2>
         </div>
         {isLoading ? (
           <div className="px-6 py-12 flex justify-center">
-            <Loader variant="inline" label="Loading voicemails..." />
+            <Loader variant="inline" label={t("loading")} />
           </div>
         ) : items.length === 0 ? (
-          <div className="px-6 py-8 text-gray-500">No voicemails.</div>
+          <div className="px-6 py-8 text-gray-500">{t("noVoicemails")}</div>
         ) : (
           <>
             <div className="divide-y divide-gray-200">
@@ -68,7 +69,7 @@ export default function VoicemailPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900">
-                      {vm.from?.callerId ?? vm.from?.number ?? "Unknown"}
+                      {vm.from?.callerId ?? vm.from?.number ?? tc("unknown")}
                     </p>
                     <p className="text-xs text-gray-500 mt-0.5">
                       {vm.callDate ? formatDateTime(vm.callDate) : "—"}
@@ -77,7 +78,7 @@ export default function VoicemailPage() {
                   </div>
                   {vm.isRead === false && (
                     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 shrink-0">
-                      Unread
+                      {t("unread")}
                     </span>
                   )}
                 </button>

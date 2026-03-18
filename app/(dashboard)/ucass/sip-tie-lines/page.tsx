@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -20,6 +21,7 @@ import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import { Pencil, Trash2 } from "lucide-react";
 
 export default function SIPTieLinesPage() {
+  const t = useTranslations("sipTieLinesPage");
   const { bootstrap } = useApp();
   const accountId = bootstrap?.account?.accountId ?? 0;
   const queryClient = useQueryClient();
@@ -130,7 +132,7 @@ export default function SIPTieLinesPage() {
     { accessorKey: "tieLineId", header: "ID" },
     {
       accessorKey: "enabled",
-      header: "Enabled",
+      header: t("colEnabled"),
       cell: ({ row }) => (
         <Toggle
           checked={row.original.enabled}
@@ -144,8 +146,8 @@ export default function SIPTieLinesPage() {
         />
       ),
     },
-    { accessorKey: "outboundDestination", header: "Destination" },
-    { accessorKey: "transportProtocol", header: "Protocol" },
+    { accessorKey: "outboundDestination", header: t("colDestination") },
+    { accessorKey: "transportProtocol", header: t("colProtocol") },
     {
       id: "actions",
       header: "",
@@ -192,24 +194,24 @@ export default function SIPTieLinesPage() {
         <DataTable
           columns={columns}
           data={tieLines}
-          searchPlaceholder="Search tie-lines..."
+          searchPlaceholder={t("search")}
         />
       )}
 
       <Modal
         isOpen={modalOpen}
         onClose={closeModal}
-        title={editingTieLine ? "Edit tie-line" : "Add tie-line"}
+        title={editingTieLine ? t("editTitle") : t("addTitle")}
       >
         <form onSubmit={handleSubmit}>
           <TextInput
-            label="Outbound destination"
+            label={t("labelDest")}
             value={formDestination}
             onChange={setFormDestination}
             placeholder="e.g. test.test"
           />
           <TextInput
-            label="Outbound prefix"
+            label={t("labelPrefix")}
             value={formPrefix}
             onChange={setFormPrefix}
             placeholder="e.g. 81"
@@ -233,7 +235,7 @@ export default function SIPTieLinesPage() {
               checked={formEnabled}
               onChange={setFormEnabled}
             />
-            <span className="text-sm text-gray-700">Enabled</span>
+            <span className="text-sm text-gray-700">{t("labelEnabled")}</span>
           </div>
           <div className="flex justify-end gap-2 mt-4">
             <button
@@ -248,7 +250,7 @@ export default function SIPTieLinesPage() {
               disabled={addMutation.isPending || updateMutation.isPending}
               className="px-4 py-2 text-sm font-medium text-white bg-[#1a73e8] rounded-md hover:bg-[#1557b0] disabled:opacity-50"
             >
-              {editingTieLine ? "Save" : "Add"}
+              {editingTieLine ? t("common_save") : t("addButton")}
             </button>
           </div>
         </form>
@@ -260,7 +262,7 @@ export default function SIPTieLinesPage() {
         onConfirm={() =>
           deleteTarget && deleteMutation.mutate(deleteTarget.tieLineId)
         }
-        title="Delete tie-line"
+        title={t("deleteTitle")}
         message={`Remove tie-line ${deleteTarget?.tieLineId}?`}
       />
     </div>

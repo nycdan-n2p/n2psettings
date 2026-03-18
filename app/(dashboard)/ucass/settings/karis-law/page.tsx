@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -19,6 +20,7 @@ import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import { Pencil, Trash2 } from "lucide-react";
 
 export default function KarisLawPage() {
+  const t = useTranslations("karisLawPage");
   const { bootstrap } = useApp();
   const accountId = bootstrap?.account?.accountId ?? 0;
   const queryClient = useQueryClient();
@@ -102,11 +104,11 @@ export default function KarisLawPage() {
   };
 
   const columns: ColumnDef<KariLawEntry>[] = [
-    { accessorKey: "number", header: "Number" },
-    { accessorKey: "ownerName", header: "Owner" },
+    { accessorKey: "number", header: t("colNumber") },
+    { accessorKey: "ownerName", header: t("colOwner") },
     {
       accessorKey: "createdAt",
-      header: "Created",
+      header: t("colCreated"),
       cell: ({ row }) =>
         row.original.createdAt
           ? new Date(row.original.createdAt).toLocaleDateString()
@@ -158,18 +160,18 @@ export default function KarisLawPage() {
         <DataTable
           columns={columns}
           data={entries}
-          searchPlaceholder="Search numbers..."
+          searchPlaceholder={t("search")}
         />
       )}
 
       <Modal
         isOpen={modalOpen}
         onClose={closeModal}
-        title={editingEntry ? "Edit number" : "Add number"}
+        title={editingEntry ? t("editTitle") : t("addTitle")}
       >
         <form onSubmit={handleSubmit}>
           <TextInput
-            label="Phone number"
+            label={t("labelPhoneNumber")}
             value={formNumber}
             onChange={setFormNumber}
             placeholder="e.g. 19734384842"
@@ -177,10 +179,10 @@ export default function KarisLawPage() {
             required
           />
           <TextInput
-            label="Owner name"
+            label={t("labelOwnerName")}
             value={formOwner}
             onChange={setFormOwner}
-            placeholder="Optional"
+            placeholder={t("placeholderOptional")}
           />
           <div className="flex justify-end gap-2 mt-4">
             <button
@@ -195,7 +197,7 @@ export default function KarisLawPage() {
               disabled={addMutation.isPending || updateMutation.isPending}
               className="px-4 py-2 text-sm font-medium text-white bg-[#1a73e8] rounded-md hover:bg-[#1557b0] disabled:opacity-50"
             >
-              {editingEntry ? "Save" : "Add"}
+              {editingEntry ? t("common_save") : t("addButton")}
             </button>
           </div>
         </form>
@@ -205,7 +207,7 @@ export default function KarisLawPage() {
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
-        title="Delete number"
+        title={t("deleteTitle")}
         message={`Remove ${deleteTarget?.number} from emergency notifications?`}
       />
     </div>

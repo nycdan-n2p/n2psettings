@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -27,6 +28,7 @@ function formatPhone(s: string): string {
 }
 
 export default function E911ContactsPage() {
+  const t = useTranslations("contacts911Page");
   const { bootstrap } = useApp();
   const accountId = bootstrap?.account?.accountId ?? 0;
   const queryClient = useQueryClient();
@@ -146,20 +148,20 @@ export default function E911ContactsPage() {
 
       {isLoading ? (
         <div className="py-12 flex justify-center">
-          <Loader variant="inline" label="Loading contacts..." />
+          <Loader variant="inline" label={t("loading")} />
         </div>
       ) : (
         <DataTable
           columns={columns}
           data={contacts}
-          searchPlaceholder="Search numbers..."
+          searchPlaceholder={t("search")}
         />
       )}
 
-      <Modal isOpen={modalOpen} onClose={closeModal} title="Add Number">
+      <Modal isOpen={modalOpen} onClose={closeModal} title={t("addTitle")}>
         <form onSubmit={handleSubmit}>
           <TextInput
-            label="Phone number"
+            label={t("labelPhoneNumber")}
             value={formNumber}
             onChange={setFormNumber}
             type="tel"
@@ -179,7 +181,7 @@ export default function E911ContactsPage() {
               disabled={addMutation.isPending}
               className="px-4 py-2 text-sm font-medium text-white bg-[#1a73e8] rounded-md hover:bg-[#1557b0] disabled:opacity-50"
             >
-              {addMutation.isPending ? "Adding..." : "Add"}
+              {addMutation.isPending ? t("adding") : t("addButton")}
             </button>
           </div>
         </form>
@@ -189,7 +191,7 @@ export default function E911ContactsPage() {
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
-        title="Remove 911 Contact"
+        title={t("deleteTitle")}
         message={`Remove ${deleteTarget ? formatPhone(deleteTarget.number) : ""} from emergency notifications?`}
       />
     </div>

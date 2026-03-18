@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -163,6 +164,7 @@ interface AddWebhookModalProps {
 }
 
 function AddWebhookModal({ isOpen, onClose, accountId, userId, eventTypes }: AddWebhookModalProps) {
+  const t = useTranslations("webhooksPage");
   const qc = useQueryClient();
 
   const [name, setName]               = useState("");
@@ -224,7 +226,7 @@ function AddWebhookModal({ isOpen, onClose, accountId, userId, eventTypes }: Add
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Add Webhook" size="lg">
+    <Modal isOpen={isOpen} onClose={handleClose} title={t("addTitle")} size="lg">
       <form onSubmit={handleSubmit}>
 
         {/* Name */}
@@ -269,7 +271,7 @@ function AddWebhookModal({ isOpen, onClose, accountId, userId, eventTypes }: Add
             value={eventsMode}
             onChange={setEventsMode}
             options={[
-              { value: "all", label: "All Events" },
+              { value: "all", label: t("allEvents") },
               { value: "specific", label: "Specific Events" },
             ]}
           />
@@ -304,7 +306,7 @@ function AddWebhookModal({ isOpen, onClose, accountId, userId, eventTypes }: Add
             value={usersMode}
             onChange={setUsersMode}
             options={[
-              { value: "all", label: "Entire Company" },
+              { value: "all", label: t("entireCompany") },
               { value: "specific", label: "Specific Team Members" },
             ]}
           />
@@ -360,7 +362,7 @@ function AddWebhookModal({ isOpen, onClose, accountId, userId, eventTypes }: Add
             disabled={mutation.isPending || !name.trim() || !url.trim() || (eventsMode === "specific" && selectedEvents.size === 0)}
             className="px-4 py-2 text-sm font-medium text-white bg-[#1a73e8] rounded-md hover:bg-[#1557b0] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {mutation.isPending ? "Adding…" : "Add Webhook"}
+            {mutation.isPending ? t("adding") : t("addButton")}
           </button>
         </div>
       </form>
@@ -381,8 +383,9 @@ function DeleteModal({
   onCancel: () => void;
   isPending: boolean;
 }) {
+  const t = useTranslations("webhooksPage");
   return (
-    <Modal isOpen onClose={onCancel} title="Delete Webhook">
+    <Modal isOpen onClose={onCancel} title={t("deleteTitle")}>
       <p className="text-sm text-gray-600 mb-1">
         Are you sure you want to delete{" "}
         <strong>{webhook.name ?? webhook.url}</strong>?
@@ -402,7 +405,7 @@ function DeleteModal({
           disabled={isPending}
           className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50"
         >
-          {isPending ? "Deleting…" : "Delete"}
+          {isPending ? t("deleting") : t("common_delete")}
         </button>
       </div>
     </Modal>
@@ -412,6 +415,7 @@ function DeleteModal({
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function WebhooksPage() {
+  const t = useTranslations("webhooksPage");
   const { bootstrap } = useApp();
   const accountId = bootstrap?.account?.accountId ?? 0;
   const userId    = bootstrap?.user?.userId ?? 0;
@@ -442,13 +446,13 @@ export default function WebhooksPage() {
 
   function eventsLabel(wh: Webhook) {
     const types = wh.eventTypes ?? [];
-    if (types.includes("*") || types.length === 0) return "All Events";
+    if (types.includes("*") || types.length === 0) return t("allEvents");
     if (types.length <= 2) return types.join(", ");
     return `${types.slice(0, 2).join(", ")} +${types.length - 2} more`;
   }
 
   function usersLabel(wh: Webhook) {
-    if (!wh.userScope || wh.userScope === "all") return "Entire Company";
+    if (!wh.userScope || wh.userScope === "all") return t("entireCompany");
     const count = wh.specificUserIds?.length ?? 0;
     return `${count} team member${count !== 1 ? "s" : ""}`;
   }
@@ -458,7 +462,7 @@ export default function WebhooksPage() {
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-medium text-gray-900">Webhooks / API</h1>
+          <h1 className="text-2xl font-medium text-gray-900">{t("title")}</h1>
           <p className="text-sm text-gray-500 mt-1">
             Receive real-time HTTP POST notifications when events occur in your account.{" "}
             <a

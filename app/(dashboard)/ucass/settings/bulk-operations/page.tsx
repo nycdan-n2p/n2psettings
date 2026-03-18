@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -8,6 +9,7 @@ import { fetchBulkLoad } from "@/lib/api/bulk-load";
 import { SettingsGroup } from "@/components/settings/SettingsGroup";
 
 export default function BulkOperationsPage() {
+  const t = useTranslations("bulkOperationsPage");
   const { bootstrap } = useApp();
   const accountId = bootstrap?.account?.accountId ?? 0;
   const [file, setFile] = useState<File | null>(null);
@@ -105,8 +107,8 @@ export default function BulkOperationsPage() {
           )}
 
           <SettingsGroup
-            title="Import"
-            description="Upload CSV or Excel file for bulk import"
+            title={t("importTitle")}
+            description={t("importDesc")}
           >
             <form onSubmit={handleUpload} className="space-y-4">
               <div>
@@ -126,15 +128,15 @@ export default function BulkOperationsPage() {
                   disabled={!file || uploading}
                   className="px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium disabled:opacity-50"
                 >
-                  {uploading ? "Uploading..." : "Upload"}
+                  {uploading ? t("uploading") : t("upload")}
                 </button>
               </div>
             </form>
           </SettingsGroup>
 
           <SettingsGroup
-            title="Template"
-            description="Download a template for bulk import"
+            title={t("templateTitle")}
+            description={t("templateDesc")}
           >
             <a
               href="#"

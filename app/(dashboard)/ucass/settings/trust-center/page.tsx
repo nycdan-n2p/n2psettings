@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { Hash, ExternalLink, Hand } from "lucide-react";
 import Link from "next/link";
@@ -33,41 +34,24 @@ function TrustCard({
 }
 
 export default function TrustCenterPage() {
+  const t = useTranslations("trustCenterPage");
   return (
     <div>
-      <h1 className="text-2xl font-medium text-gray-900 mb-2">
-        Trust Center
-      </h1>
-      <p className="text-gray-600 mb-6 max-w-2xl">
-        Secure your organization and stay compliant with carrier requirements. The Trust Center brings together messaging registration, single sign-on, two-factor authentication, and security settings in one place—so you can protect your business and deliver reliable communications.
-      </p>
+      <h1 className="text-2xl font-medium text-gray-900 mb-2">{t("title")}</h1>
+      <p className="text-gray-600 mb-6 max-w-2xl">{t("subtitle")}</p>
 
       <div className="flex items-start gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg mb-6">
         <Hand className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-        <p className="text-sm text-amber-800">
-          You need to upgrade to a paid plan before you can register your
-          numbers.
-        </p>
+        <p className="text-sm text-amber-800">{t("upgradeNote")}</p>
       </div>
 
-      <TrustCard
-        title="Local numbers registration"
-        description="Register your local numbers to send text messages to US numbers"
-      >
+      <TrustCard title={t("localNumbersTitle")} description={t("localNumbersDesc")}>
         <div className="flex flex-wrap items-center gap-3">
-          <a
-            href="#messaging-10dlc"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm font-medium border border-gray-300"
-          >
-            Register now
+          <a href="#messaging-10dlc" className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm font-medium border border-gray-300">
+            {t("registerNow")}
           </a>
-          <Link
-            href="https://support.net2phone.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 text-sm font-medium text-gray-700"
-          >
-            Learn more
+          <Link href="https://support.net2phone.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 text-sm font-medium text-gray-700">
+            {t("learnMore")}
             <ExternalLink className="w-4 h-4" />
           </Link>
         </div>
@@ -78,46 +62,26 @@ export default function TrustCenterPage() {
         </div>
       </TrustCard>
 
-      <TrustCard
-        title="Clear Scam Likely labeling"
-        description="If your phone numbers are flagged due to prior misuse, use the Free Caller Registry to update their ownership details"
-      >
-        <a
-          href="https://freecallerregistry.com/fcr/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium"
-        >
-          Register now
+      <TrustCard title={t("scamTitle")} description={t("scamDesc")}>
+        <a href="https://freecallerregistry.com/fcr/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium">
+          {t("registerNow")}
           <ExternalLink className="w-4 h-4" />
         </a>
       </TrustCard>
 
-      <TrustCard
-        id="messaging-10dlc"
-        title="MESSAGING REGISTRATION CENTER"
-        description="Here's where you can manage your 10DLC Brand, Campaign, and phone number registrations."
-      >
+      <TrustCard id="messaging-10dlc" title={t("messagingTitle")} description={t("messagingDesc")}>
         <TenDlcSection />
       </TrustCard>
 
-      <TrustCard
-        id="sso"
-        title="SINGLE SIGN ON"
-        description="Allow team members to sign into net2phone using their corporate credentials. Enable single sign on for your organization by adding your identity provider below."
-      >
+      <TrustCard id="sso" title={t("ssoTitle")} description={t("ssoDesc")}>
         <SsoSection />
       </TrustCard>
 
-      <TrustCard
-        id="two-factor"
-        title="Two-Factor Authentication"
-        description="Require 2FA for all users on your account"
-      >
+      <TrustCard id="two-factor" title={t("twoFaTitle")} description={t("twoFaDesc")}>
         <TwoFactorSection />
       </TrustCard>
 
-      <TrustCard title="Security" description="SAML SSO and 2FA configuration">
+      <TrustCard title={t("securityTitle")} description={t("securityDesc")}>
         <SecuritySection />
       </TrustCard>
     </div>

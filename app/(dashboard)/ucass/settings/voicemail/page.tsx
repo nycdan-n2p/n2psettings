@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApp } from "@/contexts/AppContext";
@@ -18,6 +19,7 @@ interface VoicemailSettings {
 }
 
 export default function VoicemailSettingsPage() {
+  const t = useTranslations("voicemailSettingsPage");
   const { bootstrap } = useApp();
   const accountId = bootstrap?.account?.accountId ?? 0;
   const queryClient = useQueryClient();
@@ -74,17 +76,17 @@ export default function VoicemailSettingsPage() {
       </p>
       {isLoading ? (
         <div className="py-12 flex justify-center">
-          <Loader variant="inline" label="Loading settings..." />
+          <Loader variant="inline" label={t("loading")} />
         </div>
       ) : (
         <CollapsibleSection
-          title="Email Notifications"
-          subtitle="Control how voicemail notifications are sent"
+          title={t("sectionTitle")}
+          subtitle={t("sectionSubtitle")}
           defaultExpanded
         >
           <SettingsRow
-            label="Email notify"
-            description="Send email when new voicemail arrives"
+            label={t("labelEmailNotify")}
+            description={t("descEmailNotify")}
           >
             <Toggle
               checked={settings?.emailNotify ?? false}
@@ -93,8 +95,8 @@ export default function VoicemailSettingsPage() {
             />
           </SettingsRow>
           <SettingsRow
-            label="Include voicemail in email"
-            description="Attach voicemail audio to notification"
+            label={t("labelIncludeVm")}
+            description={t("descIncludeVm")}
           >
             <Toggle
               checked={settings?.emailIncludeVoicemail ?? false}
@@ -103,8 +105,8 @@ export default function VoicemailSettingsPage() {
             />
           </SettingsRow>
           <SettingsRow
-            label="Transcribe voicemail"
-            description="Include transcription in email"
+            label={t("labelTranscribe")}
+            description={t("descTranscribe")}
           >
             <Toggle
               checked={settings?.emailTranscribe ?? false}
@@ -113,8 +115,8 @@ export default function VoicemailSettingsPage() {
             />
           </SettingsRow>
           <SettingsRow
-            label="Include caller details"
-            description="Show caller information in email"
+            label={t("labelCallerDetails")}
+            description={t("descCallerDetails")}
           >
             <Toggle
               checked={settings?.emailIncludeCallerDetails ?? false}

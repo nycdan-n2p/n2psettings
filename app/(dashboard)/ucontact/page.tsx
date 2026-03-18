@@ -1,16 +1,18 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { ProductHeader } from "@/components/layout/ProductHeader";
 
 export default function UcontactProductPage() {
+  const t = useTranslations("productPages");
   return (
     <div>
       <ProductHeader
         productId="ucontact"
-        status="Coming soon"
+        status={t("statusComingSoon")}
       />
       <p className="text-gray-600 mb-6">
-        Contact center and workforce management settings.
+        {t("ucontactSubtitle")}
       </p>
 
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
@@ -19,10 +21,10 @@ export default function UcontactProductPage() {
         </div>
         <div className="px-6 py-6">
           <p className="text-sm text-gray-600 mb-4">
-            Contact center settings will be available here. Configure queues, agents, and workforce management.
+            {t("ucontactDesc")}
           </p>
           <p className="text-sm text-gray-500">
-            Coming soon.
+            {t("comingSoon")}
           </p>
         </div>
       </div>

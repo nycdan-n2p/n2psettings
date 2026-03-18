@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -18,6 +19,7 @@ import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import { Trash2 } from "lucide-react";
 
 export default function CallBlockingPage() {
+  const t = useTranslations("callBlockingPage");
   const [tab, setTab] = useState<"inbound" | "outbound">("inbound");
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<BlockedNumber | null>(null);
@@ -74,7 +76,7 @@ export default function CallBlockingPage() {
   };
 
   const columns: ColumnDef<BlockedNumber>[] = [
-    { accessorKey: "number", header: "Number" },
+    { accessorKey: "number", header: t("colNumber") },
     {
       id: "actions",
       header: "",
@@ -134,7 +136,7 @@ export default function CallBlockingPage() {
         <DataTable
           columns={columns}
           data={data}
-          searchPlaceholder="Search numbers..."
+          searchPlaceholder={t("search")}
         />
       )}
 
@@ -145,7 +147,7 @@ export default function CallBlockingPage() {
       >
         <form onSubmit={handleSubmit}>
           <TextInput
-            label="Phone number"
+            label={t("labelPhoneNumber")}
             value={formNumber}
             onChange={setFormNumber}
             placeholder="e.g. +15551234567"
@@ -177,7 +179,7 @@ export default function CallBlockingPage() {
         onConfirm={() =>
           deleteTarget?.number && deleteMutation.mutate(deleteTarget.number)
         }
-        title="Remove number"
+        title={t("removeTitle")}
         message={`Remove ${deleteTarget?.number} from ${tab} block list?`}
       />
     </div>

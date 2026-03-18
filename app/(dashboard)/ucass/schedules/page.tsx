@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import Image from "next/image";
 import { useState, useMemo, useRef, useEffect } from "react";
@@ -995,6 +996,7 @@ function HolidayModal({
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function SchedulesPage() {
+  const t = useTranslations("schedulesPage");
   const { bootstrap } = useApp();
   const { formatDate } = useLocaleFormat();
   const accountId = bootstrap?.account?.accountId ?? 0;
@@ -1054,7 +1056,7 @@ export default function SchedulesPage() {
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-medium text-gray-900">Schedules</h1>
+          <h1 className="text-2xl font-medium text-gray-900">{t("title")}</h1>
           <p className="text-sm text-gray-500 mt-1">
             Define time-based rules for call routing across your account.
           </p>

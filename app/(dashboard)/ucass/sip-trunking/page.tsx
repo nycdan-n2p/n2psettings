@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -44,10 +45,11 @@ function EmptyRow({ message }: { message: string }) {
 }
 
 function LimitsCard({ limits }: { limits: Record<string, unknown> }) {
+  const t = useTranslations("sipTrunkingPage");
   const pairs = Object.entries(limits).filter(([, v]) => typeof v !== "object");
   if (pairs.length === 0) return null;
   return (
-    <SectionCard title="Channel Limits">
+    <SectionCard title={t("channelLimits")}>
       <div className="px-6 py-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
         {pairs.map(([key, val]) => (
           <div key={key} className="bg-gray-50 rounded-lg p-3">
@@ -65,6 +67,7 @@ function LimitsCard({ limits }: { limits: Record<string, unknown> }) {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function SIPTrunkingPage() {
+  const t = useTranslations("sipTrunkingPage");
   // Step 1: discover SIP trunk accounts (no account ID needed)
   const { data: sipAccounts = [], isLoading: accountsLoading } = useQuery({
     queryKey: qk.sipAccounts.all(),
@@ -108,7 +111,7 @@ export default function SIPTrunkingPage() {
     return (
       <div>
         <h1 className="text-2xl font-medium text-gray-900 mb-2">SIP Trunking</h1>
-        <p className="text-gray-600 mb-8">Manage SIP trunks, service addresses, and phone numbers.</p>
+        <p className="text-gray-600 mb-8">{t("subtitle")}</p>
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm px-6 py-12 text-center">
           <p className="text-gray-500 text-sm">
             No SIP trunk account found. Contact your administrator to enable SIP trunking.
@@ -159,9 +162,9 @@ export default function SIPTrunkingPage() {
           )}
 
           {/* Trunks */}
-          <SectionCard title="Trunks" count={trunks.length}>
+          <SectionCard title={t("trunks")} count={trunks.length}>
             {trunks.length === 0 ? (
-              <EmptyRow message="No SIP trunks configured." />
+              <EmptyRow message={t("noTrunks")} />
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 text-sm">
@@ -195,9 +198,9 @@ export default function SIPTrunkingPage() {
           </SectionCard>
 
           {/* Service Addresses */}
-          <SectionCard title="Service Addresses (E911)" count={serviceAddresses.length}>
+          <SectionCard title={t("serviceAddresses")} count={serviceAddresses.length}>
             {serviceAddresses.length === 0 ? (
-              <EmptyRow message="No service addresses configured." />
+              <EmptyRow message={t("noAddresses")} />
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 text-sm">
@@ -221,9 +224,9 @@ export default function SIPTrunkingPage() {
           </SectionCard>
 
           {/* Phone Numbers */}
-          <SectionCard title="Phone Numbers" count={phoneNumbers.length}>
+          <SectionCard title={t("phoneNumbers")} count={phoneNumbers.length}>
             {phoneNumbers.length === 0 ? (
-              <EmptyRow message="No phone numbers assigned." />
+              <EmptyRow message={t("noPhoneNumbers")} />
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 text-sm">

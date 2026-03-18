@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -17,6 +18,7 @@ function getNumbersFromOnboard(o: PortingOnboard): string[] {
 }
 
 export default function NumberPortingPage() {
+  const t = useTranslations("numberPortingPage");
   const { bootstrap } = useApp();
   const accountId = bootstrap?.account?.accountId ?? 0;
   const [wizardOpen, setWizardOpen] = useState(false);
@@ -31,13 +33,13 @@ export default function NumberPortingPage() {
     { accessorKey: "id", header: "ID" },
     {
       id: "numbers",
-      header: "Numbers",
+      header: t("colNumbers"),
       cell: ({ row }) => {
         const nums = getNumbersFromOnboard(row.original);
         return nums.length > 0 ? nums.join(", ") : "—";
       },
     },
-    { accessorKey: "status", header: "Status" },
+    { accessorKey: "status", header: t("colStatus") },
     {
       id: "targetDate",
       header: "Target Port Date",
@@ -66,13 +68,13 @@ export default function NumberPortingPage() {
       </div>
       {isLoading ? (
         <div className="py-8 flex justify-center">
-          <Loader variant="inline" label="Loading..." />
+          <Loader variant="inline" label={t("loading")} />
         </div>
       ) : onboardings.length > 0 ? (
         <DataTable
           columns={columns}
           data={onboardings}
-          searchPlaceholder="Search requests..."
+          searchPlaceholder={t("search")}
         />
       ) : (
         <div className="border border-[#dadce0] rounded-lg bg-white p-6">

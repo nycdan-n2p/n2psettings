@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApp } from "@/contexts/AppContext";
@@ -14,6 +15,7 @@ interface CompanyDirectory {
 }
 
 export default function CompanyDirectoryPage() {
+  const t = useTranslations("companyDirectoryPage");
   const { bootstrap } = useApp();
   const accountId = bootstrap?.account?.accountId ?? 0;
   const queryClient = useQueryClient();
@@ -71,13 +73,13 @@ export default function CompanyDirectoryPage() {
         <div className="py-8 text-gray-500">Loading...</div>
       ) : (
         <CollapsibleSection
-          title="Directory Settings"
-          subtitle="Company directory configuration"
+          title={t("sectionTitle")}
+          subtitle={t("sectionSubtitle")}
           defaultExpanded
         >
           <SettingsRow
-            label="Enable company directory"
-            description="Allow callers to reach the company directory menu"
+            label={t("labelEnable")}
+            description={t("descEnable")}
           >
             <Toggle
               checked={settings?.enabled ?? false}

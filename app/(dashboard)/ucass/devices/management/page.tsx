@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -62,6 +63,7 @@ interface TemplateRowProps {
   onReboot: (t: DeviceTemplate) => void;
 }
 function TemplateRow({ template, onView, onClone, onEdit, onDelete, onReboot }: TemplateRowProps) {
+  const t = useTranslations("deviceManagementPage");
   const [hovered, setHovered] = useState(false);
   const cat = templateCategory(template);
   const isDefault = cat === "default";
@@ -115,7 +117,7 @@ function TemplateRow({ template, onView, onClone, onEdit, onDelete, onReboot }: 
       <div className="w-20 shrink-0 flex justify-center">
         <button
           onClick={() => onReboot(template)}
-          title="Reboot all devices using this template"
+          title={t("rebootAllTooltip")}
           className={`p-1.5 rounded-md transition-all ${
             hovered
               ? "text-[#5f6368] hover:bg-[#e8eaed] hover:text-gray-900"
@@ -130,7 +132,7 @@ function TemplateRow({ template, onView, onClone, onEdit, onDelete, onReboot }: 
       <div className="w-32 shrink-0 flex items-center justify-end gap-1">
         <button
           onClick={() => onView(template)}
-          title="View template"
+          title={t("viewTooltip")}
           className={`p-1.5 rounded-md transition-all ${
             hovered
               ? "text-[#1a73e8] hover:bg-[#e8f0fe]"
@@ -143,7 +145,7 @@ function TemplateRow({ template, onView, onClone, onEdit, onDelete, onReboot }: 
           <>
             <button
               onClick={() => onClone(template)}
-              title="Clone template"
+              title={t("cloneTooltip")}
               className={`p-1.5 rounded-md transition-all ${
                 hovered
                   ? "text-[#5f6368] hover:bg-[#e8eaed] hover:text-gray-900"
@@ -154,7 +156,7 @@ function TemplateRow({ template, onView, onClone, onEdit, onDelete, onReboot }: 
             </button>
             <button
               onClick={() => onEdit(template)}
-              title="Edit template"
+              title={t("editTooltip")}
               className={`p-1.5 rounded-md transition-all ${
                 hovered
                   ? "text-[#5f6368] hover:bg-[#e8eaed] hover:text-gray-900"
@@ -165,7 +167,7 @@ function TemplateRow({ template, onView, onClone, onEdit, onDelete, onReboot }: 
             </button>
             <button
               onClick={() => onDelete(template)}
-              title="Delete template"
+              title={t("deleteTooltip")}
               className={`p-1.5 rounded-md transition-all ${
                 hovered
                   ? "text-red-400 hover:bg-red-50 hover:text-red-600"
@@ -183,19 +185,21 @@ function TemplateRow({ template, onView, onClone, onEdit, onDelete, onReboot }: 
 
 // ── Table Header ──────────────────────────────────────────────────────────────
 function TableHeader() {
+  const t = useTranslations("deviceManagementPage");
   return (
     <div className="flex items-center gap-4 px-4 py-2 bg-[#f8f9fa] border-b border-[#dadce0] text-xs font-medium text-gray-500 uppercase tracking-wider rounded-t-lg">
-      <div className="flex-1">Template Name</div>
-      <div className="w-40 shrink-0">Device Type</div>
-      <div className="w-28 shrink-0 text-center">Assigned Devices</div>
-      <div className="w-20 shrink-0 text-center">Reboot</div>
-      <div className="w-32 shrink-0 text-right">Actions</div>
+      <div className="flex-1">{t("colTemplateName")}</div>
+      <div className="w-40 shrink-0">{t("colDeviceType")}</div>
+      <div className="w-28 shrink-0 text-center">{t("colAssignedDevices")}</div>
+      <div className="w-20 shrink-0 text-center">{t("colReboot")}</div>
+      <div className="w-32 shrink-0 text-right">{t("colActions")}</div>
     </div>
   );
 }
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function DeviceManagementPage() {
+  const t = useTranslations("deviceManagementPage");
   const { bootstrap } = useApp();
   const accountId = bootstrap?.account?.accountId ?? 0;
   const queryClient = useQueryClient();
@@ -289,7 +293,7 @@ export default function DeviceManagementPage() {
       {/* ── Page header ──────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-medium text-gray-900">Device Management</h1>
+          <h1 className="text-2xl font-medium text-gray-900">{t("title")}</h1>
           <p className="text-sm text-gray-500 mt-1">
             Manage provisioning templates for desk phones and other devices.
           </p>
@@ -307,7 +311,7 @@ export default function DeviceManagementPage() {
       <div className="flex gap-1 border-b border-[#dadce0] mb-4">
         {(["company", "personal"] as const).map((tab) => {
           const count = tab === "company" ? companyTemplates.length : personalTemplates.length;
-          const label = tab === "company" ? "Company Templates" : "Personal Templates";
+          const label = tab === "company" ? t("tabCompany") : t("tabPersonal");
           return (
             <button
               key={tab}
@@ -333,7 +337,7 @@ export default function DeviceManagementPage() {
 
       {isLoading ? (
         <div className="py-12 flex justify-center">
-          <Loader variant="inline" label="Loading templates…" />
+          <Loader variant="inline" label={t("loading")} />
         </div>
       ) : (
         <>
@@ -343,7 +347,7 @@ export default function DeviceManagementPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
               <input
                 type="text"
-                placeholder="Search templates…"
+                placeholder={t("search")}
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(0); }}
                 className="w-full pl-9 pr-3 py-2 text-sm border border-[#dadce0] rounded-full focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:border-transparent bg-white"
@@ -361,7 +365,7 @@ export default function DeviceManagementPage() {
             <div className="py-16 text-center text-gray-400">
               <LayoutGrid className="w-10 h-10 mx-auto mb-3 opacity-40" />
               <p className="text-sm font-medium text-gray-500">
-                {search ? "No templates match your search" : "No templates found"}
+                {search ? t("noTemplatesSearch") : t("noTemplates")}
               </p>
               {!search && (
                 <p className="text-xs text-gray-400 mt-1">
@@ -456,7 +460,7 @@ export default function DeviceManagementPage() {
               <div>
                 <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Type</p>
                 <p className="text-gray-900">
-                  {viewTemplate.isDefault ? "System Default" : viewTemplate.isCompany ? "Company" : "Personal"}
+                  {viewTemplate.isDefault ? t("systemDefault") : viewTemplate.isCompany ? "Company" : "Personal"}
                 </p>
               </div>
             </div>
@@ -511,7 +515,7 @@ export default function DeviceManagementPage() {
       {/* ── Add Template Modal ────────────────────────────────────────────── */}
       <Modal
         isOpen={showAddModal}
-        title="Add Template"
+        title={t("addTemplate")}
         onClose={() => { setShowAddModal(false); setNewTemplateName(""); }}
       >
         <div className="space-y-4">
@@ -533,8 +537,8 @@ export default function DeviceManagementPage() {
               Template Type
             </label>
             <select className="w-full px-3 py-2 text-sm border border-[#dadce0] rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a73e8] bg-white">
-              <option value="personal">Personal</option>
-              <option value="company">Company</option>
+              <option value="personal">{t("optPersonal")}</option>
+              <option value="company">{t("optCompany")}</option>
             </select>
           </div>
           <div className="flex justify-end gap-3 pt-2">
@@ -563,9 +567,9 @@ export default function DeviceManagementPage() {
       {/* ── Clone Confirm Dialog ──────────────────────────────────────────── */}
       <ConfirmDialog
         isOpen={!!cloneTarget}
-        title="Clone Template"
+        title={t("cloneTemplate")}
         message={cloneTarget ? `Clone "${cloneTarget.name}"? A copy will be created that you can customize.` : ""}
-        confirmLabel="Clone"
+        confirmLabel={t("clone")}
         variant="default"
         onConfirm={handleCloneConfirm}
         onClose={() => setCloneTarget(null)}
@@ -574,9 +578,9 @@ export default function DeviceManagementPage() {
       {/* ── Reboot Confirm Dialog ─────────────────────────────────────────── */}
       <ConfirmDialog
         isOpen={!!rebootTarget}
-        title="Reboot All Devices"
+        title={t("rebootAllTitle")}
         message={rebootTarget ? `Reboot all devices using the "${rebootTarget.name}" template? This will temporarily interrupt service on ${rebootTarget.deviceCount ?? 0} device${rebootTarget.deviceCount !== 1 ? "s" : ""}.` : ""}
-        confirmLabel="Reboot All"
+        confirmLabel={t("rebootAllConfirm")}
         variant="danger"
         onConfirm={handleRebootConfirm}
         onClose={() => setRebootTarget(null)}
@@ -585,7 +589,7 @@ export default function DeviceManagementPage() {
       {/* ── Delete Confirm Dialog ─────────────────────────────────────────── */}
       <ConfirmDialog
         isOpen={!!deleteTarget}
-        title="Delete Template"
+        title={t("deleteTemplate")}
         message={deleteTarget ? `Are you sure you want to delete "${deleteTarget.name}"? This action cannot be undone.` : ""}
         confirmLabel="Delete"
         variant="danger"

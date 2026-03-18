@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -55,6 +56,7 @@ async function deleteApiKey(keyId: number): Promise<void> {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function ApiSetupPage() {
+  const t = useTranslations("apiSetupPage");
   const { bootstrap } = useApp();
   const accountId = bootstrap?.account?.accountId ?? 0;
   const queryClient = useQueryClient();
@@ -138,7 +140,7 @@ export default function ApiSetupPage() {
               className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white rounded-md text-xs font-medium hover:bg-green-700"
             >
               <Copy className="w-3.5 h-3.5" />
-              {copiedId === "new" ? "Copied!" : "Copy"}
+              {copiedId === "new" ? t("copied") : t("copy")}
             </button>
           </div>
           <button
@@ -200,7 +202,7 @@ export default function ApiSetupPage() {
         {createMutation.isError && (
           <div className="flex items-center gap-2 mb-3 text-sm text-red-600">
             <AlertTriangle className="w-4 h-4 shrink-0" />
-            {(createMutation.error as Error)?.message ?? "Failed to create key"}
+            {(createMutation.error as Error)?.message ?? t("createError")}
           </div>
         )}
 
@@ -210,7 +212,7 @@ export default function ApiSetupPage() {
           className="flex items-center gap-2 px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium disabled:opacity-50"
         >
           {createMutation.isPending ? <Loader variant="button" /> : <Key className="w-4 h-4" />}
-          {createMutation.isPending ? "Creating…" : "Create API Key"}
+          {createMutation.isPending ? t("creating") : t("createButton")}
         </button>
       </div>
 
@@ -222,12 +224,12 @@ export default function ApiSetupPage() {
 
       {keysLoading ? (
         <div className="py-8 flex justify-center">
-          <Loader variant="inline" label="Loading API keys…" />
+          <Loader variant="inline" label={t("loading")} />
         </div>
       ) : keysError ? (
         <div className="flex items-center gap-2 text-sm text-red-600 py-4">
           <AlertTriangle className="w-4 h-4 shrink-0" />
-          {(keysError as Error)?.message ?? "Failed to load API keys"}
+          {(keysError as Error)?.message ?? t("loadError")}
         </div>
       ) : keys.length === 0 ? (
         <p className="text-sm text-gray-400 py-4">No API keys yet. Create one above.</p>
@@ -293,7 +295,7 @@ export default function ApiSetupPage() {
                 disabled={deleteMutation.isPending}
                 className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50"
               >
-                {deleteMutation.isPending ? "Revoking…" : "Revoke Key"}
+                {deleteMutation.isPending ? t("revoking") : t("revokeButton")}
               </button>
             </div>
           </div>

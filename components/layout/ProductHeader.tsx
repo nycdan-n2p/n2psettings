@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { getProductById, type ProductId } from "@/lib/config/products";
 
 interface ProductHeaderProps {
@@ -15,6 +16,7 @@ export function ProductHeader({
   status,
   children,
 }: ProductHeaderProps) {
+  const tc = useTranslations("common");
   const product = getProductById(productId);
   const Icon = product?.icon;
   const displayTitle = title ?? product?.name ?? "Product";
@@ -31,7 +33,7 @@ export function ProductHeader({
           <h2 className="text-lg font-medium text-gray-900">{displayTitle}</h2>
           {status && (
             <p className="text-sm text-gray-600 mt-0.5">
-              Status: {status}
+              {tc("status")}: {status}
             </p>
           )}
           {children}
