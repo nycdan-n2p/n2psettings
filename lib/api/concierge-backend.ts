@@ -263,7 +263,7 @@ export async function applyConfiguration(
           const userId = Number(created.userId ?? created.id ?? 0);
           if (userId) {
             userIds.push(userId);
-            emailToUserId.set(user.email, userId);
+            if (user.email) emailToUserId.set(user.email, userId);
             push({ label: `Created user: ${user.firstName} ${user.lastName} (ext ${nextExt - 1})`, status: "ok" });
             allUsersFailed = false;
           } else {
@@ -301,7 +301,7 @@ export async function applyConfiguration(
     // ── 3. Assign users to departments ──────────────────────────────────────
     for (const user of payload.users) {
       if (!user.department) continue;
-      const userId = emailToUserId.get(user.email);
+      const userId = user.email ? emailToUserId.get(user.email) : undefined;
       const deptId = deptNameToId.get(user.department);
       if (!userId || !deptId) {
         push({ label: `Assign ${user.firstName} \u2192 ${user.department}`, status: "warn", detail: "Missing userId or deptId" });

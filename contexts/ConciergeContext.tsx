@@ -16,6 +16,7 @@ import { getAccessToken } from "@/lib/auth";
 export type ConciergeStage =
   | "welcome_scrape"
   | "verification_holidays"
+  | "cdr_analysis"
   | "porting"
   | "user_ingestion"
   | "architecture_hardware"
@@ -26,6 +27,7 @@ export type ConciergeStage =
 export const STAGE_ORDER: ConciergeStage[] = [
   "welcome_scrape",
   "verification_holidays",
+  "cdr_analysis",
   "porting",
   "user_ingestion",
   "architecture_hardware",
@@ -37,6 +39,7 @@ export const STAGE_ORDER: ConciergeStage[] = [
 export const STAGE_LABELS: Record<ConciergeStage, string> = {
   welcome_scrape:         "Welcome",
   verification_holidays:  "Verify & Holidays",
+  cdr_analysis:           "CDR Analysis",
   porting:                "Porting",
   user_ingestion:         "Users",
   architecture_hardware:  "Architecture",
@@ -50,10 +53,29 @@ export const STAGE_LABELS: Record<ConciergeStage, string> = {
 export interface OnboardingUser {
   firstName: string;
   lastName: string;
-  email: string;
+  email?: string;
+  extension?: string;
   department?: string;
   macAddress?: string;
   hardphoneModel?: string;
+}
+
+export interface CdrInsights {
+  analyzed: boolean;
+  skipped: boolean;
+  agents: { name: string; extension: string }[];
+  inboundNumbers: string[];
+  queues: string[];
+  insights: string[];
+  recommendations: {
+    routingType: "ring_groups" | "call_queues";
+    strategy: QueueStrategy;
+    afterHoursAction: "voicemail" | "greeting";
+    welcomeMenuEnabled: boolean;
+    suggestedGreeting: string;
+    menuOptions: MenuOption[];
+  };
+  approvedRecommendation: boolean;
 }
 
 export interface PortingAddress {
@@ -138,6 +160,7 @@ export interface OnboardingData {
   welcomeMenu: WelcomeMenuConfig;
   routingConfig: RoutingConfig;
   afterHours: AfterHoursConfig;
+  cdrAnalysis: CdrInsights;
 }
 
 const EMPTY_PORTING_CONTACT: PortingAddress = {
@@ -178,6 +201,23 @@ export const EMPTY_CONFIG: OnboardingData = {
     maxCapacity: 10,
   },
   afterHours: { action: "voicemail" },
+  cdrAnalysis: {
+    analyzed: false,
+    skipped: false,
+    agents: [],
+    inboundNumbers: [],
+    queues: [],
+    insights: [],
+    recommendations: {
+      routingType: "ring_groups",
+      strategy: "ring_all",
+      afterHoursAction: "voicemail",
+      welcomeMenuEnabled: false,
+      suggestedGreeting: "",
+      menuOptions: [],
+    },
+    approvedRecommendation: false,
+  },
 };
 
 // ── State & Actions ──────────────────────────────────────────────────────────

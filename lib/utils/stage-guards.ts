@@ -25,6 +25,10 @@ export function validateStageComplete(
       if (!config.scraped.timezone) missing.push("timezone");
       break;
 
+    case "cdr_analysis":
+      // Optional stage — skip or upload are both valid; always completable
+      break;
+
     case "porting":
       break;
 
