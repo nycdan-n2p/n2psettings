@@ -1,8 +1,8 @@
 "use client";
 
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import { locales, defaultLocale, localeNames, type Locale } from "@/i18n/config";
+import { useRouter } from "next/navigation";
+import { defaultLocale, localeNames, locales, type Locale } from "@/i18n/config";
 
 interface LocaleContextValue {
   locale: Locale;
@@ -27,31 +27,17 @@ export function LocaleProvider({
 }) {
   const [locale, setLocaleState] = useState<Locale>(initialLocale);
   const router = useRouter();
-  const pathname = usePathname();
 
   const setLocale = useCallback(
     (newLocale: Locale) => {
       setLocaleState(newLocale);
-      // Persist to cookie so next-intl middleware picks it up on the next request.
+      // Persist to cookie so next-intl picks it up on the next server render.
+      // With localePrefix: "never", URLs never change — only the cookie changes.
       document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
-
-      // Navigate to the same page under the new locale prefix.
-      // For "en" (default locale), next-intl uses no prefix so we strip it.
-      const segments = pathname.split("/").filter(Boolean);
-      const currentLocalePrefix = locales.find((l) => segments[0] === l);
-      const pathWithoutLocale = currentLocalePrefix
-        ? "/" + segments.slice(1).join("/")
-        : pathname;
-
-      const newPath =
-        newLocale === defaultLocale
-          ? pathWithoutLocale || "/"
-          : `/${newLocale}${pathWithoutLocale}`;
-
-      router.push(newPath);
+      // Refresh the current page so server components re-render in the new locale.
       router.refresh();
     },
-    [pathname, router]
+    [router]
   );
 
   return (

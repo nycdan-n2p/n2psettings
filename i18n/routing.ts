@@ -4,8 +4,10 @@ import { locales, defaultLocale } from "./config";
 export const routing = defineRouting({
   locales,
   defaultLocale,
-  // Prefix strategy: "as-needed" means the default locale has no prefix (/),
-  // while other locales do (/es, /fr-CA, /pt-BR).
-  // This keeps the existing /ucass/... URLs working for English users.
-  localePrefix: "as-needed",
+  // "never" means NO locale prefix is ever added to URLs.
+  // Locale is determined exclusively by the NEXT_LOCALE cookie (set by LocaleContext)
+  // or the Accept-Language header — never by redirecting to /es/... paths.
+  // This prevents 404s that occur when the middleware redirects to a locale-prefixed
+  // path that has no corresponding page in the app directory.
+  localePrefix: "never",
 });
