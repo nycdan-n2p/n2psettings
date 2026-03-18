@@ -40,7 +40,7 @@ export function TopBar() {
   const unreadCount = bootstrap?.unreadVoicemailCount ?? 0;
 
   return (
-    <header className="h-14 flex items-center justify-between px-4 bg-[#1a73e8] text-white shrink-0">
+    <header className="h-14 flex items-center justify-between px-4 text-white shrink-0" style={{ background: "linear-gradient(to right, #0d1b4b, #5b21b6, #c026d3, #e91e8c)" }}>
       <div className="flex items-center gap-6">
         <Link href="/products" prefetch={false} className="flex items-center gap-2 font-medium">
           <span className="text-lg font-semibold">net2phone</span>
@@ -137,7 +137,7 @@ export function TopBar() {
                 onClick={() => { openConcierge(); (document.activeElement as HTMLElement)?.blur(); }}
                 className="w-full flex items-center gap-2 text-sm text-gray-700 hover:bg-gray-50 -mx-2 px-2 py-1.5 rounded text-left"
               >
-                <Sparkles className="w-4 h-4 shrink-0 text-[#1a73e8]" />
+                <Sparkles className="w-4 h-4 shrink-0 text-[#5b21b6]" />
                 {te("setupWizard")}
               </button>
               <button
