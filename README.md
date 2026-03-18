@@ -1,23 +1,50 @@
 # net2phone Settings App
 
-A Google Admin–style settings console for net2phone UCaaS, built with Next.js 14. Manages team members, call routing, phone numbers, devices, 10DLC/SMS registration, 911 contacts, and more.
+A Google Admin–style settings console for net2phone UCaaS, built with Next.js 14. Manages team members, call routing, phone numbers, devices, SMS/10DLC registration, 911 contacts, and more — plus an AI-driven onboarding agent ("The Concierge") that guides new accounts through full system configuration.
+
+---
+
+## Table of Contents
+
+1. [Tech Stack](#tech-stack)
+2. [Features](#features)
+3. [The Concierge — AI Onboarding Agent](#the-concierge--ai-onboarding-agent)
+4. [API Routes](#api-routes)
+5. [Proxy Architecture](#proxy-architecture)
+6. [MCP Server](#mcp-server)
+7. [Local Development](#local-development)
+8. [Environment Variables](#environment-variables)
+9. [Deployment (Vercel)](#deployment-vercel)
+10. [Security](#security)
+11. [Localization Roadmap](#localization-roadmap)
+12. [Known Limitations](#known-limitations)
+
+---
 
 ## Tech Stack
 
-- **Framework:** Next.js 14 (App Router)
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS
-- **Data:** TanStack Query (React Query) & TanStack Table
-- **Icons:** Lucide React
-- **Charts:** Recharts
-- **HTTP:** Axios (with OAuth2 token refresh)
-- **AI:** Anthropic SDK (N2P Assistant), MCP (Model Context Protocol)
+| Layer | Library |
+|---|---|
+| Framework | Next.js 14 (App Router) |
+| Language | TypeScript |
+| Styling | Tailwind CSS |
+| Data fetching | TanStack Query (React Query) |
+| Tables | TanStack Table |
+| Icons | Lucide React |
+| Charts | Recharts |
+| HTTP client | Axios (OAuth2 token refresh) |
+| AI model | Anthropic Claude (`claude-sonnet-4-6`, `claude-haiku-4-5`) |
+| AI streaming | Server-Sent Events (SSE) |
+| AI context | Model Context Protocol (MCP) via `lib/mcp/server.ts` |
+| Markdown rendering | `react-markdown` + `remark-gfm` |
+
+---
 
 ## Features
 
 ### Overview
 - **Dashboard** — Account analytics, team/department counts, phone number summary, call stats
-- **Analytics** — Call history–derived analytics, user/department breakdowns
+- **Analytics** — Call history-derived analytics, user/department breakdowns
 
 ### Communications
 - **Calls** — Call history with CDR, playback, voicemail integration, AI call analysis
@@ -25,28 +52,27 @@ A Google Admin–style settings console for net2phone UCaaS, built with Next.js 
 - **Call History** — Full CDR history with filters and export
 
 ### Organization
-- **Company** — Company directory (feature-gated)
 - **Team Members** — CRUD, departments, extensions, devices
 - **Departments** — CRUD, call forwarding rules, features
+- **Company** — Company directory (feature-gated)
 
 ### Call Routing
 - **Virtual Assistant** — Welcome menus (auto-attendants), greetings, TTS, routing
-- **Ring Groups** — CRUD, members, overflow, schedules
+- **Ring Groups** — CRUD, members, overflow, tier rings, schedules
 - **Call Queues** — CRUD, agents, reports (agent activity, queue activity)
-- **Agent** — AI agent (placeholder)
 
 ### Resources
 - **Phone Numbers** — List, search, assignment
 - **Devices** — Devices, extensions, SIP registrations, templates, orders, reboot
 - **Device Management** — Device provisioning
-- **Schedules** — Time-based schedules
+- **Schedules** — Time-based schedules with national holiday auto-import (USA, Canada, CALA)
 - **Special Extensions** — Custom extensions
 - **Virtual Fax** — Fax numbers CRUD
 
 ### Integrations
 - **SIP Trunking** — Trunk accounts, trunks, limits, service addresses, phone numbers
 - **SIP Tie-Lines** — Tie-line configuration
-- **Webhooks/API** — Webhook configuration, event types
+- **Webhooks / API** — Webhook configuration, event types
 - **API Setup** — Auth API setup
 
 ### Settings
@@ -56,107 +82,261 @@ A Google Admin–style settings console for net2phone UCaaS, built with Next.js 
 - **911 Contacts** — Emergency notification numbers (Kari's Law)
 - **Licenses** — License management
 - **Trust Center** — 10DLC (Messaging Registration Center), SSO, 2FA, security
-- **Kari's Law** — Emergency call notification (feature-gated)
 - **Delegates** — Delegate management
 - **Number Porting** — Port requests, status, wizard
 - **Bulk Operations** — Bulk load status
 
-### Help & Assistant
-- **N2P Assistant** — AI assistant (profile dropdown)
-- **Help and support** — Links (profile dropdown)
+---
 
-## APIs Used
+## The Concierge — AI Onboarding Agent
 
-The app uses three API bases, proxied via Next.js routes:
+The Concierge is an AI-powered conversational onboarding agent that guides new accounts through the entire setup process. It uses Anthropic Claude via SSE streaming and calls the same MCP tools the settings UI uses — so every step results in real data written to the net2phone backend.
 
-| Base | URL | Proxy | Used for |
-|------|-----|-------|----------|
-| **V1** | `app.net2phone.com/api` | `/api/proxy` | Most resources: accounts, users, departments, ring groups, call queues, devices, schedules, voicemail, webhooks, etc. |
-| **V2** | `api.n2p.io/v2` | `/api/proxy-v2` | 10DLC campaign registry (brands, campaigns, verticals, opt-out) |
-| **N2P** | `api.n2p.io/v2` | `/api/proxy-n2p` | SIP trunking, SIP registrations |
-| **Auth** | `auth.net2phone.com/api` | `/api/proxy-auth` | Auth, 2FA, API setup |
+### Onboarding Stages
 
-### API → Page Mapping
+| # | Stage key | What happens |
+|---|---|---|
+| 1 | `welcome_scrape` | Collects admin name + website URL; Claude scrapes the website to extract company name, hours, timezone, phone numbers, and description |
+| 2 | `verification_holidays` | Admin reviews and corrects scraped data; optionally auto-loads national holidays |
+| 3 | `cdr_analysis` | *(Optional)* Admin uploads a CDR CSV; a dedicated Claude agent analyzes it to extract users, extensions, numbers, call patterns, and recommends ring group / call queue / after-hours configuration |
+| 4 | `porting` | Multi-step porting wizard: select numbers, enter current provider details, submit contact/billing address, receive LOA signing link |
+| 5 | `user_ingestion` | Add team members manually or upload a CSV; live email validation against the net2phone account prevents duplicate users |
+| 6 | `architecture_hardware` | Sequential sub-steps: define departments → assign users → choose phone type → configure hardphone details and MAC addresses |
+| 7 | `licensing` | Comprehensive call routing setup: welcome menu (greeting, TTS, menu options, extension dialing, barge, hold message) → ring group or call queue (strategy, tiers, rings, schedule) → after-hours configuration |
+| 8 | `final_blueprint` | Markdown summary of the full configuration; one-click "Confirm & Build" applies everything via MCP tools with a live step-by-step progress display |
 
-| Page | API Module | Endpoints |
-|------|------------|-----------|
-| **Dashboard** | `analytics`, `call-history`, `team-members`, `departments`, `phone-numbers` | Account analytics, call stats, counts |
-| **Analytics** | `analytics-from-history`, `call-history` | Call history, analytics |
-| **Calls** | `call-history`, `voicemails` | CDR, recordings, voicemail |
-| **Call History** | `call-history` | CDR list |
-| **Voicemail** | `voicemails` | Voicemail list, playback |
-| **Team Members** | `team-members`, `departments` | Users CRUD |
-| **Departments** | `departments`, `phone-numbers`, `ring-groups` | Departments CRUD, call forwarding |
-| **Virtual Assistant** | `virtual-assistant`, `onboarding` | Menus, greetings, TTS |
-| **Ring Groups** | `ring-groups` | Ring groups CRUD |
-| **Call Queues** | `call-queues`, `virtual-assistant` | Queues CRUD, reports |
-| **Phone Numbers** | `phone-numbers` | Account numbers |
-| **Devices** | `devices` | Devices, extensions, SIP reg, templates |
-| **Schedules** | `schedules` | Schedules CRUD |
-| **Special Extensions** | `special-extensions`, `onboarding` | Special extensions CRUD |
-| **Virtual Fax** | `virtual-fax` | Fax numbers CRUD |
-| **SIP Trunking** | `sip-trunking` | Trunks, limits, addresses (api.n2p.io) |
-| **SIP Tie-Lines** | `tie-lines` | Tie lines |
-| **Call Blocking** | `call-blocking` | Inbound/outbound block lists |
-| **Webhooks** | `webhooks` | Webhooks, event types |
-| **911 Contacts** | `karis-law` | `karisLawSettings` CRUD |
-| **Kari's Law** | `karis-law` | Same as 911 |
-| **Trust Center** | `10dlc` | Brands, campaigns, verticals, opt-out (api.n2p.io) |
-| **SSO** | — | Embedded iframe `auth.net2phone.com/saml/settings/{clientId}` |
-| **Delegates** | `delegates` | Delegates CRUD |
-| **Number Porting** | `porting` | Onboards, sign links |
-| **Bulk Operations** | `bulk-load` | Bulk load status |
-| **Music Options** | `music-options` | Music options CRUD |
-| **Voicemail Settings** | `api-client` | Direct API |
-| **Company Directory** | `api-client` | Direct API |
-| **API Setup** | `api-client` (auth) | Auth API |
+### Key Technical Details
 
-### Key API Endpoints (by module)
+- **AI loop:** `hooks/useConciergeAgent.ts` drives the Claude tool-use loop. The AI controls all stage transitions via an `advance_stage` tool — widgets never advance the stage directly.
+- **Streaming:** `app/api/concierge-agent/route.ts` uses the Anthropic streaming SDK and writes SSE events to the client so responses appear token-by-token.
+- **State persistence:** Onboarding state is saved to the server on every stage change (`app/api/onboarding-state/route.ts`) with optimistic locking. `localStorage` provides a fast in-memory fallback.
+- **Configuration application:** `lib/api/concierge-backend.ts` calls MCP tools to create users, departments, ring groups, call queues, schedules, welcome menus, and after-hours routing.
+- **CDR analysis:** `app/api/analyze-cdr/route.ts` sends the uploaded CSV to `claude-sonnet-4-6` and returns structured JSON (agents, numbers, queues, insights, recommendations) that pre-populates later stages.
+- **Stage guards:** `lib/utils/stage-guards.ts` prevents the AI from advancing a stage until all required fields are collected.
+- **Retry logic:** `lib/utils/retry.ts` wraps all MCP calls with exponential backoff.
+- **Conversation truncation:** `lib/utils/truncate-messages.ts` keeps the message history within Claude's context window.
+- **Analytics:** `lib/utils/analytics.ts` tracks flow events. Wire a real destination (PostHog, Segment, custom webhook) with one call to `setAnalyticsDestination(fn)`.
 
-- **karis-law:** `GET/POST/PATCH/DELETE /accounts/{id}/karisLawSettings`
-- **10dlc:** `GET /campaign-registry-brands`, `-campaigns`, `-verticals`, `-campaigns/-/opt-out-entries`; `POST/PATCH/DELETE` for brands
-- **sip-trunking:** `GET sip-trunk-accounts`, `sip-trunk-accounts/{id}/trunks`, `limits`, etc. (api.n2p.io)
-- **call-queues:** `GET/POST/PATCH/DELETE /call-queues` (v2); reports via `POST` to api.n2p.io
+### Widget Files
 
-## Setup
+Each onboarding stage has its own component under `components/concierge/widgets/`:
 
-1. Install dependencies:
-
-```bash
-npm install
+```
+components/concierge/
+├── ConciergeOverlay.tsx      # Chat UI shell, message bubbles, input
+├── StageWidgets.tsx          # Thin dispatcher (50 lines)
+├── widgets/
+│   ├── shared.tsx            # CardShell, FixItButton, ValidationErrors
+│   ├── WelcomeScrapeWidget.tsx
+│   ├── VerificationWidget.tsx
+│   ├── CdrWidget.tsx
+│   ├── PortingWidget.tsx
+│   ├── UserIngestionWidget.tsx
+│   ├── ArchitectureWidget.tsx
+│   ├── CallRoutingWidget.tsx
+│   └── FinalBlueprintWidget.tsx
+├── MessageBubble.tsx
+├── ProgressBar.tsx
+└── ErrorBoundary (via components/ui/ErrorBoundary.tsx)
 ```
 
-2. Run the dev server:
+---
 
-```bash
-npm run dev
+## API Routes
+
+| Route | Method(s) | Auth required | Description |
+|---|---|---|---|
+| `/api/concierge-agent` | POST | Yes | SSE-streaming Claude agent; drives the onboarding conversation |
+| `/api/analyze-cdr` | POST | Yes | CDR CSV → Claude analysis → structured JSON |
+| `/api/research-website` | POST | No | Scrapes a website using Claude and extracts business info |
+| `/api/n2p-tools` | POST | Yes | Executes any MCP tool against the net2phone backend |
+| `/api/onboarding-state` | GET / PUT / DELETE | Yes | Server-side persistence for onboarding state (with optimistic locking) |
+| `/api/porting` | GET / POST | Yes | Submit and track number porting requests |
+| `/api/validate-user-email` | GET | Yes | Real-time email availability check against the account's team members |
+| `/api/proxy/[...path]` | ALL | Forwarded | Proxies to `app.net2phone.com/api` |
+| `/api/proxy-v2/[...path]` | ALL | Forwarded | Proxies to `app.net2phone.com/api/v2` |
+| `/api/proxy-n2p/[...path]` | ALL | Forwarded | Proxies to `api.n2p.io/v2` |
+| `/api/proxy-auth/[...path]` | ALL | Forwarded | Proxies to `auth.net2phone.com/api` |
+
+---
+
+## Proxy Architecture
+
+The app proxies all net2phone API calls through Next.js server routes so credentials never leave the server and the browser only talks to the same origin.
+
+```
+Browser → /api/proxy/[...path]       → app.net2phone.com/api
+Browser → /api/proxy-v2/[...path]    → app.net2phone.com/api/v2
+Browser → /api/proxy-n2p/[...path]   → api.n2p.io/v2
+Browser → /api/proxy-auth/[...path]  → auth.net2phone.com/api
 ```
 
-3. Open [http://localhost:3000](http://localhost:3000).
+All proxy routes validate path segments before forwarding (blocks `../` traversal and unsafe characters).
 
-4. **Login:** Paste your OAuth2 refresh token on the login page. Obtain it from [app.net2phone.com](https://app.net2phone.com): DevTools → Application → Local Storage → `n2p_refresh_token`.
-
-**If you get `invalid_grant`:** The token may be expired or revoked. Log in again at app.net2phone.com, then copy a fresh `n2p_refresh_token` from Local Storage. Avoid extra spaces or line breaks when pasting.
-
-## Environment
-
-API URLs are loaded from `public/env.json`. Defaults point to production:
-
-| Variable | Default |
-|----------|---------|
-| `N2P_API_URL` | https://app.net2phone.com/ |
-| `N2P_API_V2_URL` | https://api.n2p.io/v2 |
-| `N2P_API_AUTH_URL` | https://auth.net2phone.com |
-| `N2P_API_PROFILE_SETTINGS` | https://profile.prod.n2p.io |
-| `N2P_HUDDLE_URL` | https://huddle.net2phone.com |
-| `N2P_WALLBOARD_URL` | https://wallboard.net2phone.com/ |
-| `N2P_AI_AGENT_URL` | https://agent.net2phone.com |
-| `N2P_COACH_URL` | https://coachai.net2phone.com |
+---
 
 ## MCP Server
 
-The `n2p-mcp` package exposes net2phone APIs as MCP tools for AI agents (e.g. Claude Desktop). See [n2p-mcp/README.md](n2p-mcp/README.md) for setup and available tools (62+ tools for team members, departments, ring groups, call queues, 10DLC, 911, SIP trunking, etc.).
+`lib/mcp/server.ts` exposes 60+ net2phone API operations as MCP tools. The `lib/n2p-tools/adapter.ts` maps Anthropic tool calls to the correct MCP tool + argument shape.
 
-## API Reference
+Available tool categories:
+- Team members — create, search, update, assign phone
+- Departments — create, list, assign members
+- Ring groups — create, update, add members, set schedule
+- Call queues — create, update, add agents
+- Schedules — create, add time blocks, load holidays
+- Virtual assistant — create/update, set menu options, TTS greeting
+- Phone numbers — list, assign
+- Users — get next extension
+- Devices — list, assign
+- Licenses — check eligibility
 
-See the n2p-settings-api-map for full endpoint documentation.
+The MCP server is also compatible with Claude Desktop. See `n2p-mcp/README.md` for setup.
+
+---
+
+## Local Development
+
+### Prerequisites
+
+- Node.js 18+
+- An active net2phone account with admin access
+- Anthropic API key (for the Concierge and CDR analysis)
+
+### Steps
+
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. Create environment file
+cp .env.example .env.local
+# Fill in the required values (see Environment Variables below)
+
+# 3. Start the dev server
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+**Login:** Paste your OAuth2 refresh token on the login page. Obtain it from [app.net2phone.com](https://app.net2phone.com): DevTools → Application → Local Storage → `n2p_refresh_token`.
+
+> If you get `invalid_grant`, the token may be expired. Log back in at app.net2phone.com and copy a fresh `n2p_refresh_token`.
+
+---
+
+## Environment Variables
+
+Create `.env.local` with the following:
+
+```bash
+# ── Required ─────────────────────────────────────────────────────────────────
+
+# Anthropic API key — used by the Concierge agent and CDR analyzer
+ANTHROPIC_API_KEY=sk-ant-...
+
+# ── net2phone API base URLs (defaults point to production) ────────────────────
+
+N2P_API_URL=https://app.net2phone.com/
+N2P_API_V2_URL=https://app.net2phone.com/api/v2
+N2P_API_AUTH_URL=https://auth.net2phone.com
+N2P_API_N2P_URL=https://api.n2p.io/v2
+
+# ── Optional ──────────────────────────────────────────────────────────────────
+
+# Linked product URLs shown in the top navigation
+N2P_API_PROFILE_SETTINGS=https://profile.prod.n2p.io
+N2P_HUDDLE_URL=https://huddle.net2phone.com
+N2P_WALLBOARD_URL=https://wallboard.net2phone.com/
+N2P_AI_AGENT_URL=https://agent.net2phone.com
+N2P_COACH_URL=https://coachai.net2phone.com
+```
+
+> **Production (Vercel):** Set these in the Vercel dashboard under **Project → Settings → Environment Variables**. After changing `ANTHROPIC_API_KEY`, redeploy for the change to take effect.
+
+---
+
+## Deployment (Vercel)
+
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy
+vercel --prod
+```
+
+The project is a standard Next.js 14 App Router app and deploys to Vercel with zero configuration.
+
+**Important note on onboarding state storage:** `app/api/onboarding-state/route.ts` currently writes to `os.tmpdir()`, which is ephemeral on Vercel's serverless platform. For production multi-user deployments, replace the file-based store with **Vercel KV** (Redis). The GET/PUT/DELETE handler interface is self-contained and is a simple swap.
+
+---
+
+## Security
+
+The following security controls are in place:
+
+### HTTP Headers (`next.config.mjs`)
+- `Content-Security-Policy` — restricts scripts, styles, connects, and frame-ancestors
+- `Strict-Transport-Security` — enforces HTTPS for 1 year including subdomains
+- `X-Frame-Options: SAMEORIGIN` — prevents clickjacking
+- `X-Content-Type-Options: nosniff` — blocks MIME sniffing
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy` — disables camera, microphone, geolocation, payment
+
+### Authentication
+- All AI-calling routes (`/api/concierge-agent`, `/api/analyze-cdr`, `/api/n2p-tools`, etc.) require a valid `Bearer` token
+- JWT claims are decoded server-side via `lib/server/jwt.ts` — no client-visible secrets
+
+### SSRF Protection
+- `lib/server/ssrf-guard.ts` — blocks private IP ranges, loopback, AWS/GCP metadata endpoints, and non-HTTP schemes before any server-side fetch of a user-supplied URL
+- Applied to `/api/research-website`
+
+### Proxy Path Validation
+- `lib/server/proxy-guard.ts` — rejects path traversal sequences (`../`) and unsafe characters in all 4 proxy routes
+
+### Rate Limiting
+- In-memory sliding-window rate limiter (`lib/server/rate-limit.ts`) applied per client IP:
+  - `concierge-agent` — 30 requests / minute
+  - `analyze-cdr` — 10 requests / minute
+  - `research-website` — 20 requests / minute
+- For multi-instance production deployments, replace the in-memory store with **Upstash Redis** (`@upstash/ratelimit`) — a drop-in swap
+
+### Input Validation
+- `lib/utils/validation.ts` — validates emails, phone numbers, MAC addresses, URLs, user objects, porting provider/address
+- `concierge-agent` route enforces a 200-message cap and 2 MB body size limit
+- `analyze-cdr` route enforces a 5 MB body size limit
+- CDR content is truncated to 40,000 characters before being sent to the AI
+
+### Concurrency
+- `onboarding-state` writes use an optimistic locking scheme (`clientVersion` timestamp comparison) and atomic file rename to prevent partial writes and stale overwrites
+
+---
+
+## Localization Roadmap
+
+The application currently serves English only. Support for **CALA Spanish**, **Brazilian Portuguese**, and **French Canadian** is planned in two phases:
+
+**Phase 1 — Static UI strings**
+- Adopt `next-intl` with locale routing (`/en`, `/es`, `/pt-BR`, `/fr-CA`)
+- Extract all hardcoded strings into `messages/{locale}.json` files
+- Locale detection: URL path → user account preference → browser `Accept-Language`
+
+**Phase 2 — AI-generated content**
+- Pass the user's locale to Claude via the system prompt (e.g. `"Respond in French Canadian"`)
+- Locale-aware phone number validation using `libphonenumber-js` (replaces the current regex)
+- Date/time formatting using `Intl.DateTimeFormat` per locale
+
+---
+
+## Known Limitations
+
+| Area | Limitation |
+|---|---|
+| Onboarding state | Stored in `os.tmpdir()` — ephemeral on Vercel; swap to Vercel KV for production |
+| Rate limiting | In-memory per-instance — does not share counts across Vercel function instances; swap to Upstash Redis |
+| Analytics | Events are collected locally and logged to console; wire `setAnalyticsDestination()` to PostHog or Segment |
+| Localization | English only; see roadmap above |
+| CDR file size | Truncated to 40,000 characters (~800 rows) before AI analysis |
+| Porting LOA | Sign URL is provided by the net2phone API; the signing flow is external |
+| Onboarding legacy route | `/api/onboarding-agent` is a non-streaming legacy route; `/api/concierge-agent` is the active route |
