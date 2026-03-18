@@ -668,10 +668,8 @@ function LicensingWidget({ onMessages }: { onMessages: (msgs: string[]) => void 
 
 function FinalBlueprintWidget({
   onMessages,
-  onApply,
 }: {
   onMessages: (msgs: string[]) => void;
-  onApply: () => void;
 }) {
   const { config } = useConcierge();
   const [applying, setApplying] = useState(false);
@@ -750,12 +748,11 @@ ${usersRows || "| — | — | — |"}
 
 interface StageWidgetsProps {
   onUserMessages: (msgs: string[]) => void;
-  onApply: () => void;
   /** Explicit stage to render — defaults to context stage if omitted. */
   currentStage?: string;
 }
 
-export function StageWidget({ onUserMessages, onApply, currentStage }: StageWidgetsProps) {
+export function StageWidget({ onUserMessages, currentStage }: StageWidgetsProps) {
   const { stage: contextStage } = useConcierge();
   const stage = currentStage ?? contextStage;
 
@@ -773,7 +770,7 @@ export function StageWidget({ onUserMessages, onApply, currentStage }: StageWidg
     case "licensing":
       return <LicensingWidget onMessages={onUserMessages} />;
     case "final_blueprint":
-      return <FinalBlueprintWidget onMessages={onUserMessages} onApply={onApply} />;
+      return <FinalBlueprintWidget onMessages={onUserMessages} />;
     default:
       return null;
   }

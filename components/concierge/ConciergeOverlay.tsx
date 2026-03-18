@@ -491,7 +491,6 @@ export function ConciergeOverlay() {
                       const text = Array.isArray(msgs) ? msgs.join(" · ") : String(msgs);
                       sendMessage(text);
                     }}
-                    onApply={handleApplySuccess}
                   />
                 </div>
               )}
