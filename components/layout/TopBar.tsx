@@ -10,10 +10,12 @@ import {
   MessageCircle,
   Bot,
   HelpCircle,
+  Sparkles,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useApp } from "@/contexts/AppContext";
 import { useAssistant } from "@/contexts/AssistantContext";
+import { useConcierge } from "@/contexts/ConciergeContext";
 import { clearTokens } from "@/lib/auth";
 import { INTEGRATIONS } from "@/lib/config/integrations";
 import { LocaleSelector } from "@/components/ui/LocaleSelector";
@@ -22,6 +24,7 @@ export function TopBar() {
   const t = useTranslations("topbar");
   const { bootstrap } = useApp();
   const { open: openAssistant } = useAssistant();
+  const { open: openConcierge } = useConcierge();
 
   const handleLogout = () => {
     clearTokens();
@@ -56,6 +59,14 @@ export function TopBar() {
           {bootstrap?.account?.company ?? t("account")}
         </span>
         <LocaleSelector />
+        <button
+          onClick={openConcierge}
+          className="p-2 rounded-full hover:bg-white/20 transition-colors"
+          title="Setup Wizard"
+          aria-label="Open setup wizard"
+        >
+          <Sparkles className="w-5 h-5" />
+        </button>
         <button
           onClick={openAssistant}
           className="p-2 rounded-full hover:bg-white/20 transition-colors"
@@ -121,6 +132,13 @@ export function TopBar() {
               <p className="px-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">
                 Help
               </p>
+              <button
+                onClick={() => { openConcierge(); (document.activeElement as HTMLElement)?.blur(); }}
+                className="w-full flex items-center gap-2 text-sm text-gray-700 hover:bg-gray-50 -mx-2 px-2 py-1.5 rounded text-left"
+              >
+                <Sparkles className="w-4 h-4 shrink-0 text-[#1a73e8]" />
+                Setup Wizard
+              </button>
               <button
                 onClick={() => { openAssistant(); (document.activeElement as HTMLElement)?.blur(); }}
                 className="w-full flex items-center gap-2 text-sm text-gray-700 hover:bg-gray-50 -mx-2 px-2 py-1.5 rounded text-left"

@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
 import { defaultLocale, localeNames, locales, type Locale } from "@/i18n/config";
 
 interface LocaleContextValue {
@@ -26,19 +25,15 @@ export function LocaleProvider({
   children: ReactNode;
 }) {
   const [locale, setLocaleState] = useState<Locale>(initialLocale);
-  const router = useRouter();
 
-  const setLocale = useCallback(
-    (newLocale: Locale) => {
-      setLocaleState(newLocale);
-      // Persist to cookie so next-intl picks it up on the next server render.
-      // With localePrefix: "never", URLs never change — only the cookie changes.
-      document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
-      // Refresh the current page so server components re-render in the new locale.
-      router.refresh();
-    },
-    [router]
-  );
+  const setLocale = useCallback((newLocale: Locale) => {
+    setLocaleState(newLocale);
+    // Persist to cookie so next-intl picks it up on the next server render.
+    document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
+    // Full reload so the root layout (app/layout.tsx) re-fetches with the new cookie.
+    // router.refresh() does not reliably cause shared layout segments to re-render.
+    window.location.reload();
+  }, []);
 
   return (
     <LocaleContext.Provider value={{ locale, localeNames, locales, setLocale }}>
