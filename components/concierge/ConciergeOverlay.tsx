@@ -125,9 +125,9 @@ export function ConciergeOverlay() {
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop — dim app to ~80% visibility when Concierge is open */}
       <div
-        className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-500 motion-reduce:duration-0 ${
+        className={`fixed inset-0 bg-black/20 z-40 transition-opacity duration-500 motion-reduce:duration-0 ${
           isTransitioning ? "opacity-0" : "opacity-100"
         }`}
         aria-hidden="true"
