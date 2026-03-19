@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Phone, ArrowRight, CheckSquare, Square, Plus,
   Loader2, AlertCircle, SkipForward, ExternalLink,
   Calendar, Lock,
 } from "lucide-react";
 import { useConcierge } from "@/contexts/ConciergeContext";
+import { useApp } from "@/contexts/AppContext";
+import { fetchPhoneNumberStats } from "@/lib/api/onboarding";
 import { getAccessToken } from "@/lib/auth";
 import {
   validatePhoneNumber,
@@ -42,10 +44,25 @@ function field(
 
 export function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => void }) {
   const { config, updateConfig } = useConcierge();
+  const { bootstrap } = useApp();
+  const accountId = bootstrap?.account?.accountId ?? 0;
   const phones = config.scraped.phones;
 
   const [step, setStep] = useState<PortingStep>(phones.length > 0 ? "numbers" : "decide");
   const [selected, setSelected] = useState<Set<string>>(new Set(phones));
+  const [phoneStats, setPhoneStats] = useState<{ maxPhoneNumbers: number; phoneNumbersInUse: number } | null>(null);
+
+  useEffect(() => {
+    if (!accountId) return;
+    fetchPhoneNumberStats(accountId).then((s) => {
+      if (s) setPhoneStats({ maxPhoneNumbers: s.maxPhoneNumbers, phoneNumbersInUse: s.phoneNumbersInUse });
+    });
+  }, [accountId]);
+
+  const availableSlots = phoneStats
+    ? Math.max(0, phoneStats.maxPhoneNumbers - phoneStats.phoneNumbersInUse)
+    : null;
+  const overLimit = availableSlots != null && selected.size > availableSlots;
   const [manualNum, setManualNum] = useState("");
 
   const [providerName, setProviderName]     = useState(config.portingQueue.providerName);
@@ -100,6 +117,11 @@ export function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => 
 
   const handleNumbersNext = () => {
     if (selected.size === 0) return;
+    if (overLimit) {
+      setValidationErrors([`Your plan allows up to ${availableSlots} number${availableSlots !== 1 ? "s" : ""}. You're trying to port ${selected.size}. Remove some or contact sales to increase your limit.`]);
+      return;
+    }
+    setValidationErrors([]);
     updateConfig({ portingQueue: { ...config.portingQueue, numbers: Array.from(selected) } });
     setStep("provider");
   };
@@ -185,7 +207,7 @@ export function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => 
               <SkipForward className="w-4 h-4" aria-hidden="true" /> Skip &mdash; I&apos;ll handle this later
             </button>
           </div>
-          <FixItButton targetStage="verification_holidays" />
+          <FixItButton targetStage="architecture_hardware" />
         </div>
       </CardShell>
     );
@@ -224,6 +246,17 @@ export function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => 
               <Plus className="w-4 h-4 text-gray-600" aria-hidden="true" />
             </button>
           </div>
+          {phoneStats && (
+            <p className="text-xs text-gray-600">
+              Your plan: {phoneStats.phoneNumbersInUse} of {phoneStats.maxPhoneNumbers} numbers in use. You can port up to {availableSlots} more.
+            </p>
+          )}
+          {overLimit && (
+            <p className="flex items-center gap-1.5 text-xs text-amber-600" role="alert">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+              Your plan allows up to {availableSlots} number{availableSlots !== 1 ? "s" : ""}. You&apos;re selecting {selected.size}. Remove some or contact sales to increase your limit.
+            </p>
+          )}
           <ValidationErrors errors={validationErrors} />
           {selected.size > 0 && (
             <div className="flex flex-wrap gap-1.5">
@@ -240,7 +273,7 @@ export function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => 
               className="px-3 py-2 text-sm text-gray-500 border border-[#dadce0] rounded-lg hover:bg-[#f8f9fa]">
               Skip porting
             </button>
-            <button onClick={handleNumbersNext} disabled={selected.size === 0}
+            <button onClick={handleNumbersNext} disabled={selected.size === 0 || overLimit}
               className="flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold bg-[#1a73e8] text-white rounded-lg hover:bg-[#1557b0] disabled:opacity-40 transition-colors">
               Port {selected.size} number{selected.size !== 1 ? "s" : ""} <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </button>

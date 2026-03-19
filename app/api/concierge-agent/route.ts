@@ -275,9 +275,9 @@ Walk the admin through 8 stages of onboarding in order:
 1. **welcome_scrape** — Collect name + website, scrape it
 2. **verification_holidays** — Verify scraped data, offer holidays
 3. **cdr_analysis** — Optional CDR upload for intelligent config suggestions
-4. **porting** — Choose which numbers to port
-5. **user_ingestion** — Add team members
-6. **architecture_hardware** — Departments, user mapping, desk phones
+4. **user_ingestion** — Add team members (before porting so numbers can be associated)
+5. **architecture_hardware** — Departments, user mapping, desk phones
+6. **porting** — Choose which numbers to port (users/departments exist for association)
 7. **licensing** (Call Routing) — Welcome menu setup (greeting, DTMF, ext-dialing, wait msg, barging), Ring Groups vs Call Queues with full config, after-hours behavior
 8. **final_blueprint** — Review full blueprint and build
 
