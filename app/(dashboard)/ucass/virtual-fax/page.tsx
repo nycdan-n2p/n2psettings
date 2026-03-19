@@ -1,6 +1,7 @@
 "use client";
 import { useTranslations } from "next-intl";
 
+import { FeatureGate } from "@/components/feature-gate/FeatureGate";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DataTable } from "@/components/tables/DataTable";
@@ -20,7 +21,7 @@ import { Toggle } from "@/components/settings/Toggle";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import { Pencil, Trash2 } from "lucide-react";
 
-export default function VirtualFaxPage() {
+function VirtualFaxContent() {
   const t = useTranslations("virtualFaxPage");
   const { bootstrap } = useApp();
   const accountId = bootstrap?.account?.accountId ?? 0;
@@ -243,5 +244,13 @@ export default function VirtualFaxPage() {
         message={`Remove ${deleteTarget?.phoneNumber} from virtual fax?`}
       />
     </div>
+  );
+}
+
+export default function VirtualFaxPage() {
+  return (
+    <FeatureGate feature="IsVirtualFaxEnabled">
+      <VirtualFaxContent />
+    </FeatureGate>
   );
 }

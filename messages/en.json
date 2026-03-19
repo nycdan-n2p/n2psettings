@@ -49,12 +49,10 @@
     "created": "Created",
     "deleted": "Deleted"
   },
-
   "meta": {
     "appName": "net2phone Settings",
     "appDescription": "Manage your net2phone account"
   },
-
   "auth": {
     "signIn": "Sign in to manage your account",
     "title": "net2phone Settings",
@@ -74,7 +72,6 @@
     "requestFailed": "Request failed",
     "logOut": "Log Out"
   },
-
   "nav": {
     "sidebar": {
       "apps": "Apps",
@@ -135,7 +132,6 @@
       "emergencySettings": "Emergency Settings"
     }
   },
-
   "topbar": {
     "searchPlaceholder": "Search...",
     "openAssistant": "Open assistant",
@@ -147,7 +143,6 @@
     "logOut": "Log Out",
     "products": "Products"
   },
-
   "concierge": {
     "title": "The Concierge",
     "subtitle": "AI Onboarding Assistant",
@@ -379,7 +374,6 @@
       "macInvalid": "Please enter a valid MAC address (AA:BB:CC:DD:EE:FF)."
     }
   },
-
   "assistant": {
     "title": "N2P Assistant",
     "placeholder": "Ask anything about your account…",
@@ -390,7 +384,6 @@
     "errorTitle": "Assistant error",
     "emptyState": "Ask me anything about your net2phone account — team members, call routing, billing, devices, and more."
   },
-
   "schedules": {
     "title": "Schedules",
     "newSchedule": "New Schedule",
@@ -419,7 +412,6 @@
       "VE": "Venezuela"
     }
   },
-
   "ringGroups": {
     "title": "Ring Groups",
     "newGroup": "New Ring Group",
@@ -444,7 +436,6 @@
       "fewest_calls": "Fewest Calls"
     }
   },
-
   "teamMembers": {
     "title": "Team Members",
     "newMember": "New Member",
@@ -460,7 +451,6 @@
     "invitePending": "Invite Pending",
     "active": "Active"
   },
-
   "login": {
     "title": "net2phone Settings",
     "subtitle": "Sign in to manage your account",
@@ -478,7 +468,6 @@
     "invalidGrant": "Password login is not enabled — paste a refresh token below.",
     "authFailed": "Authentication failed"
   },
-
   "errors": {
     "boundary": {
       "title": "Something went wrong",
@@ -489,7 +478,6 @@
     "unauthorized": "Unauthorized — please sign in",
     "serverError": "Server error — please try again later"
   },
-
   "locale": {
     "label": "Language",
     "en": "English",
@@ -497,7 +485,6 @@
     "fr-CA": "Français (Canada)",
     "pt-BR": "Português (Brasil)"
   },
-
   "topbarExtra": {
     "setupWizard": "Setup Wizard",
     "termsOfService": "Terms of Service",
@@ -505,7 +492,6 @@
     "help": "Help",
     "appsIntegrations": "Apps & Integrations"
   },
-
   "company": {
     "title": "Company",
     "subtitle": "Company profile and account settings.",
@@ -527,7 +513,6 @@
     "policyMaxExtLen": "Max extension length",
     "directoryLink": "Company Directory settings →"
   },
-
   "dashboard": {
     "title": "Dashboard",
     "callActivity": "Call Activity (7 days)",
@@ -544,7 +529,6 @@
     "licenses": "Licenses",
     "account": "Account"
   },
-
   "analytics": {
     "title": "Call Analytics",
     "subtitle": "Insights from call history",
@@ -571,7 +555,6 @@
     "peakHour": "Peak Hour",
     "topUser": "Top User"
   },
-
   "calls": {
     "title": "Call History",
     "last30days": "Last 30 days",
@@ -596,7 +579,6 @@
     "searchCalls": "Search calls...",
     "loadingCalls": "Loading calls..."
   },
-
   "callHistory": {
     "title": "Call History",
     "subtitle": "View call detail records and recordings.",
@@ -613,7 +595,6 @@
     "loading": "Loading calls...",
     "search": "Search calls..."
   },
-
   "voicemailPage": {
     "title": "Voicemail",
     "subtitle": "Voicemail inbox and messages. You have {count} unread.",
@@ -623,7 +604,6 @@
     "loading": "Loading voicemails...",
     "unread": "Unread"
   },
-
   "teamMembersPage": {
     "title": "Team Members",
     "addButton": "Add Team Member",
@@ -654,7 +634,6 @@
     "noneOption": "None",
     "failedToAdd": "Failed to add user"
   },
-
   "departmentsPage": {
     "title": "Departments",
     "addButton": "Add Department",
@@ -697,7 +676,6 @@
     "placeholderPM": "e.g. Product Management",
     "failedToSave": "Failed to save"
   },
-
   "ringGroupsPage": {
     "title": "Ring Groups",
     "addButton": "Add Ring Group",
@@ -734,7 +712,6 @@
     "transformedTo": "Transformed to",
     "tier": "Tier {n}"
   },
-
   "callQueuesPage": {
     "title": "Call Queues",
     "addButton": "Add Call Queue",
@@ -775,7 +752,6 @@
     "ringAllNote": "All agents are rung simultaneously.",
     "savedSuccess": "Changes saved successfully."
   },
-
   "virtualAssistantPage": {
     "title": "Welcome Menus",
     "addButton": "Add Welcome Menu",
@@ -814,7 +790,6 @@
     "forwardCallsTo": "Forward Calls To",
     "dragDropFile": "Drag & Drop or click to Browse File"
   },
-
   "phoneNumbersPage": {
     "title": "Phone Numbers",
     "addButton": "Add Phone Number",
@@ -867,7 +842,6 @@
     "destSpecialExt": "Special Extensions",
     "destCallQueue": "Call Queue"
   },
-
   "devicesPage": {
     "title": "Devices",
     "subtitle": "Manage all physical devices on your account.",
@@ -914,7 +888,6 @@
     "bulkUpload": "Bulk Upload",
     "addDeskPhone": "Add Desk Phone"
   },
-
   "deviceManagementPage": {
     "title": "Device Management",
     "subtitle": "Manage provisioning templates for desk phones.",
@@ -953,7 +926,6 @@
     "editTooltip": "Edit template",
     "deleteTooltip": "Delete template"
   },
-
   "specialExtensionsPage": {
     "title": "Special Extensions",
     "addButton": "Add Special Extension",
@@ -981,7 +953,6 @@
     "unassignedOption": "Unassigned",
     "failedToSave": "Failed to save"
   },
-
   "callBlockingPage": {
     "title": "Call Blocking",
     "subtitle": "Manage inbound and outbound block lists.",
@@ -994,7 +965,6 @@
     "loading": "Loading...",
     "search": "Search numbers..."
   },
-
   "virtualFaxPage": {
     "title": "Virtual Fax",
     "subtitle": "Manage virtual fax numbers and email routing.",
@@ -1012,7 +982,6 @@
     "labelEncrypt": "Encrypt",
     "deleteTitle": "Delete fax number"
   },
-
   "sipTrunkingPage": {
     "title": "SIP Trunking",
     "subtitle": "Manage SIP trunks, service addresses, and phone numbers.",
@@ -1032,7 +1001,6 @@
     "colAddress": "Address",
     "colNumber": "Number"
   },
-
   "sipTieLinesPage": {
     "title": "SIP Tie-Lines",
     "subtitle": "Manage SIP tie-line configurations.",
@@ -1054,7 +1022,6 @@
     "protoTcp": "TCP",
     "deleteTitle": "Delete tie-line"
   },
-
   "schedulesPage": {
     "title": "Schedules",
     "subtitle": "Define time-based rules for call routing.",
@@ -1075,7 +1042,6 @@
     "deselectAll": "Deselect all",
     "createHoliday": "Create Holiday Schedule"
   },
-
   "webhooksPage": {
     "title": "Webhooks / API",
     "subtitle": "Receive real-time HTTP POST notifications for account events.",
@@ -1106,7 +1072,6 @@
     "deleting": "Deleting…",
     "failedToCreate": "Failed to create webhook. Please check the URL and try again."
   },
-
   "apiSetupPage": {
     "title": "API Setup",
     "subtitle": "Create and manage API keys for programmatic access.",
@@ -1128,7 +1093,6 @@
     "loadError": "Failed to load API keys",
     "createError": "Failed to create key"
   },
-
   "voicemailSettingsPage": {
     "title": "Voicemail Settings",
     "subtitle": "Configure voicemail notification preferences.",
@@ -1144,7 +1108,6 @@
     "labelCallerDetails": "Include caller details",
     "descCallerDetails": "Show caller information in email"
   },
-
   "companyDirectoryPage": {
     "title": "Company Directory",
     "subtitle": "Configure the company directory menu and greeting.",
@@ -1152,9 +1115,20 @@
     "sectionSubtitle": "Company directory configuration",
     "loading": "Loading...",
     "labelEnable": "Enable company directory",
-    "descEnable": "Allow callers to reach the company directory menu"
+    "descEnable": "Allow callers to reach the company directory menu",
+    "greetingTitle": "Greeting",
+    "playingDefault": "Playing: Default Greeting",
+    "playingCustom": "Playing: Custom Greeting",
+    "changeGreeting": "Change",
+    "returnToDefault": "Return to default",
+    "uploading": "Uploading...",
+    "uploadError": "Upload failed. Please try again.",
+    "lookupTitle": "Team Member Lookup",
+    "lookupDescription": "Choose how to look up team members in your company. Caller will be asked to enter 3 digits of their first OR last name.",
+    "byLastName": "By Last Name",
+    "byFirstName": "By First Name",
+    "saving": "Saving..."
   },
-
   "karisLawPage": {
     "title": "Kari's Law",
     "subtitle": "Emergency notification numbers (E911).",
@@ -1171,7 +1145,6 @@
     "placeholderOptional": "Optional",
     "deleteTitle": "Delete number"
   },
-
   "contacts911Page": {
     "title": "911 / Emergency Call Notification",
     "subtitle": "Contacts on this list will be notified by SMS when any extension dials 911.",
@@ -1187,7 +1160,6 @@
     "deleteTitle": "Remove 911 Contact",
     "tooltip": "These contacts receive SMS notifications when 911 is dialed from any extension."
   },
-
   "emergencySettingsPage": {
     "title": "Emergency Settings",
     "subtitle": "Contacts notified by SMS when any extension dials 911. Required for Kari's Law compliance.",
@@ -1211,7 +1183,6 @@
     "editTooltip": "Edit",
     "deleteTooltip": "Remove"
   },
-
   "numberPortingPage": {
     "title": "Number Porting",
     "subtitle": "Port phone numbers from your current provider to net2phone.",
@@ -1224,7 +1195,6 @@
     "search": "Search requests...",
     "noRequests": "No porting requests yet. Click \"New porting request\" to start."
   },
-
   "bulkOperationsPage": {
     "title": "Bulk Operations",
     "subtitle": "Bulk import and load operations.",
@@ -1242,7 +1212,6 @@
     "downloadTemplate": "Download CSV template",
     "loading": "Loading..."
   },
-
   "musicOptionsPage": {
     "title": "Music Options",
     "subtitle": "Upload and manage music-on-hold audio files for your call queues.",
@@ -1271,7 +1240,6 @@
     "namePlaceholder": "Name for library (required)",
     "descPlaceholder": "e.g. \"Upbeat jazz music for a professional phone queue, no vocals\""
   },
-
   "delegatesPage": {
     "title": "Delegates",
     "subtitle": "Partner access and delegate management.",
@@ -1291,7 +1259,6 @@
     "typeAdmin": "Admin",
     "deleteTitle": "Delete delegate"
   },
-
   "licensesPage": {
     "title": "Licenses",
     "subtitle": "Active licenses for your account.",
@@ -1304,7 +1271,6 @@
     "noLicenses": "No license information available.",
     "contactNote": "To add or modify licenses, contact your net2phone account manager."
   },
-
   "trustCenterPage": {
     "title": "Trust Center",
     "subtitle": "Secure your organization and stay compliant.",
@@ -1324,12 +1290,10 @@
     "securityDesc": "SAML SSO and 2FA configuration",
     "upgradeNote": "You need to upgrade to a paid plan before you can register your numbers."
   },
-
   "productsPage": {
     "title": "Products",
     "subtitle": "Select a product to manage its settings."
   },
-
   "onboardingPage": {
     "title": "Welcome to net2phone",
     "subtitle": "Get your account fully configured in minutes.",
@@ -1344,7 +1308,6 @@
     "assistantDesc": "Add users, manage ring groups, pull call stats.",
     "openButton": "Open"
   },
-
   "calendarPage": {
     "title": "Calendar",
     "subtitle": "Calendar integration settings. Connect your calendar for availability and scheduling.",
@@ -1353,7 +1316,6 @@
     "openProfile": "Open Profile Settings →",
     "notConfigured": "Profile settings URL not configured. Contact support for calendar integration."
   },
-
   "productPages": {
     "agentTitle": "AI Agent Settings",
     "agentSubtitle": "Configure your AI assistant for calls and messaging.",

@@ -49,12 +49,10 @@
     "created": "Criado",
     "deleted": "Excluído"
   },
-
   "meta": {
     "appName": "net2phone Configurações",
     "appDescription": "Gerencie sua conta net2phone"
   },
-
   "auth": {
     "signIn": "Entre para gerenciar sua conta",
     "title": "net2phone Configurações",
@@ -74,7 +72,6 @@
     "requestFailed": "Falha na requisição",
     "logOut": "Sair"
   },
-
   "nav": {
     "sidebar": {
       "apps": "Aplicativos",
@@ -135,7 +132,6 @@
       "emergencySettings": "Configurações de emergência"
     }
   },
-
   "topbar": {
     "searchPlaceholder": "Buscar...",
     "openAssistant": "Abrir assistente",
@@ -147,7 +143,6 @@
     "logOut": "Sair",
     "products": "Produtos"
   },
-
   "concierge": {
     "title": "O Concierge",
     "subtitle": "Assistente de configuração IA",
@@ -379,7 +374,6 @@
       "macInvalid": "Por favor, insira um endereço MAC válido (AA:BB:CC:DD:EE:FF)."
     }
   },
-
   "assistant": {
     "title": "Assistente N2P",
     "placeholder": "Pergunte qualquer coisa sobre sua conta…",
@@ -390,7 +384,6 @@
     "errorTitle": "Erro do assistente",
     "emptyState": "Pergunte qualquer coisa sobre sua conta net2phone — membros da equipe, roteamento de chamadas, faturamento, dispositivos e muito mais."
   },
-
   "schedules": {
     "title": "Horários",
     "newSchedule": "Novo horário",
@@ -419,7 +412,6 @@
       "VE": "Venezuela"
     }
   },
-
   "ringGroups": {
     "title": "Grupos de toque",
     "newGroup": "Novo grupo de toque",
@@ -444,7 +436,6 @@
       "fewest_calls": "Menos chamadas"
     }
   },
-
   "teamMembers": {
     "title": "Membros da equipe",
     "newMember": "Novo membro",
@@ -460,7 +451,6 @@
     "invitePending": "Convite pendente",
     "active": "Ativo"
   },
-
   "login": {
     "title": "net2phone Configurações",
     "subtitle": "Entre para gerenciar sua conta",
@@ -478,7 +468,6 @@
     "invalidGrant": "Login com senha não está habilitado — cole um token de atualização abaixo.",
     "authFailed": "Falha na autenticação"
   },
-
   "errors": {
     "boundary": {
       "title": "Algo deu errado",
@@ -489,7 +478,6 @@
     "unauthorized": "Não autorizado — por favor, entre",
     "serverError": "Erro do servidor — por favor, tente novamente mais tarde"
   },
-
   "locale": {
     "label": "Idioma",
     "en": "English",
@@ -497,7 +485,6 @@
     "fr-CA": "Français (Canada)",
     "pt-BR": "Português (Brasil)"
   },
-
   "topbarExtra": {
     "setupWizard": "Assistente de Configuração",
     "termsOfService": "Termos de Serviço",
@@ -505,7 +492,6 @@
     "help": "Ajuda",
     "appsIntegrations": "Aplicativos e Integrações"
   },
-
   "company": {
     "title": "Empresa",
     "subtitle": "Perfil da empresa e configurações da conta.",
@@ -527,7 +513,6 @@
     "policyMaxExtLen": "Comprimento máx. do ramal",
     "directoryLink": "Configurações do Diretório →"
   },
-
   "dashboard": {
     "title": "Painel",
     "callActivity": "Atividade de Chamadas (7 dias)",
@@ -544,7 +529,6 @@
     "licenses": "Licenças",
     "account": "Conta"
   },
-
   "analytics": {
     "title": "Análise de Chamadas",
     "subtitle": "Insights do histórico de chamadas",
@@ -571,7 +555,6 @@
     "peakHour": "Horário de Pico",
     "topUser": "Usuário Principal"
   },
-
   "calls": {
     "title": "Histórico de Chamadas",
     "last30days": "Últimos 30 dias",
@@ -596,7 +579,6 @@
     "searchCalls": "Pesquisar chamadas...",
     "loadingCalls": "Carregando chamadas..."
   },
-
   "callHistory": {
     "title": "Histórico de Chamadas",
     "subtitle": "Ver registros detalhados de chamadas e gravações.",
@@ -613,7 +595,6 @@
     "loading": "Carregando chamadas...",
     "search": "Pesquisar chamadas..."
   },
-
   "voicemailPage": {
     "title": "Caixa Postal",
     "subtitle": "Caixa de entrada e mensagens. Você tem {count} não lidas.",
@@ -623,7 +604,6 @@
     "loading": "Carregando caixa postal...",
     "unread": "Não lida"
   },
-
   "teamMembersPage": {
     "title": "Membros da Equipe",
     "addButton": "Adicionar Membro",
@@ -654,7 +634,6 @@
     "noneOption": "Nenhum",
     "failedToAdd": "Falha ao adicionar usuário"
   },
-
   "departmentsPage": {
     "title": "Departamentos",
     "addButton": "Adicionar Departamento",
@@ -697,7 +676,6 @@
     "placeholderPM": "ex. Gestão de Produto",
     "failedToSave": "Falha ao salvar"
   },
-
   "ringGroupsPage": {
     "title": "Grupos de Toque",
     "addButton": "Adicionar Grupo de Toque",
@@ -734,7 +712,6 @@
     "transformedTo": "Transformado para",
     "tier": "Nível {n}"
   },
-
   "callQueuesPage": {
     "title": "Filas de Chamadas",
     "addButton": "Adicionar Fila de Chamadas",
@@ -775,7 +752,6 @@
     "ringAllNote": "Todos os agentes tocam simultaneamente.",
     "savedSuccess": "Alterações salvas com sucesso."
   },
-
   "virtualAssistantPage": {
     "title": "Menus de Boas-Vindas",
     "addButton": "Adicionar Menu",
@@ -814,7 +790,6 @@
     "forwardCallsTo": "Desviar Chamadas Para",
     "dragDropFile": "Arrastar e soltar ou clicar para navegar"
   },
-
   "phoneNumbersPage": {
     "title": "Números de Telefone",
     "addButton": "Adicionar Número",
@@ -867,7 +842,6 @@
     "destSpecialExt": "Ramais Especiais",
     "destCallQueue": "Fila de Chamadas"
   },
-
   "devicesPage": {
     "title": "Dispositivos",
     "subtitle": "Gerenciar todos os dispositivos físicos da sua conta.",
@@ -914,7 +888,6 @@
     "bulkUpload": "Upload em Massa",
     "addDeskPhone": "Adicionar Telefone de Mesa"
   },
-
   "deviceManagementPage": {
     "title": "Gerenciamento de Dispositivos",
     "subtitle": "Gerenciar modelos de provisionamento para telefones de mesa.",
@@ -953,7 +926,6 @@
     "editTooltip": "Editar modelo",
     "deleteTooltip": "Excluir modelo"
   },
-
   "specialExtensionsPage": {
     "title": "Ramais Especiais",
     "addButton": "Adicionar Ramal Especial",
@@ -981,7 +953,6 @@
     "unassignedOption": "Não atribuído",
     "failedToSave": "Falha ao salvar"
   },
-
   "callBlockingPage": {
     "title": "Bloqueio de Chamadas",
     "subtitle": "Gerenciar listas de bloqueio de chamadas entrantes e saintes.",
@@ -994,7 +965,6 @@
     "loading": "Carregando...",
     "search": "Pesquisar números..."
   },
-
   "virtualFaxPage": {
     "title": "Fax Virtual",
     "subtitle": "Gerenciar números de fax virtual e roteamento de e-mail.",
@@ -1012,7 +982,6 @@
     "labelEncrypt": "Criptografar",
     "deleteTitle": "Excluir número de fax"
   },
-
   "sipTrunkingPage": {
     "title": "Tronco SIP",
     "subtitle": "Gerenciar troncos SIP, endereços de serviço e números.",
@@ -1032,7 +1001,6 @@
     "colAddress": "Endereço",
     "colNumber": "Número"
   },
-
   "sipTieLinesPage": {
     "title": "Linhas SIP Vinculadas",
     "subtitle": "Gerenciar configurações de linhas SIP vinculadas.",
@@ -1054,7 +1022,6 @@
     "protoTcp": "TCP",
     "deleteTitle": "Excluir linha"
   },
-
   "schedulesPage": {
     "title": "Horários",
     "subtitle": "Definir regras baseadas em tempo para roteamento de chamadas.",
@@ -1075,7 +1042,6 @@
     "deselectAll": "Desmarcar tudo",
     "createHoliday": "Criar Horário de Feriados"
   },
-
   "webhooksPage": {
     "title": "Webhooks / API",
     "subtitle": "Receber notificações HTTP POST em tempo real para eventos da conta.",
@@ -1106,7 +1072,6 @@
     "deleting": "Excluindo…",
     "failedToCreate": "Falha ao criar webhook. Verifique a URL e tente novamente."
   },
-
   "apiSetupPage": {
     "title": "Configuração de API",
     "subtitle": "Criar e gerenciar chaves de API para acesso programático.",
@@ -1128,7 +1093,6 @@
     "loadError": "Falha ao carregar chaves de API",
     "createError": "Falha ao criar a chave"
   },
-
   "voicemailSettingsPage": {
     "title": "Configurações da Caixa Postal",
     "subtitle": "Configurar preferências de notificação da caixa postal.",
@@ -1144,7 +1108,6 @@
     "labelCallerDetails": "Incluir detalhes do chamador",
     "descCallerDetails": "Mostrar informações do chamador no e-mail"
   },
-
   "companyDirectoryPage": {
     "title": "Diretório da Empresa",
     "subtitle": "Configurar o menu do diretório da empresa e saudação.",
@@ -1152,9 +1115,20 @@
     "sectionSubtitle": "Configuração do diretório da empresa",
     "loading": "Carregando...",
     "labelEnable": "Habilitar diretório da empresa",
-    "descEnable": "Permitir que os chamadores acessem o menu do diretório da empresa"
+    "descEnable": "Permitir que os chamadores acessem o menu do diretório da empresa",
+    "greetingTitle": "Saudação",
+    "playingDefault": "Reproduzindo: Saudação padrão",
+    "playingCustom": "Reproduzindo: Saudação personalizada",
+    "changeGreeting": "Alterar",
+    "returnToDefault": "Retornar ao padrão",
+    "uploading": "Enviando...",
+    "uploadError": "Falha no envio. Por favor, tente novamente.",
+    "lookupTitle": "Pesquisa de membros da equipe",
+    "lookupDescription": "Escolha como pesquisar membros da equipe. O chamador deverá inserir 3 dígitos do primeiro ou último nome.",
+    "byLastName": "Por sobrenome",
+    "byFirstName": "Por nome",
+    "saving": "Salvando..."
   },
-
   "karisLawPage": {
     "title": "Lei Kari",
     "subtitle": "Números de notificação de emergência (E911).",
@@ -1171,7 +1145,6 @@
     "placeholderOptional": "Opcional",
     "deleteTitle": "Excluir número"
   },
-
   "contacts911Page": {
     "title": "Notificação de Emergência 911",
     "subtitle": "Os contatos desta lista serão notificados por SMS quando qualquer ramal discar 911.",
@@ -1187,7 +1160,6 @@
     "deleteTitle": "Remover Contato 911",
     "tooltip": "Estes contatos recebem notificações SMS quando o 911 é discado de qualquer ramal."
   },
-
   "emergencySettingsPage": {
     "title": "Configurações de Emergência",
     "subtitle": "Contatos notificados por SMS quando qualquer ramal discar 911. Exigido pela Lei de Kari.",
@@ -1211,7 +1183,6 @@
     "editTooltip": "Editar",
     "deleteTooltip": "Remover"
   },
-
   "numberPortingPage": {
     "title": "Portabilidade de Números",
     "subtitle": "Portar números de telefone do seu provedor atual para a net2phone.",
@@ -1224,7 +1195,6 @@
     "search": "Pesquisar solicitações...",
     "noRequests": "Nenhuma solicitação de portabilidade. Clique em \"Nova solicitação\" para começar."
   },
-
   "bulkOperationsPage": {
     "title": "Operações em Massa",
     "subtitle": "Importação e carregamento em massa.",
@@ -1242,7 +1212,6 @@
     "downloadTemplate": "Baixar modelo CSV",
     "loading": "Carregando..."
   },
-
   "musicOptionsPage": {
     "title": "Opções de Música",
     "subtitle": "Enviar e gerenciar arquivos de música de espera para suas filas.",
@@ -1271,7 +1240,6 @@
     "namePlaceholder": "Nome para biblioteca (obrigatório)",
     "descPlaceholder": "ex. \"Música jazz animada para fila profissional, sem vocais\""
   },
-
   "delegatesPage": {
     "title": "Delegados",
     "subtitle": "Acesso de parceiros e gerenciamento de delegados.",
@@ -1291,7 +1259,6 @@
     "typeAdmin": "Administrador",
     "deleteTitle": "Excluir delegado"
   },
-
   "licensesPage": {
     "title": "Licenças",
     "subtitle": "Licenças ativas da sua conta.",
@@ -1304,7 +1271,6 @@
     "noLicenses": "Nenhuma informação de licença disponível.",
     "contactNote": "Para adicionar ou modificar licenças, entre em contato com seu gerente de conta net2phone."
   },
-
   "trustCenterPage": {
     "title": "Central de Confiança",
     "subtitle": "Proteja sua organização e mantenha a conformidade.",
@@ -1324,12 +1290,10 @@
     "securityDesc": "Configuração de SAML SSO e 2FA",
     "upgradeNote": "Você precisa atualizar para um plano pago antes de registrar seus números."
   },
-
   "productsPage": {
     "title": "Produtos",
     "subtitle": "Selecione um produto para gerenciar suas configurações."
   },
-
   "onboardingPage": {
     "title": "Bem-vindo à net2phone",
     "subtitle": "Configure sua conta completamente em minutos.",
@@ -1344,7 +1308,6 @@
     "assistantDesc": "Adicione usuários, gerencie grupos de toque, consulte estatísticas.",
     "openButton": "Abrir"
   },
-
   "calendarPage": {
     "title": "Calendário",
     "subtitle": "Configurações de integração de calendário.",
@@ -1353,7 +1316,6 @@
     "openProfile": "Abrir Configurações do Perfil →",
     "notConfigured": "URL de configurações de perfil não configurada. Entre em contato com o suporte."
   },
-
   "productPages": {
     "agentTitle": "Configurações do Agente IA",
     "agentSubtitle": "Configure seu assistente IA para chamadas e mensagens.",

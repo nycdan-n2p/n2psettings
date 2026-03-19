@@ -49,12 +49,10 @@
     "created": "Créé",
     "deleted": "Supprimé"
   },
-
   "meta": {
     "appName": "net2phone Paramètres",
     "appDescription": "Gérez votre compte net2phone"
   },
-
   "auth": {
     "signIn": "Connectez-vous pour gérer votre compte",
     "title": "net2phone Paramètres",
@@ -74,7 +72,6 @@
     "requestFailed": "Échec de la requête",
     "logOut": "Se déconnecter"
   },
-
   "nav": {
     "sidebar": {
       "apps": "Applications",
@@ -135,7 +132,6 @@
       "emergencySettings": "Paramètres d'urgence"
     }
   },
-
   "topbar": {
     "searchPlaceholder": "Rechercher...",
     "openAssistant": "Ouvrir l'assistant",
@@ -147,7 +143,6 @@
     "logOut": "Se déconnecter",
     "products": "Produits"
   },
-
   "concierge": {
     "title": "Le Concierge",
     "subtitle": "Assistant de configuration IA",
@@ -379,7 +374,6 @@
       "macInvalid": "Veuillez saisir une adresse MAC valide (AA:BB:CC:DD:EE:FF)."
     }
   },
-
   "assistant": {
     "title": "Assistant N2P",
     "placeholder": "Posez n'importe quelle question sur votre compte…",
@@ -390,7 +384,6 @@
     "errorTitle": "Erreur de l'assistant",
     "emptyState": "Posez-moi n'importe quelle question sur votre compte net2phone — membres de l'équipe, acheminement des appels, facturation, appareils et plus encore."
   },
-
   "schedules": {
     "title": "Horaires",
     "newSchedule": "Nouvel horaire",
@@ -419,7 +412,6 @@
       "VE": "Venezuela"
     }
   },
-
   "ringGroups": {
     "title": "Groupes de sonnerie",
     "newGroup": "Nouveau groupe de sonnerie",
@@ -444,7 +436,6 @@
       "fewest_calls": "Moins d'appels"
     }
   },
-
   "teamMembers": {
     "title": "Membres de l'équipe",
     "newMember": "Nouveau membre",
@@ -460,7 +451,6 @@
     "invitePending": "Invitation en attente",
     "active": "Actif"
   },
-
   "login": {
     "title": "net2phone Paramètres",
     "subtitle": "Connectez-vous pour gérer votre compte",
@@ -478,7 +468,6 @@
     "invalidGrant": "La connexion par mot de passe n'est pas activée — collez un jeton d'actualisation ci-dessous.",
     "authFailed": "Échec de l'authentification"
   },
-
   "errors": {
     "boundary": {
       "title": "Une erreur s'est produite",
@@ -489,7 +478,6 @@
     "unauthorized": "Non autorisé — veuillez vous connecter",
     "serverError": "Erreur du serveur — veuillez réessayer plus tard"
   },
-
   "locale": {
     "label": "Langue",
     "en": "English",
@@ -497,7 +485,6 @@
     "fr-CA": "Français (Canada)",
     "pt-BR": "Português (Brasil)"
   },
-
   "topbarExtra": {
     "setupWizard": "Assistant de Configuration",
     "termsOfService": "Conditions d'utilisation",
@@ -505,7 +492,6 @@
     "help": "Aide",
     "appsIntegrations": "Applications et Intégrations"
   },
-
   "company": {
     "title": "Entreprise",
     "subtitle": "Profil d'entreprise et paramètres du compte.",
@@ -527,7 +513,6 @@
     "policyMaxExtLen": "Longueur max extension",
     "directoryLink": "Paramètres de l'annuaire →"
   },
-
   "dashboard": {
     "title": "Tableau de bord",
     "callActivity": "Activité des appels (7 jours)",
@@ -544,7 +529,6 @@
     "licenses": "Licences",
     "account": "Compte"
   },
-
   "analytics": {
     "title": "Analytique des appels",
     "subtitle": "Aperçus de l'historique des appels",
@@ -571,7 +555,6 @@
     "peakHour": "Heure de pointe",
     "topUser": "Utilisateur principal"
   },
-
   "calls": {
     "title": "Historique des appels",
     "last30days": "30 derniers jours",
@@ -596,7 +579,6 @@
     "searchCalls": "Rechercher des appels...",
     "loadingCalls": "Chargement des appels..."
   },
-
   "callHistory": {
     "title": "Historique des appels",
     "subtitle": "Voir les enregistrements détaillés des appels.",
@@ -613,7 +595,6 @@
     "loading": "Chargement des appels...",
     "search": "Rechercher des appels..."
   },
-
   "voicemailPage": {
     "title": "Messagerie vocale",
     "subtitle": "Boîte de réception et messages. Vous avez {count} non lus.",
@@ -623,7 +604,6 @@
     "loading": "Chargement des messages...",
     "unread": "Non lu"
   },
-
   "teamMembersPage": {
     "title": "Membres de l'équipe",
     "addButton": "Ajouter un membre",
@@ -654,7 +634,6 @@
     "noneOption": "Aucun",
     "failedToAdd": "Échec de l'ajout de l'utilisateur"
   },
-
   "departmentsPage": {
     "title": "Départements",
     "addButton": "Ajouter un département",
@@ -697,7 +676,6 @@
     "placeholderPM": "ex. Gestion de produit",
     "failedToSave": "Échec de l'enregistrement"
   },
-
   "ringGroupsPage": {
     "title": "Groupes de sonnerie",
     "addButton": "Ajouter un groupe",
@@ -734,7 +712,6 @@
     "transformedTo": "Transformé en",
     "tier": "Niveau {n}"
   },
-
   "callQueuesPage": {
     "title": "Files d'attente",
     "addButton": "Ajouter une file",
@@ -775,7 +752,6 @@
     "ringAllNote": "Tous les agents sonnent simultanément.",
     "savedSuccess": "Modifications enregistrées."
   },
-
   "virtualAssistantPage": {
     "title": "Menus d'accueil",
     "addButton": "Ajouter un menu",
@@ -814,7 +790,6 @@
     "forwardCallsTo": "Transférer les appels à",
     "dragDropFile": "Glisser-déposer ou cliquer pour parcourir"
   },
-
   "phoneNumbersPage": {
     "title": "Numéros de téléphone",
     "addButton": "Ajouter un numéro",
@@ -867,7 +842,6 @@
     "destSpecialExt": "Extensions spéciales",
     "destCallQueue": "File d'attente"
   },
-
   "devicesPage": {
     "title": "Appareils",
     "subtitle": "Gérer tous les appareils physiques de votre compte.",
@@ -914,7 +888,6 @@
     "bulkUpload": "Téléversement en masse",
     "addDeskPhone": "Ajouter un téléphone de bureau"
   },
-
   "deviceManagementPage": {
     "title": "Gestion des appareils",
     "subtitle": "Gérer les modèles de provisionnement pour les téléphones de bureau.",
@@ -953,7 +926,6 @@
     "editTooltip": "Modifier le modèle",
     "deleteTooltip": "Supprimer le modèle"
   },
-
   "specialExtensionsPage": {
     "title": "Extensions spéciales",
     "addButton": "Ajouter une extension spéciale",
@@ -981,7 +953,6 @@
     "unassignedOption": "Non assigné",
     "failedToSave": "Échec de l'enregistrement"
   },
-
   "callBlockingPage": {
     "title": "Blocage des appels",
     "subtitle": "Gérer les listes de blocage entrant et sortant.",
@@ -994,7 +965,6 @@
     "loading": "Chargement...",
     "search": "Rechercher des numéros..."
   },
-
   "virtualFaxPage": {
     "title": "Télécopieur virtuel",
     "subtitle": "Gérer les numéros de télécopieur virtuel et le routage par courriel.",
@@ -1012,7 +982,6 @@
     "labelEncrypt": "Chiffrer",
     "deleteTitle": "Supprimer le numéro de fax"
   },
-
   "sipTrunkingPage": {
     "title": "Trunk SIP",
     "subtitle": "Gérer les trunks SIP, adresses de service et numéros.",
@@ -1032,7 +1001,6 @@
     "colAddress": "Adresse",
     "colNumber": "Numéro"
   },
-
   "sipTieLinesPage": {
     "title": "Lignes SIP liées",
     "subtitle": "Gérer les configurations de lignes SIP liées.",
@@ -1054,7 +1022,6 @@
     "protoTcp": "TCP",
     "deleteTitle": "Supprimer la ligne"
   },
-
   "schedulesPage": {
     "title": "Horaires",
     "subtitle": "Définir des règles temporelles pour le routage des appels.",
@@ -1075,7 +1042,6 @@
     "deselectAll": "Tout désélectionner",
     "createHoliday": "Créer l'horaire de congés"
   },
-
   "webhooksPage": {
     "title": "Webhooks / API",
     "subtitle": "Recevoir des notifications HTTP POST en temps réel.",
@@ -1106,7 +1072,6 @@
     "deleting": "Suppression…",
     "failedToCreate": "Échec de la création du webhook. Vérifiez l'URL et réessayez."
   },
-
   "apiSetupPage": {
     "title": "Configuration API",
     "subtitle": "Créer et gérer des clés API.",
@@ -1128,7 +1093,6 @@
     "loadError": "Échec du chargement",
     "createError": "Échec de la création"
   },
-
   "voicemailSettingsPage": {
     "title": "Paramètres de messagerie vocale",
     "subtitle": "Configurer les préférences de notification.",
@@ -1144,7 +1108,6 @@
     "labelCallerDetails": "Inclure les détails de l'appelant",
     "descCallerDetails": "Afficher les informations de l'appelant dans le courriel"
   },
-
   "companyDirectoryPage": {
     "title": "Annuaire de l'entreprise",
     "subtitle": "Configurer le menu de l'annuaire et le message d'accueil.",
@@ -1152,9 +1115,20 @@
     "sectionSubtitle": "Configuration de l'annuaire d'entreprise",
     "loading": "Chargement...",
     "labelEnable": "Activer l'annuaire",
-    "descEnable": "Permettre aux appelants d'accéder au menu de l'annuaire"
+    "descEnable": "Permettre aux appelants d'accéder au menu de l'annuaire",
+    "greetingTitle": "Message d'accueil",
+    "playingDefault": "En cours : Message d'accueil par défaut",
+    "playingCustom": "En cours : Message d'accueil personnalisé",
+    "changeGreeting": "Modifier",
+    "returnToDefault": "Revenir au défaut",
+    "uploading": "Téléversement...",
+    "uploadError": "Échec du téléversement. Veuillez réessayer.",
+    "lookupTitle": "Recherche de membres de l'équipe",
+    "lookupDescription": "Choisissez comment rechercher les membres de l'équipe. L'appelant devra saisir 3 chiffres du prénom ou du nom.",
+    "byLastName": "Par nom de famille",
+    "byFirstName": "Par prénom",
+    "saving": "Enregistrement..."
   },
-
   "karisLawPage": {
     "title": "Loi Kari",
     "subtitle": "Numéros de notification d'urgence (E911).",
@@ -1171,7 +1145,6 @@
     "placeholderOptional": "Optionnel",
     "deleteTitle": "Supprimer le numéro"
   },
-
   "contacts911Page": {
     "title": "Notification d'urgence 911",
     "subtitle": "Les contacts de cette liste seront notifiés par SMS lors d'un appel au 911.",
@@ -1187,7 +1160,6 @@
     "deleteTitle": "Supprimer le contact 911",
     "tooltip": "Ces contacts reçoivent des SMS quand le 911 est composé depuis une extension."
   },
-
   "emergencySettingsPage": {
     "title": "Paramètres d'urgence",
     "subtitle": "Contacts notifiés par SMS quand une extension compose le 911. Requis pour la conformité à la loi de Kari.",
@@ -1211,7 +1183,6 @@
     "editTooltip": "Modifier",
     "deleteTooltip": "Supprimer"
   },
-
   "numberPortingPage": {
     "title": "Portabilité des numéros",
     "subtitle": "Porter des numéros de votre fournisseur actuel vers net2phone.",
@@ -1224,7 +1195,6 @@
     "search": "Rechercher des demandes...",
     "noRequests": "Aucune demande de portabilité. Cliquez sur « Nouvelle demande » pour commencer."
   },
-
   "bulkOperationsPage": {
     "title": "Opérations en masse",
     "subtitle": "Importation et chargement en masse.",
@@ -1242,7 +1212,6 @@
     "downloadTemplate": "Télécharger le modèle CSV",
     "loading": "Chargement..."
   },
-
   "musicOptionsPage": {
     "title": "Options musicales",
     "subtitle": "Téléverser et gérer des fichiers audio de musique d'attente.",
@@ -1271,7 +1240,6 @@
     "namePlaceholder": "Nom pour la bibliothèque (requis)",
     "descPlaceholder": "ex. « Musique jazz animée pour une file professionnelle, sans voix »"
   },
-
   "delegatesPage": {
     "title": "Délégués",
     "subtitle": "Accès partenaire et gestion des délégués.",
@@ -1291,7 +1259,6 @@
     "typeAdmin": "Administrateur",
     "deleteTitle": "Supprimer le délégué"
   },
-
   "licensesPage": {
     "title": "Licences",
     "subtitle": "Licences actives de votre compte.",
@@ -1304,7 +1271,6 @@
     "noLicenses": "Aucune information de licence disponible.",
     "contactNote": "Pour ajouter ou modifier des licences, contactez votre gestionnaire de compte net2phone."
   },
-
   "trustCenterPage": {
     "title": "Centre de confiance",
     "subtitle": "Sécurisez votre organisation et restez en conformité.",
@@ -1324,12 +1290,10 @@
     "securityDesc": "Configuration SAML SSO et 2FA",
     "upgradeNote": "Vous devez passer à un forfait payant avant d'enregistrer vos numéros."
   },
-
   "productsPage": {
     "title": "Produits",
     "subtitle": "Sélectionnez un produit pour gérer ses paramètres."
   },
-
   "onboardingPage": {
     "title": "Bienvenue sur net2phone",
     "subtitle": "Configurez votre compte en quelques minutes.",
@@ -1344,7 +1308,6 @@
     "assistantDesc": "Ajoutez des utilisateurs, gérez les groupes, consultez les statistiques.",
     "openButton": "Ouvrir"
   },
-
   "calendarPage": {
     "title": "Calendrier",
     "subtitle": "Paramètres d'intégration du calendrier.",
@@ -1353,7 +1316,6 @@
     "openProfile": "Ouvrir les paramètres du profil →",
     "notConfigured": "URL des paramètres de profil non configurée. Contactez le support."
   },
-
   "productPages": {
     "agentTitle": "Paramètres de l'agent IA",
     "agentSubtitle": "Configurez votre assistant IA pour les appels et la messagerie.",

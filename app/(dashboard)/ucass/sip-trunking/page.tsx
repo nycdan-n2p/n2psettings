@@ -1,6 +1,7 @@
 "use client";
 import { useTranslations } from "next-intl";
 
+import { FeatureGate } from "@/components/feature-gate/FeatureGate";
 import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { qk } from "@/lib/query-keys";
@@ -66,7 +67,7 @@ function LimitsCard({ limits }: { limits: Record<string, unknown> }) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
-export default function SIPTrunkingPage() {
+function SIPTrunkingContent() {
   const t = useTranslations("sipTrunkingPage");
   // Step 1: discover SIP trunk accounts (no account ID needed)
   const { data: sipAccounts = [], isLoading: accountsLoading } = useQuery({
@@ -249,5 +250,13 @@ export default function SIPTrunkingPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function SIPTrunkingPage() {
+  return (
+    <FeatureGate feature="SipTrunkingManagement">
+      <SIPTrunkingContent />
+    </FeatureGate>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 import { useTranslations } from "next-intl";
 
+import { FeatureGate } from "@/components/feature-gate/FeatureGate";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -158,7 +159,7 @@ function CallQueueAgentsPopover({
 
 const EMPTY_FORM: CreateCallQueuePayload = { name: "", extension: "", strategy: "round-robin" };
 
-export default function CallQueuesPage() {
+function CallQueuesContent() {
   const t = useTranslations("callQueuesPage");
   const { bootstrap } = useApp();
   const accountId = bootstrap?.account?.accountId ?? 0;
@@ -328,5 +329,13 @@ export default function CallQueuesPage() {
         message={`Delete call queue "${deleteTarget?.name}"? This cannot be undone.`}
       />
     </div>
+  );
+}
+
+export default function CallQueuesPage() {
+  return (
+    <FeatureGate feature="CallQueue">
+      <CallQueuesContent />
+    </FeatureGate>
   );
 }

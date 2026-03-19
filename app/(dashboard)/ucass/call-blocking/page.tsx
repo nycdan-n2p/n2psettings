@@ -1,6 +1,7 @@
 "use client";
 import { useTranslations } from "next-intl";
 
+import { FeatureGate } from "@/components/feature-gate/FeatureGate";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DataTable } from "@/components/tables/DataTable";
@@ -18,7 +19,7 @@ import { TextInput } from "@/components/settings/TextInput";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import { Trash2 } from "lucide-react";
 
-export default function CallBlockingPage() {
+function CallBlockingContent() {
   const t = useTranslations("callBlockingPage");
   const [tab, setTab] = useState<"inbound" | "outbound">("inbound");
   const [modalOpen, setModalOpen] = useState(false);
@@ -183,5 +184,13 @@ export default function CallBlockingPage() {
         message={`Remove ${deleteTarget?.number} from ${tab} block list?`}
       />
     </div>
+  );
+}
+
+export default function CallBlockingPage() {
+  return (
+    <FeatureGate feature="CallBlocking">
+      <CallBlockingContent />
+    </FeatureGate>
   );
 }

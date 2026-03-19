@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Lock } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useApp } from "@/contexts/AppContext";
 import { useAssistant } from "@/contexts/AssistantContext";
@@ -81,12 +81,14 @@ function NavGroupSection({ group }: { group: NavGroup }) {
   const t = useTranslations("nav");
   const tAny = t as unknown as (key: string) => string;
 
-  const visibleItems = group.items.filter((item) => {
-    if (!item.feature) return true;
-    return bootstrap?.features?.[item.feature] !== false;
-  });
+  // All items are shown; locked ones get a visual indicator and still navigate
+  // to their page (which renders the FeatureGate upsell content).
+  const visibleItems = group.items;
 
   if (visibleItems.length === 0) return null;
+
+  const isLocked = (item: NavItem) =>
+    !!item.feature && bootstrap?.features?.[item.feature] === false;
 
   const groupLabel = NAV_GROUP_KEYS[group.label]
     ? tAny(NAV_GROUP_KEYS[group.label])
@@ -140,6 +142,7 @@ function NavGroupSection({ group }: { group: NavGroup }) {
             }
             const href = item.href!;
             const isActive = pathname === href || pathname.startsWith(`${href}/`);
+            const locked = isLocked(item);
             return (
               <Link
                 key={href}
@@ -148,11 +151,16 @@ function NavGroupSection({ group }: { group: NavGroup }) {
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
                   isActive
                     ? "bg-[#e8f0fe] text-[#1a73e8] font-medium"
+                    : locked
+                    ? "text-gray-400 hover:bg-[#e8eaed] hover:text-gray-600"
                     : "text-gray-700 hover:bg-[#e8eaed]"
                 }`}
               >
                 <Icon className="w-5 h-5 shrink-0" />
-                {itemLabel(item.label)}
+                <span className="flex-1 min-w-0 truncate">{itemLabel(item.label)}</span>
+                {locked && (
+                  <Lock className="w-3 h-3 shrink-0 text-gray-400" />
+                )}
               </Link>
             );
           })}

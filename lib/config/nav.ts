@@ -57,7 +57,7 @@ function ucassNav(base: string): NavGroup[] {
       label: "Communications",
       items: [
         { href: `${base}/calls`, label: "Call History", icon: Phone },
-        { href: `${base}/virtual-fax`, label: "Virtual Fax", icon: Printer },
+        { href: `${base}/virtual-fax`, label: "Virtual Fax", icon: Printer, feature: "IsVirtualFaxEnabled" },
       ],
     },
     {
@@ -67,7 +67,7 @@ function ucassNav(base: string): NavGroup[] {
         { href: `${base}/team-members`, label: "Team Members", icon: Users },
         { href: `${base}/departments`, label: "Departments", icon: Network },
         { href: `${base}/settings/company-directory`, label: "Company Directory", icon: FolderOpen, feature: "CompanyDirectory" },
-        { href: `${base}/settings/delegates`, label: "Delegates", icon: UserPlus },
+        { href: `${base}/settings/delegates`, label: "Delegates", icon: UserPlus, feature: "CustomerDelegateManagement" },
       ],
     },
     {
@@ -86,13 +86,13 @@ function ucassNav(base: string): NavGroup[] {
         { href: `${base}/phone-numbers`, label: "Phone Numbers", icon: Hash },
         { href: `${base}/devices`, label: "Devices", icon: Smartphone },
         { href: `${base}/devices/management`, label: "Device Management", icon: Settings },
-        { href: `${base}/call-blocking`, label: "Call Blocking", icon: PhoneOff },
+        { href: `${base}/call-blocking`, label: "Call Blocking", icon: PhoneOff, feature: "CallBlocking" },
       ],
     },
     {
       label: "Integrations",
       items: [
-        { href: `${base}/sip-trunking`, label: "SIP Trunking", icon: Cable },
+        { href: `${base}/sip-trunking`, label: "SIP Trunking", icon: Cable, feature: "SipTrunkingManagement" },
         { href: `${base}/sip-tie-lines`, label: "SIP Tie-Lines", icon: Link2 },
         { href: `${base}/settings/webhooks`, label: "Webhooks", icon: Webhook },
         { href: `${base}/settings/api-setup`, label: "API Keys", icon: KeyRound },
