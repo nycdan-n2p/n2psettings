@@ -59,7 +59,9 @@ function AssignmentPicker({
 }) {
   const [open, setOpen] = useState(false);
   const [submenu, setSubmenu] = useState<DestType | null>(null);
-  const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; flip: boolean } | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const { data: targets, isLoading } = useQuery({
     queryKey: ["phone-assign-targets", accountId],
@@ -68,16 +70,35 @@ function AssignmentPicker({
     enabled: !!accountId,
   });
 
+  const handleToggle = () => {
+    if (!open && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const flip = window.innerHeight - rect.bottom < 400 && rect.top > 400;
+      setPos({ top: flip ? rect.top - 8 : rect.bottom + 8, left: rect.left, flip });
+      setSubmenu(null);
+    }
+    setOpen((o) => !o);
+  };
+
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+    if (!open) return;
+    const close = (e: MouseEvent) => {
+      if (
+        buttonRef.current && !buttonRef.current.contains(e.target as Node) &&
+        panelRef.current && !panelRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
         setSubmenu(null);
       }
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
+    const closeOnScroll = () => { setOpen(false); setSubmenu(null); };
+    document.addEventListener("mousedown", close);
+    window.addEventListener("scroll", closeOnScroll, true);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      window.removeEventListener("scroll", closeOnScroll, true);
+    };
+  }, [open]);
 
   const currentLabel = phoneNumber.routesTo ?? "Unassigned";
   const currentExt = phoneNumber.extension ? ` ${phoneNumber.extension}` : "";
@@ -92,10 +113,11 @@ function AssignmentPicker({
   const destTypes: DestType[] = ["user", "department", "ringGroup", "welcomeMenu", "specialExtension", "callQueue"];
 
   return (
-    <div ref={ref} className="relative inline-block">
+    <div className="inline-block">
       {/* Trigger */}
       <button
-        onClick={() => { setOpen(!open); setSubmenu(null); }}
+        ref={buttonRef}
+        onClick={handleToggle}
         className="flex items-center gap-2 min-w-[180px] px-3 py-1.5 border border-[#dadce0] rounded-lg bg-white hover:bg-gray-50 text-sm transition-colors"
       >
         {currentType ? (
@@ -109,8 +131,18 @@ function AssignmentPicker({
         <ChevronRight className={`w-3.5 h-3.5 text-gray-400 transition-transform ${open ? "rotate-90" : ""}`} />
       </button>
 
-      {open && (
-        <div className="absolute z-50 top-full left-0 mt-1 w-64 bg-white rounded-xl border border-[#dadce0] shadow-lg overflow-hidden">
+      {open && pos && (
+        <div
+          ref={panelRef}
+          style={{
+            position: "fixed",
+            top: pos.flip ? undefined : pos.top,
+            bottom: pos.flip ? window.innerHeight - pos.top : undefined,
+            left: pos.left,
+            zIndex: 9999,
+          }}
+          className="w-64 bg-white rounded-xl border border-[#dadce0] shadow-lg overflow-hidden"
+        >
           {isLoading ? (
             <div className="px-4 py-3 text-xs text-gray-400">Loading…</div>
           ) : (
@@ -640,7 +672,7 @@ export default function PhoneNumbersPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-[#202124] uppercase tracking-wide">Phone Numbers</h1>
           {stats && (

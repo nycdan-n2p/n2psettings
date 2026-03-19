@@ -632,7 +632,12 @@
     "saving": "Enregistrement...",
     "deleteTitle": "Supprimer le membre",
     "noneOption": "Aucun",
-    "failedToAdd": "Échec de l'ajout de l'utilisateur"
+    "failedToAdd": "Échec de l'ajout de l'utilisateur",
+    "licensesUsed": "{used}/{max} licences utilisées",
+    "membersCount": "{count} membres",
+    "licenseLimitBadgeTitle": "Besoin de plus d'utilisateurs?",
+    "licenseLimitBadgeBody": "Pas de problème. Cliquez ici pour en ajouter.",
+    "addDisabledAtLimit": "Vous avez atteint la limite de licences. Contactez les ventes pour ajouter plus d'utilisateurs."
   },
   "departmentsPage": {
     "title": "Départements",

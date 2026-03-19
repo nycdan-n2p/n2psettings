@@ -52,19 +52,38 @@ function CallQueueAgentsPopover({
 }) {
   const count = queue.agents_count ?? 0;
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ top: number; left: number; flip: boolean } | null>(null);
   const [detail, setDetail] = useState<{ agents?: QueueAgent[]; supervisors?: QueueAgent[] } | null>(null);
   const [loading, setLoading] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const needsFetch = count > 0 && open && !detail;
 
+  const handleToggle = () => {
+    if (!open && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const flip = window.innerHeight - rect.bottom < 340 && rect.top > 340;
+      setPos({ top: flip ? rect.top - 8 : rect.bottom + 8, left: rect.left, flip });
+    }
+    setOpen((o) => !o);
+  };
+
   useEffect(() => {
     if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    const close = (e: MouseEvent) => {
+      if (
+        buttonRef.current && !buttonRef.current.contains(e.target as Node) &&
+        panelRef.current && !panelRef.current.contains(e.target as Node)
+      ) setOpen(false);
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    const closeOnScroll = () => setOpen(false);
+    document.addEventListener("mousedown", close);
+    window.addEventListener("scroll", closeOnScroll, true);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      window.removeEventListener("scroll", closeOnScroll, true);
+    };
   }, [open]);
 
   useEffect(() => {
@@ -113,9 +132,10 @@ function CallQueueAgentsPopover({
   }
 
   return (
-    <div ref={ref} className="relative inline-block">
+    <div className="inline-block">
       <button
-        onClick={() => setOpen((o) => !o)}
+        ref={buttonRef}
+        onClick={handleToggle}
         className="flex items-center gap-1.5 group"
       >
         <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold ${avatarColor(String(queue.id))}`}>
@@ -124,8 +144,18 @@ function CallQueueAgentsPopover({
         <ChevronDown className={`w-3.5 h-3.5 text-[#1a73e8] transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
-      {open && (
-        <div className="absolute z-50 top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-[#dadce0] overflow-hidden">
+      {open && pos && (
+        <div
+          ref={panelRef}
+          style={{
+            position: "fixed",
+            top: pos.flip ? undefined : pos.top,
+            bottom: pos.flip ? window.innerHeight - pos.top : undefined,
+            left: pos.left,
+            zIndex: 9999,
+          }}
+          className="w-64 bg-white rounded-xl shadow-xl border border-[#dadce0] overflow-hidden"
+        >
           <div className="flex items-center justify-between px-3 py-2 border-b border-[#f1f3f4] bg-[#f8f9fa]">
             <span className="text-xs font-semibold text-gray-600">
               {count} agent{count !== 1 ? "s" : ""}
@@ -246,7 +276,7 @@ function CallQueuesContent() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-medium text-gray-900">{t("title")}</h1>
           <p className="text-sm text-gray-500 mt-1">{queues.length} queues</p>

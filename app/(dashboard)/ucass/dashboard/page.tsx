@@ -203,8 +203,8 @@ export default function DashboardPage() {
           <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
             Licenses
           </h2>
-          <div className="bg-white rounded-lg border border-[#dadce0] overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="bg-white rounded-lg border border-[#dadce0] overflow-x-auto">
+            <table className="w-full text-sm min-w-[280px]">
               <thead className="bg-[#f8f9fa]">
                 <tr>
                   <th className="px-4 py-3 text-left font-medium text-gray-700">License</th>

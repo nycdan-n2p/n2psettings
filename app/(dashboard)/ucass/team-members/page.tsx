@@ -21,7 +21,33 @@ import { Modal } from "@/components/settings/Modal";
 import { TextInput } from "@/components/settings/TextInput";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import { EditTeamMemberModal } from "@/components/team-members/EditTeamMemberModal";
-import { Pencil, Trash2, Download, Music2, ChevronDown, X } from "lucide-react";
+import { Pencil, Trash2, Download, Music2, ChevronDown, X, UserPlus } from "lucide-react";
+
+const DISMISS_KEY = "team-members-license-upsell-dismissed";
+
+function LicenseLimitBanner({ onDismiss }: { onDismiss: () => void }) {
+  const t = useTranslations("teamMembersPage");
+  return (
+    <div className="relative mb-6 rounded-xl border border-[#1a73e8]/30 bg-gradient-to-r from-[#e8f0fe] to-[#f3e8ff] p-4 flex items-start gap-4">
+      <div className="shrink-0 w-9 h-9 rounded-lg bg-[#1a73e8] flex items-center justify-center">
+        <UserPlus className="w-4 h-4 text-white" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-gray-900 mb-1">{t("licenseLimitBadgeTitle")}</p>
+        <a href="#" className="text-xs text-[#1a73e8] hover:underline font-medium">
+          {t("licenseLimitBadgeBody")}
+        </a>
+      </div>
+      <button
+        onClick={onDismiss}
+        className="shrink-0 p-1 rounded hover:bg-black/10 text-gray-400 hover:text-gray-600 transition-colors"
+        aria-label="Dismiss"
+      >
+        <X className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
 
 const AVATAR_COLORS = [
   "bg-blue-100 text-blue-700",
@@ -122,6 +148,7 @@ const EMPTY_FORM: CreateUserPayload = { firstName: "", lastName: "", email: "", 
 export default function TeamMembersPage() {
   const { bootstrap } = useApp();
   const accountId = bootstrap?.account?.accountId ?? 0;
+  const maxUsers = bootstrap?.account?.maxUsers;
   const queryClient = useQueryClient();
   const t = useTranslations("teamMembersPage");
   const tc = useTranslations("common");
@@ -130,6 +157,10 @@ export default function TeamMembersPage() {
   const [editingUser, setEditingUser] = useState<TeamMember | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<TeamMember | null>(null);
   const [form, setForm] = useState<CreateUserPayload>({ ...EMPTY_FORM });
+  const [licenseBannerDismissed, setLicenseBannerDismissed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(DISMISS_KEY) === "1";
+  });
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: qk.teamMembers.list(accountId),
@@ -156,6 +187,12 @@ export default function TeamMembersPage() {
   const openAddModal = () => { setEditingUser(null); setForm({ ...EMPTY_FORM }); setModalOpen(true); };
   const openEditModal = (u: TeamMember) => { setEditingUser(u); };
   const closeModal = () => { setModalOpen(false); setForm({ ...EMPTY_FORM }); };
+
+  const atLimit = maxUsers != null && maxUsers > 0 && users.length >= maxUsers;
+  const dismissLicenseBanner = () => {
+    if (typeof window !== "undefined") localStorage.setItem(DISMISS_KEY, "1");
+    setLicenseBannerDismissed(true);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -238,20 +275,33 @@ export default function TeamMembersPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-medium text-gray-900">{t("title")}</h1>
-          <p className="text-sm text-gray-500 mt-1">{users.length} members</p>
+          <p className="text-sm text-gray-500 mt-1">
+            {maxUsers != null && maxUsers > 0
+              ? t("licensesUsed", { used: users.length, max: maxUsers })
+              : t("membersCount", { count: users.length })}
+          </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button onClick={handleExportCsv} className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-[#dadce0] rounded-md hover:bg-gray-50">
             <Download className="w-4 h-4" />{t("exportCsv")}
           </button>
-          <button onClick={openAddModal} className="px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium">
+          <button
+            onClick={openAddModal}
+            disabled={atLimit}
+            title={atLimit ? t("addDisabledAtLimit") : undefined}
+            className="px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             {t("addButton")}
           </button>
         </div>
       </div>
+
+      {atLimit && !licenseBannerDismissed && (
+        <LicenseLimitBanner onDismiss={dismissLicenseBanner} />
+      )}
 
       {isLoading ? (
         <div className="py-12 flex justify-center"><Loader variant="inline" label={t("loading")} /></div>

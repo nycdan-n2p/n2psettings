@@ -77,7 +77,7 @@ export function DataTable<TData>({
       )}
       <div className="border border-[#dadce0] rounded-lg bg-white">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[500px]">
             <thead className="bg-[#f8f9fa] sticky top-0">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
@@ -147,8 +147,8 @@ export function DataTable<TData>({
         </div>
       </div>
       {(table.getPageCount() > 1 || totalRows > 0) && (
-        <div className="flex items-center justify-between mt-4 px-1">
-          <p className="text-sm text-gray-600">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 px-1">
+          <p className="text-sm text-gray-600 order-2 sm:order-1">
             {totalRows > 0 ? (
               <>Showing {startRow}–{endRow} of {totalRows}</>
             ) : (
@@ -156,7 +156,7 @@ export function DataTable<TData>({
             )}
           </p>
           {table.getPageCount() > 1 && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 order-1 sm:order-2">
               <span className="text-sm text-gray-500">
                 Page {pageIndex + 1} of {table.getPageCount()}
               </span>

@@ -632,7 +632,12 @@
     "saving": "Saving...",
     "deleteTitle": "Delete Team Member",
     "noneOption": "None",
-    "failedToAdd": "Failed to add user"
+    "failedToAdd": "Failed to add user",
+    "licensesUsed": "{used}/{max} licenses used",
+    "membersCount": "{count} members",
+    "licenseLimitBadgeTitle": "Need more users?",
+    "licenseLimitBadgeBody": "No problem. Click here to add more.",
+    "addDisabledAtLimit": "You've reached your license limit. Contact sales to add more users."
   },
   "departmentsPage": {
     "title": "Departments",

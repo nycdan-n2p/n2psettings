@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, ChevronRight, Lock } from "lucide-react";
+import { ChevronDown, ChevronRight, Lock, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useApp } from "@/contexts/AppContext";
 import { useAssistant } from "@/contexts/AssistantContext";
-import { useState } from "react";
+import { useSidebar } from "@/contexts/SidebarContext";
+import { useState, useEffect } from "react";
 import { getNavForProduct } from "@/lib/config/nav";
 import { getProductFromPath, PRODUCTS } from "@/lib/config/products";
 
@@ -176,103 +177,142 @@ export function Sidebar() {
   const [productsExpanded, setProductsExpanded] = useState(true);
   const uniteExpanded = productId === "ucass";
   const t = useTranslations("nav");
+  const { mobileOpen, setMobileOpen } = useSidebar();
 
   const ucassNavGroups = getNavForProduct("ucass");
 
-  return (
-    <aside className="w-64 shrink-0 bg-white border-r border-[#dadce0] overflow-y-auto">
-      <nav className="p-3">
-        <div className="mb-2">
-          <p className="px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
-            {t("sidebar.apps")}
-          </p>
-          <Link
-            href="/products"
-            prefetch={false}
-            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
-              pathname === "/products"
-                ? "bg-[#e8f0fe] text-[#1a73e8] font-medium"
-                : "text-gray-700 hover:bg-[#e8eaed]"
-            }`}
-          >
-            {t("items.overview")}
-          </Link>
-        </div>
+  // Close mobile sidebar on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname, setMobileOpen]);
 
-        <div className="mb-1">
-          <button
-            onClick={() => setProductsExpanded(!productsExpanded)}
-            className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider hover:bg-[#e8eaed] rounded-md"
-          >
-            {productsExpanded ? (
-              <ChevronDown className="w-4 h-4" />
-            ) : (
-              <ChevronRight className="w-4 h-4" />
-            )}
-            {t("sidebar.products")}
-          </button>
+  const navContent = (
+    <nav className="p-3">
+      <div className="mb-2">
+        <p className="px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
+          {t("sidebar.apps")}
+        </p>
+        <Link
+          href="/products"
+          prefetch={false}
+          className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
+            pathname === "/products"
+              ? "bg-[#e8f0fe] text-[#1a73e8] font-medium"
+              : "text-gray-700 hover:bg-[#e8eaed]"
+          }`}
+        >
+          {t("items.overview")}
+        </Link>
+      </div>
 
-          {productsExpanded && (
-            <div className="mt-0.5 space-y-0.5">
-              {PRODUCTS.map((product) => {
-                const Icon = product.icon;
-                const isActive = productId === product.id;
-                const href =
-                  product.id === "ucass"
-                    ? "/ucass/dashboard"
-                    : product.basePath;
-
-                if (product.id === "ucass") {
-                  return (
-                    <div key={product.id}>
-                      <Link
-                        href={href}
-                        prefetch={false}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
-                          isActive
-                            ? "bg-[#e8f0fe] text-[#1a73e8] font-medium"
-                            : "text-gray-700 hover:bg-[#e8eaed]"
-                        }`}
-                      >
-                        <Icon className="w-5 h-5 shrink-0" />
-                        {product.shortName}
-                        {uniteExpanded ? (
-                          <ChevronDown className="w-4 h-4 ml-auto" />
-                        ) : (
-                          <ChevronRight className="w-4 h-4 ml-auto" />
-                        )}
-                      </Link>
-                      {uniteExpanded && (
-                        <div className="ml-4 mt-0.5 border-l border-gray-200 pl-2">
-                          {ucassNavGroups.map((group) => (
-                            <NavGroupSection key={group.label} group={group} />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                }
-
-                return (
-                  <Link
-                    key={product.id}
-                    href={href}
-                    prefetch={false}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
-                      isActive
-                        ? "bg-[#e8f0fe] text-[#1a73e8] font-medium"
-                        : "text-gray-700 hover:bg-[#e8eaed]"
-                    }`}
-                  >
-                    <Icon className="w-5 h-5 shrink-0" />
-                    {product.shortName}
-                  </Link>
-                );
-              })}
-            </div>
+      <div className="mb-1">
+        <button
+          onClick={() => setProductsExpanded(!productsExpanded)}
+          className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider hover:bg-[#e8eaed] rounded-md"
+        >
+          {productsExpanded ? (
+            <ChevronDown className="w-4 h-4" />
+          ) : (
+            <ChevronRight className="w-4 h-4" />
           )}
+          {t("sidebar.products")}
+        </button>
+
+        {productsExpanded && (
+          <div className="mt-0.5 space-y-0.5">
+            {PRODUCTS.map((product) => {
+              const Icon = product.icon;
+              const isActive = productId === product.id;
+              const href =
+                product.id === "ucass"
+                  ? "/ucass/dashboard"
+                  : product.basePath;
+
+              if (product.id === "ucass") {
+                return (
+                  <div key={product.id}>
+                    <Link
+                      href={href}
+                      prefetch={false}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
+                        isActive
+                          ? "bg-[#e8f0fe] text-[#1a73e8] font-medium"
+                          : "text-gray-700 hover:bg-[#e8eaed]"
+                      }`}
+                    >
+                      <Icon className="w-5 h-5 shrink-0" />
+                      {product.shortName}
+                      {uniteExpanded ? (
+                        <ChevronDown className="w-4 h-4 ml-auto" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4 ml-auto" />
+                      )}
+                    </Link>
+                    {uniteExpanded && (
+                      <div className="ml-4 mt-0.5 border-l border-gray-200 pl-2">
+                        {ucassNavGroups.map((group) => (
+                          <NavGroupSection key={group.label} group={group} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              return (
+                <Link
+                  key={product.id}
+                  href={href}
+                  prefetch={false}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
+                    isActive
+                      ? "bg-[#e8f0fe] text-[#1a73e8] font-medium"
+                      : "text-gray-700 hover:bg-[#e8eaed]"
+                  }`}
+                >
+                  <Icon className="w-5 h-5 shrink-0" />
+                  {product.shortName}
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </nav>
+  );
+
+  return (
+    <>
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-40 lg:hidden"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Sidebar: drawer on mobile, static on desktop */}
+      <aside
+        className={`
+          w-64 shrink-0 bg-white border-r border-[#dadce0] overflow-y-auto
+          fixed lg:static inset-y-0 left-0 top-14 lg:top-0 z-50 lg:z-auto
+          transform transition-transform duration-200 ease-out
+          ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+        `}
+      >
+        <div className="flex items-center justify-between px-3 py-3 border-b border-[#e8eaed] lg:hidden">
+          <span className="text-sm font-medium text-gray-700">Menu</span>
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="p-2 rounded-md hover:bg-[#e8eaed] text-gray-600"
+            aria-label="Close menu"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
-      </nav>
-    </aside>
+        {navContent}
+      </aside>
+    </>
   );
 }

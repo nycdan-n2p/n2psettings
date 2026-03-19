@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  AreaChart,
+  ComposedChart,
   Area,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
   ResponsiveContainer,
 } from "recharts";
 import { useApp } from "@/contexts/AppContext";
@@ -268,7 +270,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+      <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-4">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-gray-600">Direction:</span>
           <div className="flex rounded-lg border border-gray-200 overflow-hidden bg-white">
@@ -276,7 +278,7 @@ export default function AnalyticsPage() {
               <button
                 key={d.value}
                 onClick={() => setDirection(d.value)}
-                className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors ${
+                className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm font-medium transition-colors ${
                   direction === d.value
                     ? "bg-indigo-600 text-white"
                     : "text-gray-600 hover:bg-gray-50"
@@ -295,7 +297,7 @@ export default function AnalyticsPage() {
               <button
                 key={p.value}
                 onClick={() => setPreset(p.value)}
-                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                className={`px-3 sm:px-4 py-2 text-sm font-medium transition-colors ${
                   preset === p.value
                     ? "bg-indigo-600 text-white"
                     : "text-gray-600 hover:bg-gray-50"
@@ -371,7 +373,7 @@ export default function AnalyticsPage() {
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height={280}>
-                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                     <defs>
                       <linearGradient id="callGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#6366f1" stopOpacity={0.4} />
@@ -410,14 +412,39 @@ export default function AnalyticsPage() {
                         );
                       }}
                     />
+                    <Legend
+                      wrapperStyle={{ paddingTop: 8 }}
+                      formatter={(value) => (
+                        <span className="text-xs text-gray-600">{value}</span>
+                      )}
+                    />
                     <Area
                       type="monotone"
                       dataKey="calls"
+                      name="Total"
                       stroke="#6366f1"
                       strokeWidth={2}
                       fill="url(#callGradient)"
                     />
-                  </AreaChart>
+                    <Line
+                      type="monotone"
+                      dataKey="answered"
+                      name="Answered"
+                      stroke="#10b981"
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                      connectNulls
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="missed"
+                      name="Missed"
+                      stroke="#f43f5e"
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                      connectNulls
+                    />
+                  </ComposedChart>
                 </ResponsiveContainer>
               )}
             </div>

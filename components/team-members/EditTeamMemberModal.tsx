@@ -322,16 +322,35 @@ function DepartmentSelect({
   onSelect: (ids: number[]) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; flip: boolean } | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const count = selectedIds.size;
+
+  const handleToggle = () => {
+    if (!open && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const flip = window.innerHeight - rect.bottom < 340 && rect.top > 340;
+      setPos({ top: flip ? rect.top - 8 : rect.bottom + 8, left: rect.left, flip });
+    }
+    setOpen((o) => !o);
+  };
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    const close = (e: MouseEvent) => {
+      if (
+        buttonRef.current && !buttonRef.current.contains(e.target as Node) &&
+        panelRef.current && !panelRef.current.contains(e.target as Node)
+      ) setOpen(false);
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    const closeOnScroll = () => setOpen(false);
+    document.addEventListener("mousedown", close);
+    window.addEventListener("scroll", closeOnScroll, true);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      window.removeEventListener("scroll", closeOnScroll, true);
+    };
   }, [open]);
 
   const toggle = (deptId: number) => {
@@ -342,10 +361,11 @@ function DepartmentSelect({
   };
 
   return (
-    <div ref={ref} className="relative inline-block w-full max-w-full">
+    <div className="inline-block w-full max-w-full">
       <button
+        ref={buttonRef}
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={handleToggle}
         className="flex items-center gap-2 px-3 py-2 text-sm border border-[#dadce0] rounded-lg bg-white hover:bg-[#f8f9fa] text-left w-full min-w-0 max-w-full"
       >
         <span className="flex-1 truncate text-gray-700 min-w-0">
@@ -357,8 +377,18 @@ function DepartmentSelect({
           className={`w-4 h-4 text-gray-500 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
         />
       </button>
-      {open && (
-        <div className="absolute z-50 top-full left-0 mt-1 w-72 max-h-64 bg-white rounded-lg shadow-lg border border-[#dadce0] overflow-hidden">
+      {open && pos && (
+        <div
+          ref={panelRef}
+          style={{
+            position: "fixed",
+            top: pos.flip ? undefined : pos.top,
+            bottom: pos.flip ? window.innerHeight - pos.top : undefined,
+            left: pos.left,
+            zIndex: 9999,
+          }}
+          className="w-72 max-h-64 bg-white rounded-lg shadow-lg border border-[#dadce0] overflow-hidden"
+        >
           <div className="px-3 py-2 border-b border-[#f1f3f4] bg-[#f8f9fa]">
             <span className="text-xs font-medium text-gray-600">
               Select departments

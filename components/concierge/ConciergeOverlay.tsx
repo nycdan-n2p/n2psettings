@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { X, Sparkles, RotateCcw, Send, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useConcierge, STAGE_ORDER } from "@/contexts/ConciergeContext";
+import { useConcierge, STAGE_ORDER, type ConciergeStage } from "@/contexts/ConciergeContext";
 import { useConciergeAgent } from "@/hooks/useConciergeAgent";
 import { ProgressBar } from "./ProgressBar";
 import { MessageBubble } from "./MessageBubble";
@@ -49,6 +49,18 @@ function useFocusTrap(containerRef: React.RefObject<HTMLDivElement | null>, acti
     return () => el.removeEventListener("keydown", handler);
   }, [containerRef, active]);
 }
+
+// Stages that show a form widget — hide the free-form message input when one is shown
+const STAGES_WITH_FORM: ConciergeStage[] = [
+  "welcome_scrape",
+  "verification_holidays",
+  "cdr_analysis",
+  "porting",
+  "user_ingestion",
+  "architecture_hardware",
+  "licensing",
+  "final_blueprint",
+];
 
 // ── Main overlay ──────────────────────────────────────────────────────────────
 
@@ -104,6 +116,12 @@ export function ConciergeOverlay() {
 
   const isDone   = stage === "done";
   const stageIdx = STAGE_ORDER.indexOf(stage);
+
+  // Only show the free-form message input when we need text outside a form
+  const showMessageInput =
+    !isDone &&
+    !isRunning &&
+    !STAGES_WITH_FORM.includes(widgetStage as ConciergeStage);
 
   return (
     <>
@@ -222,8 +240,8 @@ export function ConciergeOverlay() {
             </div>
           </div>
 
-          {/* Input bar */}
-          {!isDone && (
+          {/* Input bar — only when we need free-form text (no form on screen) */}
+          {showMessageInput && (
             <div className="px-4 py-3 border-t border-[#e8eaed] bg-white rounded-b-2xl shrink-0 flex items-center gap-2">
               <label htmlFor="concierge-input" className="sr-only">
                 {t("inputPlaceholder")}

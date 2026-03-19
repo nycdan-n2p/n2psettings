@@ -2,6 +2,7 @@
 
 import { TopBar } from "@/components/layout/TopBar";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { SidebarProvider } from "@/contexts/SidebarContext";
 import { AssistantSidePanel } from "@/components/assistant/AssistantSidePanel";
 import { AssistantProvider } from "@/contexts/AssistantContext";
 import { ConciergeProvider, useConcierge } from "@/contexts/ConciergeContext";
@@ -39,13 +40,13 @@ function FirstTimeSetupBanner() {
   if (!visible) return null;
 
   return (
-    <div className="flex items-center justify-between px-4 py-2 bg-[#e8f0fe] border-b border-[#c5d8fb] shrink-0">
-      <div className="flex items-center gap-2 text-sm text-[#1a56b0]">
+    <div className="flex items-center justify-between gap-2 px-4 py-2 bg-[#e8f0fe] border-b border-[#c5d8fb] shrink-0">
+      <div className="flex flex-wrap items-center gap-2 text-sm text-[#1a56b0] min-w-0">
         <Sparkles className="w-4 h-4 shrink-0 text-[#1a73e8]" aria-hidden="true" />
-        <span>New account? Get set up in minutes.</span>
+        <span className="truncate"><span className="hidden sm:inline">New account? </span>Get set up in minutes.</span>
         <button
           onClick={() => { open(); dismiss(); }}
-          className="font-semibold underline hover:no-underline"
+          className="font-semibold underline hover:no-underline shrink-0"
         >
           Start guided setup →
         </button>
@@ -120,20 +121,22 @@ export default function DashboardLayout({
   return (
     <ConciergeProvider>
       <AssistantProvider>
-        <div className="min-h-screen flex flex-col bg-[#f8f9fa]">
-          <TopBar />
-          <FirstTimeSetupBanner />
-          <div className="flex flex-1 overflow-hidden">
-            <Sidebar />
-            <main className="flex-1 overflow-auto p-6">
-              <ErrorBoundary>{children}</ErrorBoundary>
-            </main>
+        <SidebarProvider>
+          <div className="min-h-screen flex flex-col bg-[#f8f9fa]">
+            <TopBar />
+            <FirstTimeSetupBanner />
+            <div className="flex flex-1 overflow-hidden relative">
+              <Sidebar />
+              <main className="flex-1 overflow-auto p-4 sm:p-6 min-w-0">
+                <ErrorBoundary>{children}</ErrorBoundary>
+              </main>
+            </div>
+            <AssistantSidePanel />
+            <ErrorBoundary context="Concierge">
+              <ConciergeOverlay />
+            </ErrorBoundary>
           </div>
-          <AssistantSidePanel />
-          <ErrorBoundary context="Concierge">
-            <ConciergeOverlay />
-          </ErrorBoundary>
-        </div>
+        </SidebarProvider>
       </AssistantProvider>
     </ConciergeProvider>
   );

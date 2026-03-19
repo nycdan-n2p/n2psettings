@@ -632,7 +632,12 @@
     "saving": "Guardando...",
     "deleteTitle": "Eliminar Miembro del Equipo",
     "noneOption": "Ninguno",
-    "failedToAdd": "Error al agregar usuario"
+    "failedToAdd": "Error al agregar usuario",
+    "licensesUsed": "{used}/{max} licencias usadas",
+    "membersCount": "{count} miembros",
+    "licenseLimitBadgeTitle": "¿Necesita más usuarios?",
+    "licenseLimitBadgeBody": "No hay problema. Haga clic aquí para agregar más.",
+    "addDisabledAtLimit": "Ha alcanzado el límite de licencias. Contacte a ventas para agregar más usuarios."
   },
   "departmentsPage": {
     "title": "Departamentos",

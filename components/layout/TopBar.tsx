@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState, useRef, useEffect } from "react";
 import {
   Search,
   Bell,
@@ -11,11 +12,13 @@ import {
   Bot,
   HelpCircle,
   Sparkles,
+  Menu,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useApp } from "@/contexts/AppContext";
 import { useAssistant } from "@/contexts/AssistantContext";
 import { useConcierge } from "@/contexts/ConciergeContext";
+import { useSidebar } from "@/contexts/SidebarContext";
 import { clearTokens } from "@/lib/auth";
 import { INTEGRATIONS } from "@/lib/config/integrations";
 import { LocaleSelector } from "@/components/ui/LocaleSelector";
@@ -26,6 +29,18 @@ export function TopBar() {
   const { bootstrap } = useApp();
   const { open: openAssistant } = useAssistant();
   const { open: openConcierge } = useConcierge();
+  const { toggleMobile } = useSidebar();
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const close = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) setUserMenuOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [userMenuOpen]);
 
   const handleLogout = () => {
     clearTokens();
@@ -40,11 +55,18 @@ export function TopBar() {
   const unreadCount = bootstrap?.unreadVoicemailCount ?? 0;
 
   return (
-    <header className="h-14 flex items-center justify-between px-4 text-white shrink-0" style={{ background: "linear-gradient(to right, #0d1b4b, #5b21b6, #c026d3, #e91e8c)" }}>
-      <div className="flex items-center gap-6">
-        <Link href="/products" prefetch={false} className="flex items-center gap-2 font-medium">
-          <span className="text-lg font-semibold">net2phone</span>
-          <span className="text-white/80 text-sm">{t("products")}</span>
+    <header className="h-14 flex items-center justify-between px-3 sm:px-4 text-white shrink-0 gap-2" style={{ background: "linear-gradient(to right, #0d1b4b, #5b21b6, #c026d3, #e91e8c)" }}>
+      <div className="flex items-center gap-2 sm:gap-6 min-w-0">
+        <button
+          onClick={toggleMobile}
+          className="lg:hidden p-2 -ml-1 rounded-md hover:bg-white/20 transition-colors shrink-0"
+          aria-label="Open menu"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+        <Link href="/products" prefetch={false} className="flex items-center gap-1.5 sm:gap-2 font-medium min-w-0">
+          <span className="text-base sm:text-lg font-semibold truncate">net2phone</span>
+          <span className="text-white/80 text-xs sm:text-sm hidden sm:inline">{t("products")}</span>
         </Link>
         <div className="hidden md:flex items-center gap-2 bg-white/20 rounded-md px-3 py-1.5 w-64">
           <Search className="w-4 h-4 text-white/80" />
@@ -89,14 +111,20 @@ export function TopBar() {
             </span>
           )}
         </Link>
-        <div className="relative group">
-          <button className="flex items-center gap-2 p-2 rounded-full hover:bg-white/20 transition-colors">
+        <div className="relative" ref={userMenuRef}>
+          <button
+            onClick={() => setUserMenuOpen((o) => !o)}
+            className="flex items-center gap-2 p-2 rounded-full hover:bg-white/20 transition-colors"
+            aria-expanded={userMenuOpen}
+            aria-haspopup="true"
+          >
             <div className="w-8 h-8 rounded-full bg-white/30 flex items-center justify-center">
               <User className="w-4 h-4" />
             </div>
             <ChevronDown className="w-4 h-4" />
           </button>
-          <div className="absolute right-0 top-full mt-1 py-1 w-56 bg-white rounded-md shadow-lg text-gray-900 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+          {userMenuOpen && (
+          <div className="absolute right-0 top-full mt-1 py-1 w-56 bg-white rounded-md shadow-lg text-gray-900 z-50">
             <div className="px-3 py-2 border-b border-gray-100">
               <p className="text-sm font-medium truncate">{userName}</p>
               <p className="text-xs text-gray-500 truncate">
@@ -183,6 +211,7 @@ export function TopBar() {
               {t("logOut")}
             </button>
           </div>
+          )}
         </div>
       </div>
     </header>

@@ -135,9 +135,18 @@ export async function fetchAnalyticsFromCallHistory(
   const missedCalls = cdrs.filter((c) => isMissed(resultLower(c))).length;
   const voicemailCalls = cdrs.filter((c) => isVoicemail(resultLower(c))).length;
 
-  const dailyVolume = Array.from(dayMap.entries())
-    .map(([date, v]) => ({ date, ...v }))
-    .sort((a, b) => a.date.localeCompare(b.date));
+  // Build dailyVolume with all days in range (fill missing days with zeros)
+  const dailyVolume: { date: string; calls: number; answered: number; missed: number }[] = [];
+  const cursor = new Date(start);
+  cursor.setHours(0, 0, 0, 0);
+  const endDate = new Date(end);
+  endDate.setHours(0, 0, 0, 0);
+  while (cursor.getTime() <= endDate.getTime()) {
+    const d = cursor.toISOString().substring(0, 10);
+    const v = dayMap.get(d) ?? { calls: 0, answered: 0, missed: 0 };
+    dailyVolume.push({ date: d, ...v });
+    cursor.setDate(cursor.getDate() + 1);
+  }
 
   const userRows = Array.from(userMap.entries())
     .map(([name, u]) => ({
