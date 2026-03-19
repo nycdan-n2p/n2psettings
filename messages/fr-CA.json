@@ -87,6 +87,7 @@
       "callRouting": "Acheminement des appels",
       "resources": "Ressources",
       "integrations": "Intégrations",
+      "compliance": "Conformité",
       "settings": "Paramètres",
       "helpSupport": "Aide et soutien",
       "aiAgent": "Agent IA",
@@ -129,7 +130,8 @@
       "bulkOperations": "Opérations en bloc",
       "overview": "Aperçu",
       "settings": "Paramètres",
-      "callHistory": "Historique des appels"
+      "callHistory": "Historique des appels",
+      "callBlocking": "Blocage d'appels"
     }
   },
 

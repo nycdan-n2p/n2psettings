@@ -26,9 +26,10 @@ import {
   Truck,
   Package,
   BarChart2,
-  Phone as PhoneIcon,
+  Printer,
   Music,
   KeyRound,
+  PhoneOff,
 } from "lucide-react";
 
 interface NavItem {
@@ -57,8 +58,9 @@ function ucassNav(base: string): NavGroup[] {
     {
       label: "Communications",
       items: [
-        { href: `${base}/calls`, label: "Calls", icon: Phone },
+        { href: `${base}/calls`, label: "Call History", icon: Phone },
         { href: `${base}/voicemail`, label: "Voicemail", icon: Voicemail },
+        { href: `${base}/virtual-fax`, label: "Virtual Fax", icon: Printer },
         { href: `${base}/calendar`, label: "Calendar", icon: Calendar },
       ],
     },
@@ -68,6 +70,8 @@ function ucassNav(base: string): NavGroup[] {
         { href: `${base}/company`, label: "Company", icon: Building2 },
         { href: `${base}/team-members`, label: "Team Members", icon: Users },
         { href: `${base}/departments`, label: "Departments", icon: Network },
+        { href: `${base}/settings/company-directory`, label: "Company Directory", icon: FolderOpen, feature: "CompanyDirectory" },
+        { href: `${base}/settings/delegates`, label: "Delegates", icon: UserPlus },
       ],
     },
     {
@@ -76,7 +80,8 @@ function ucassNav(base: string): NavGroup[] {
         { href: `${base}/virtual-assistant`, label: "Virtual Assistant", icon: PhoneCall },
         { href: `${base}/ring-groups`, label: "Ring Groups", icon: Users },
         { href: `${base}/call-queues`, label: "Call Queues", icon: ListOrdered, feature: "CallQueue" },
-        { href: `${base}/agent`, label: "Agent", icon: Bot },
+        { href: `${base}/schedules`, label: "Schedules", icon: Clock },
+        { href: `${base}/special-extensions`, label: "Special Extensions", icon: Star },
       ],
     },
     {
@@ -85,9 +90,7 @@ function ucassNav(base: string): NavGroup[] {
         { href: `${base}/phone-numbers`, label: "Phone Numbers", icon: Hash },
         { href: `${base}/devices`, label: "Devices", icon: Smartphone },
         { href: `${base}/devices/management`, label: "Device Management", icon: Settings },
-        { href: `${base}/schedules`, label: "Schedules", icon: Clock },
-        { href: `${base}/special-extensions`, label: "Special Extensions", icon: Star },
-        { href: `${base}/virtual-fax`, label: "Virtual Fax", icon: PhoneIcon },
+        { href: `${base}/call-blocking`, label: "Call Blocking", icon: PhoneOff },
       ],
     },
     {
@@ -100,16 +103,19 @@ function ucassNav(base: string): NavGroup[] {
       ],
     },
     {
+      label: "Compliance",
+      items: [
+        { href: `${base}/settings/911-contacts`, label: "911 Contacts", icon: AlertTriangle },
+        { href: `${base}/settings/karis-law`, label: "Kari's Law", icon: AlertTriangle, feature: "EmergencyCallNotification" },
+        { href: `${base}/settings/trust-center`, label: "Trust Center", icon: Shield },
+      ],
+    },
+    {
       label: "Settings",
       items: [
         { href: `${base}/settings/voicemail`, label: "Voicemail Settings", icon: Settings },
         { href: `${base}/settings/music-options`, label: "Music Options", icon: Music },
-        { href: `${base}/settings/company-directory`, label: "Company Directory", icon: FolderOpen, feature: "CompanyDirectory" },
-        { href: `${base}/settings/911-contacts`, label: "911 Contacts", icon: AlertTriangle },
         { href: `${base}/settings/licenses`, label: "Licenses", icon: FileBarChart },
-        { href: `${base}/settings/trust-center`, label: "Trust Center", icon: Shield },
-        { href: `${base}/settings/karis-law`, label: "Kari's Law", icon: AlertTriangle, feature: "EmergencyCallNotification" },
-        { href: `${base}/settings/delegates`, label: "Delegates", icon: UserPlus },
         { href: `${base}/settings/number-porting`, label: "Number Porting", icon: Truck },
         { href: `${base}/settings/bulk-operations`, label: "Bulk Operations", icon: Package },
       ],
