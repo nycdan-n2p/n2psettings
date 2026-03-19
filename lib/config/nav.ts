@@ -2,8 +2,6 @@ import type { ProductId } from "./products";
 import {
   LayoutDashboard,
   Phone,
-  Voicemail,
-  Calendar,
   Building2,
   Users,
   Network,
@@ -59,9 +57,7 @@ function ucassNav(base: string): NavGroup[] {
       label: "Communications",
       items: [
         { href: `${base}/calls`, label: "Call History", icon: Phone },
-        { href: `${base}/voicemail`, label: "Voicemail", icon: Voicemail },
         { href: `${base}/virtual-fax`, label: "Virtual Fax", icon: Printer },
-        { href: `${base}/calendar`, label: "Calendar", icon: Calendar },
       ],
     },
     {
