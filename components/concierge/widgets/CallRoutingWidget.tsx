@@ -109,11 +109,15 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
 
   // Step handlers
   const handleMenuNext = () => {
+    const filteredOptions = menuEnabled ? menuOptions.filter((o) => o.destinationName.trim()) : [];
+    if (menuEnabled && filteredOptions.length === 0) {
+      return; // Block: require at least one option when menu is enabled
+    }
     const menu = {
       enabled: menuEnabled,
       greetingType: menuEnabled ? greetingType : "none" as const,
       greetingText: menuEnabled && greetingType === "tts" ? greetingText : "",
-      menuOptions: menuEnabled ? menuOptions.filter((o) => o.destinationName.trim()) : [],
+      menuOptions: filteredOptions,
       allowExtensionDialing: extDialing,
       playWaitMessage: playWait,
       allowBargingThrough: barging,
@@ -285,8 +289,15 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
             </>
           )}
 
-          <button onClick={handleMenuNext}
-            className="w-full py-2 text-sm font-medium bg-[#1a73e8] text-white rounded-lg hover:bg-[#1557b0] transition-colors">
+          {menuEnabled && menuOptions.filter((o) => o.destinationName.trim()).length === 0 && (
+            <p className="text-xs text-amber-600" role="alert">
+              Add at least one menu option (e.g. Press 1 → Sales) or disable the welcome menu.
+            </p>
+          )}
+          <button
+            onClick={handleMenuNext}
+            disabled={menuEnabled && menuOptions.filter((o) => o.destinationName.trim()).length === 0}
+            className="w-full py-2 text-sm font-medium bg-[#1a73e8] text-white rounded-lg hover:bg-[#1557b0] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
             {tCommon("next")}
           </button>
           <FixItButton targetStage="architecture_hardware" />

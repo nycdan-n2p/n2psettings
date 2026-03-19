@@ -152,6 +152,7 @@ export function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[
   const [newEmail, setNewEmail] = useState("");
   const [csvLoading, setCsvLoading] = useState(false);
   const [csvError, setCsvError]     = useState("");
+  const [csvJustImported, setCsvJustImported] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -183,6 +184,8 @@ export function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[
     try {
       const parsed = await parseCSV(file);
       setUsers(parsed);
+      updateConfig({ users: parsed }); // Persist immediately so users survive widget unmount (e.g. when AI runs)
+      setCsvJustImported(true);
       setCsvLoading(false);
       setMode("edit"); // go straight to editable table
     } catch (err) {
@@ -194,6 +197,7 @@ export function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[
   };
 
   const handleConfirm = () => {
+    setCsvJustImported(false);
     updateConfig({ users });
     const list = users.map((u) =>
       `${u.firstName} ${u.lastName ?? ""} <${u.email ?? ""}>${u.department ? ` [${u.department}]` : ""}`
@@ -240,6 +244,12 @@ export function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[
   // "edit" mode — single unified editable table for both manual and CSV-imported users
   return (
     <CardShell>
+      {csvJustImported && users.length > 0 && (
+        <p className="flex items-center gap-1.5 text-sm text-[#1a73e8] mb-3" role="status">
+          <CheckCircle2 className="w-4 h-4 shrink-0" aria-hidden="true" />
+          {t("users.foundFromCsv", { count: users.length })}
+        </p>
+      )}
       <div className="flex items-center justify-between mb-3">
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("users.teamMembers")}</p>
         <button

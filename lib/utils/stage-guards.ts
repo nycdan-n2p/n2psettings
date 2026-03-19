@@ -42,9 +42,8 @@ export function validateStageComplete(
     case "licensing":
       if (!config.routingType) missing.push("routing type");
       if (!config.routingConfig?.groupName) missing.push("ring group/queue name");
-      if (config.welcomeMenu?.enabled && config.welcomeMenu.menuOptions.length === 0) {
-        missing.push("at least one welcome menu option");
-      }
+      // Allow advance when welcome menu enabled with 0 options — build creates VA with greeting only.
+      // Widget blocks Next when enabled+0 to prevent this; this relaxes for existing sessions.
       if (!config.afterHours?.action) missing.push("after-hours behavior");
       break;
 

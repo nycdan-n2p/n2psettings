@@ -8,11 +8,12 @@ import { CardShell, FixItButton } from "./shared";
 
 type ArchStep = "departments" | "depts" | "assign" | "phones" | "hardphone_details";
 
-export function deriveArchStep(config: { departments: string[]; assignmentsDone?: boolean; phoneType: string; hasHardphones: boolean }): ArchStep {
+export function deriveArchStep(config: { departments: string[]; assignmentsDone?: boolean; phoneType: string; hasHardphones: boolean; users?: { length: number } }): ArchStep {
   if (config.hasHardphones) return "hardphone_details";
-  if (config.phoneType) return "phones";
+  // Check assignmentsDone before phoneType — phoneType defaults to "softphone" in config,
+  // which would incorrectly skip departments/assign and go straight to phones.
   if (config.assignmentsDone) return "phones";
-  if (config.departments.length > 0) return "assign";
+  if (config.departments.length > 0 && (config.users?.length ?? 0) > 0) return "assign";
   return "departments";
 }
 
@@ -110,10 +111,17 @@ export function ArchitectureWidget({ onMessages }: { onMessages: (msgs: string[]
               ))}
             </div>
           )}
-          <button onClick={handleDeptsNext} disabled={depts.length === 0}
-            className="w-full py-2 text-sm font-medium bg-[#1a73e8] text-white rounded-lg hover:bg-[#1557b0] disabled:opacity-40 transition-colors">
-            {t("architecture.nextDepts")}
-          </button>
+          {depts.length === 0 ? (
+            <button onClick={handleDeptsNext}
+              className="w-full py-2 text-sm font-medium text-gray-600 border border-[#dadce0] rounded-lg hover:bg-[#f8f9fa]">
+              {t("architecture.skipDepts")}
+            </button>
+          ) : (
+            <button onClick={handleDeptsNext}
+              className="w-full py-2 text-sm font-medium bg-[#1a73e8] text-white rounded-lg hover:bg-[#1557b0] transition-colors">
+              {t("architecture.nextDepts")}
+            </button>
+          )}
           <FixItButton targetStage="user_ingestion" />
         </div>
       </CardShell>

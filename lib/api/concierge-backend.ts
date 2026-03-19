@@ -58,9 +58,9 @@ export async function parseCSV(file: File): Promise<OnboardingUser[]> {
 
         const col = (key: string) => {
           const aliases: Record<string, string[]> = {
-            firstName: ["first_name", "firstname", "first"],
-            lastName:  ["last_name",  "lastname",  "last"],
-            email:     ["email", "email_address"],
+            firstName: ["first_name", "firstname", "first", "first name", "given_name", "givenname"],
+            lastName:  ["last_name",  "lastname",  "last", "last name", "surname", "family_name", "familyname"],
+            email:     ["email", "email_address", "e-mail", "e_mail", "email address"],
           };
           const opts = aliases[key] ?? [key];
           for (const a of opts) {

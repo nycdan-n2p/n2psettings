@@ -263,6 +263,7 @@
     },
     "users": {
       "teamMembers": "Membres de l'équipe",
+      "foundFromCsv": "{count} utilisateurs trouvés dans votre CSV. Modifiez les noms et ajoutez les courriels manquants ci-dessous.",
       "howToAdd": "Comment souhaitez-vous ajouter votre équipe?",
       "manualEntry": "Saisie manuelle",
       "uploadCsv": "Téléverser CSV",
