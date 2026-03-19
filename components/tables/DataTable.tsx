@@ -75,7 +75,7 @@ export function DataTable<TData>({
           />
         </div>
       )}
-      <div className="border border-[#dadce0] rounded-lg overflow-hidden bg-white">
+      <div className="border border-[#dadce0] rounded-lg bg-white">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-[#f8f9fa] sticky top-0">
