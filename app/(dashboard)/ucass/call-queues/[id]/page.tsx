@@ -496,6 +496,7 @@ function IvrSection({
 interface MusicGenResult {
   id?: string;
   audioUrl: string;
+  audioBase64?: string;
   imageUrl?: string | null;
   title: string;
 }
@@ -510,9 +511,14 @@ function ElevenLabsMusicGenerator({ onAssign }: { onAssign: (url: string, title:
   const [result, setResult] = useState<MusicGenResult | null>(null);
   const [playing, setPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const blobUrlRef = useRef<string | null>(null);
 
   async function handleGenerate() {
     if (!prompt.trim()) return;
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+    }
     setGenerating(true);
     setError(null);
     setResult(null);
@@ -540,7 +546,18 @@ function ElevenLabsMusicGenerator({ onAssign }: { onAssign: (url: string, title:
       audio.pause();
       setPlaying(false);
     } else {
-      audio.src = result.audioUrl;
+      // Use blob URL for playback (avoids CSP issues with long data URLs)
+      if (result.audioBase64) {
+        if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+        const bin = atob(result.audioBase64);
+        const arr = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+        const blob = new Blob([arr], { type: "audio/mpeg" });
+        blobUrlRef.current = URL.createObjectURL(blob);
+        audio.src = blobUrlRef.current;
+      } else {
+        audio.src = result.audioUrl;
+      }
       audio.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
       audio.onended = () => setPlaying(false);
     }
@@ -548,6 +565,10 @@ function ElevenLabsMusicGenerator({ onAssign }: { onAssign: (url: string, title:
 
   function handleAssign() {
     if (!result) return;
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+    }
     onAssign(result.audioUrl, result.title);
     setOpen(false);
     setResult(null);
@@ -577,7 +598,16 @@ function ElevenLabsMusicGenerator({ onAssign }: { onAssign: (url: string, title:
           <span className="text-sm font-semibold text-purple-900">Generate AI Hold Music</span>
           <span className="text-xs text-purple-500 bg-purple-100 px-1.5 py-0.5 rounded-full">ElevenLabs</span>
         </div>
-        <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600">
+        <button
+          onClick={() => {
+            if (blobUrlRef.current) {
+              URL.revokeObjectURL(blobUrlRef.current);
+              blobUrlRef.current = null;
+            }
+            setOpen(false);
+          }}
+          className="text-gray-400 hover:text-gray-600"
+        >
           <X className="w-4 h-4" />
         </button>
       </div>

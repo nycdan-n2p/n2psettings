@@ -50,9 +50,14 @@ function MusicGenerator({
   const [done, setDone] = useState(false);
   const [playing, setPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const blobUrlRef = useRef<string | null>(null);
 
   async function handleGenerate() {
     if (!prompt.trim()) return;
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+    }
     setGenerating(true);
     setGenError(null);
     setResult(null);
@@ -84,7 +89,18 @@ function MusicGenerator({
       audio.pause();
       setPlaying(false);
     } else {
-      audio.src = result.audioUrl;
+      // Use blob URL for playback (avoids CSP issues with long data URLs)
+      if (result.audioBase64) {
+        if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+        const bin = atob(result.audioBase64);
+        const arr = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+        const blob = new Blob([arr], { type: "audio/mpeg" });
+        blobUrlRef.current = URL.createObjectURL(blob);
+        audio.src = blobUrlRef.current;
+      } else {
+        audio.src = result.audioUrl;
+      }
       audio.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
       audio.onended = () => setPlaying(false);
     }
@@ -132,6 +148,10 @@ function MusicGenerator({
   }
 
   function handleReset() {
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+    }
     setResult(null);
     setDone(false);
     setGenError(null);

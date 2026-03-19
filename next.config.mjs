@@ -30,6 +30,7 @@ const nextConfig = {
               "script-src 'self' 'unsafe-inline'",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https://*.net2phone.com",
+              "media-src 'self' data: blob: https://*.blob.vercel-storage.com",
               "font-src 'self' data: https://fonts.gstatic.com",
               "connect-src 'self' https://*.net2phone.com https://api.n2p.io https://api.anthropic.com https://date.nager.at",
               "frame-src 'none'",
