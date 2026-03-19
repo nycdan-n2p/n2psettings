@@ -33,6 +33,7 @@ export function validateStageComplete(
       break;
 
     case "user_ingestion":
+      if (config.users.length === 0) missing.push("at least one team member");
       break;
 
     case "architecture_hardware":

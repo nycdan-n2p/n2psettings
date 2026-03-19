@@ -122,7 +122,7 @@ export function ArchitectureWidget({ onMessages }: { onMessages: (msgs: string[]
               {t("architecture.nextDepts")}
             </button>
           )}
-          <FixItButton targetStage="user_ingestion" />
+          <FixItButton targetStage="porting" />
         </div>
       </CardShell>
     );
@@ -220,6 +220,7 @@ export function ArchitectureWidget({ onMessages }: { onMessages: (msgs: string[]
       <div className="space-y-3">
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("architecture.hardphoneDetailsTitle")}</p>
         <p className="text-xs text-gray-500">{t("architecture.hardphoneDescription")}</p>
+        <p className="text-xs text-gray-500 italic">{t("architecture.deviceProvisioningNote")}</p>
         <div className="rounded-xl border border-[#e8eaed] overflow-hidden max-h-52 overflow-y-auto">
           {users.map((u, i) => (
             <div key={i} className="flex items-center gap-2 px-3 py-2 border-b border-[#f1f3f4] last:border-0 bg-white">
@@ -251,7 +252,7 @@ export function ArchitectureWidget({ onMessages }: { onMessages: (msgs: string[]
             {t("architecture.finishButton")}
           </button>
         </div>
-        <FixItButton targetStage="user_ingestion" />
+        <FixItButton targetStage="porting" />
       </div>
     </CardShell>
   );

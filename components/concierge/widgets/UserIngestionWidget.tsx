@@ -236,7 +236,7 @@ export function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[
           </p>
         )}
         <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleCSV} aria-label="Upload CSV file" />
-        <FixItButton targetStage="porting" />
+        <FixItButton targetStage="cdr_analysis" />
       </CardShell>
     );
   }
@@ -320,14 +320,17 @@ export function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[
 
       <button onClick={handleConfirm} disabled={users.length === 0 || missingFields.length > 0}
         className="w-full py-2 text-sm font-medium bg-[#1a73e8] text-white rounded-lg hover:bg-[#1557b0] disabled:opacity-40 transition-colors"
-        title={missingFields.length > 0 ? t("users.missingEmails") : undefined}
+        title={users.length === 0 ? t("users.teamRequired") : missingFields.length > 0 ? t("users.missingEmails") : undefined}
       >
         {t("users.confirmUsers", { count: users.length })}
       </button>
-      {missingFields.length > 0 && (
+      {users.length === 0 && (
+        <p className="text-xs text-center text-amber-600 mt-1.5">{t("users.teamRequired")}</p>
+      )}
+      {missingFields.length > 0 && users.length > 0 && (
         <p className="text-xs text-center text-gray-400 mt-1.5">{t("users.missingEmails")}</p>
       )}
-      <FixItButton targetStage="porting" />
+      <FixItButton targetStage="cdr_analysis" />
     </CardShell>
   );
 }

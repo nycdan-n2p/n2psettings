@@ -24,14 +24,15 @@ export type ConciergeStage =
   | "final_blueprint"
   | "done";
 
+// Jonathan's suggested order: Welcome → CDR → Team → Scheduling → Routing → Porting → Hardware
 export const STAGE_ORDER: ConciergeStage[] = [
   "welcome_scrape",
-  "verification_holidays",
   "cdr_analysis",
   "user_ingestion",
-  "architecture_hardware",
-  "porting",
+  "verification_holidays",
   "licensing",
+  "porting",
+  "architecture_hardware",
   "final_blueprint",
   "done",
 ];

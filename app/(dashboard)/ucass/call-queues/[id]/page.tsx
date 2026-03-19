@@ -492,22 +492,22 @@ function IvrSection({
   );
 }
 
-// ── Suno AI Music Generator ───────────────────────────────────────────────────
-interface SunoResult {
+// ── ElevenLabs AI Music Generator ──────────────────────────────────────────────
+interface MusicGenResult {
   id?: string;
   audioUrl: string;
   imageUrl?: string | null;
   title: string;
 }
 
-function SunoMusicGenerator({ onAssign }: { onAssign: (url: string, title: string) => void }) {
+function ElevenLabsMusicGenerator({ onAssign }: { onAssign: (url: string, title: string) => void }) {
   const [open, setOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [style, setStyle] = useState("instrumental, corporate, upbeat");
   const [instrumental, setInstrumental] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<SunoResult | null>(null);
+  const [result, setResult] = useState<MusicGenResult | null>(null);
   const [playing, setPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -525,7 +525,7 @@ function SunoMusicGenerator({ onAssign }: { onAssign: (url: string, title: strin
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Generation failed");
-      setResult(data as SunoResult);
+      setResult(data as MusicGenResult);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to generate music");
     } finally {
@@ -575,7 +575,7 @@ function SunoMusicGenerator({ onAssign }: { onAssign: (url: string, title: strin
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-purple-600" />
           <span className="text-sm font-semibold text-purple-900">Generate AI Hold Music</span>
-          <span className="text-xs text-purple-500 bg-purple-100 px-1.5 py-0.5 rounded-full">Suno AI</span>
+          <span className="text-xs text-purple-500 bg-purple-100 px-1.5 py-0.5 rounded-full">ElevenLabs</span>
         </div>
         <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600">
           <X className="w-4 h-4" />
@@ -668,7 +668,7 @@ function SunoMusicGenerator({ onAssign }: { onAssign: (url: string, title: strin
           {generating ? (
             <>
               <span className="animate-spin inline-block w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full" />
-              Generating… (~1 min)
+              Generating… (~15 sec)
             </>
           ) : (
             <>
@@ -726,10 +726,10 @@ function AnnouncementsSection({
     setSecondaryAudio(detail.announcement_settings?.secondary_audio ?? { type: "default" });
   }, [detail]);
 
-  function handleSunoAssign(audioUrl: string, ..._args: unknown[]) {
+  function handleMusicAssign(audioUrl: string, ..._args: unknown[]) {
     void _args; // additional callback args, unused
-    // Set hold music to "custom" type with the Suno URL as the ID.
-    // (Works for queues where the net2phone API accepts a direct URL as the custom audio ID.)
+    // Set hold music to "custom" type with the audio URL as the ID.
+    // Requires BLOB_READ_WRITE_TOKEN for call-queues (ElevenLabs returns a fetchable URL).
     setHoldAudio({ type: "custom", id: audioUrl });
   }
 
@@ -747,7 +747,7 @@ function AnnouncementsSection({
       <div className="mb-5">
         <div className="flex items-center justify-between mb-1.5">
           <label className="text-sm font-medium text-gray-700">Hold Music</label>
-          <SunoMusicGenerator onAssign={handleSunoAssign} />
+          <ElevenLabsMusicGenerator onAssign={handleMusicAssign} />
         </div>
         <select
           value={holdAudio.type}
@@ -762,8 +762,8 @@ function AnnouncementsSection({
         </select>
         {holdAudio.type === "custom" && holdAudio.id && (
           <p className="text-xs text-gray-400 mt-1 truncate" title={holdAudio.id}>
-            {holdAudio.id.startsWith("http") ? (
-              <>🎵 AI-generated: <span className="text-purple-600">{holdAudio.id.split("/").pop()?.split("?")[0]}</span></>
+            {(holdAudio.id.startsWith("http") || holdAudio.id.startsWith("data:")) ? (
+              <>🎵 AI-generated: <span className="text-purple-600">{holdAudio.id.startsWith("data:") ? "ElevenLabs" : holdAudio.id.split("/").pop()?.split("?")[0]}</span></>
             ) : (
               <>File: {holdAudio.id}</>
             )}

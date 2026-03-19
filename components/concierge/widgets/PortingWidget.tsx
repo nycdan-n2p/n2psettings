@@ -207,7 +207,7 @@ export function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => 
               <SkipForward className="w-4 h-4" aria-hidden="true" /> Skip &mdash; I&apos;ll handle this later
             </button>
           </div>
-          <FixItButton targetStage="architecture_hardware" />
+          <FixItButton targetStage="licensing" />
         </div>
       </CardShell>
     );

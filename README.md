@@ -311,6 +311,10 @@ N2P_API_N2P_URL=https://api.n2p.io/v2
 
 # ── Optional ──────────────────────────────────────────────────────────────────
 
+# AI Music-on-Hold (ElevenLabs) — Music Options & Call Queue hold music
+# N2P_API_ELEVEN_LABS=your_elevenlabs_api_key
+# BLOB_READ_WRITE_TOKEN=... (Vercel Blob — for call-queue hold music URLs)
+
 # Linked product URLs shown in the top navigation
 N2P_API_PROFILE_SETTINGS=https://profile.prod.n2p.io
 N2P_HUDDLE_URL=https://huddle.net2phone.com

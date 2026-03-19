@@ -179,15 +179,16 @@ function buildSystemPrompt(
 - If the user says skip or "skip porting": call update_config({ portingQueue: { ...config.portingQueue, skipped: true } }), then call advance_stage.
 - Do NOT ask for provider details in chat — the widget collects all of that.`,
 
-    user_ingestion: `You are at the USER INGESTION stage.
+    user_ingestion: `You are at the USER INGESTION stage. Team members are REQUIRED — at least one.
 - Introduce the step: users can type names/emails in chat OR use the form widget below.
 - If the user types a name/email pair, call update_config({ users: [...existing, newUser] }) immediately.
 - IMPORTANT: If you receive a message starting with "[form]", the widget has ALREADY saved the complete data to config (including firstName, lastName, email for every user). Do NOT call update_config — the data is already persisted. Just acknowledge and call advance_stage immediately. Do NOT ask for details again.
-- When the user says they're done (or after processing a [form] message), call advance_stage.`,
+- Do NOT call advance_stage until config.users.length >= 1. The system blocks advance with 0 users.
+- When the user says they're done (or after processing a [form] message) AND there is at least one user, call advance_stage.`,
 
-    architecture_hardware: `You are at the ARCHITECTURE stage. The config already contains the users list — refer to it in the "Data collected so far" section below.
+    architecture_hardware: `You are at the ARCHITECTURE stage (comes after porting). The config already contains the users list — refer to it in the "Data collected so far" section below.
 
-The user interacts with a WIDGET that walks through each sub-step one at a time: departments → user assignments → phone type → hardphone details (if applicable).
+The user interacts with a WIDGET that walks through each sub-step one at a time: departments → user assignments → phone type → hardphone details (if applicable). Device provisioning (linekeys, softkeys, speed dials, directory) can be configured after setup in Settings → Devices.
 
 IMPORTANT: If you receive a message starting with "[arch]", the WIDGET has ALREADY saved the data to config. Do NOT call update_config — the data is already persisted. Just acknowledge what was configured and wait for the next widget sub-step.
 
@@ -273,12 +274,12 @@ Respond ONLY in **${lang}**. All messages, tables, confirmations, and errors mus
 ## Your mission
 Walk the admin through 8 stages of onboarding in order:
 1. **welcome_scrape** — Collect name + website, scrape it
-2. **verification_holidays** — Verify scraped data, offer holidays
-3. **cdr_analysis** — Optional CDR upload for intelligent config suggestions
-4. **user_ingestion** — Add team members (before porting so numbers can be associated)
-5. **architecture_hardware** — Departments, user mapping, desk phones
-6. **porting** — Choose which numbers to port (users/departments exist for association)
-7. **licensing** (Call Routing) — Welcome menu setup (greeting, DTMF, ext-dialing, wait msg, barging), Ring Groups vs Call Queues with full config, after-hours behavior
+2. **cdr_analysis** — Optional CDR upload for intelligent config suggestions
+3. **user_ingestion** — Add team members (REQUIRED: at least one). Before porting so numbers can be associated.
+4. **verification_holidays** — Scheduling/hours/timezone: verify scraped data, offer holidays
+5. **licensing** (Call Routing) — Welcome menu, Ring Groups vs Call Queues, after-hours behavior
+6. **porting** — Choose which numbers to port (users exist for association)
+7. **architecture_hardware** — Departments, user mapping, desk phones, device provisioning
 8. **final_blueprint** — Review full blueprint and build
 
 ## Current stage: ${stage}

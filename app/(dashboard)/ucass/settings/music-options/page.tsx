@@ -20,16 +20,17 @@ import {
   type MusicOption,
 } from "@/lib/api/music-options";
 
-// ── Suno generation result shape ──────────────────────────────────────────────
-interface SunoResult {
+// ── AI generation result shape ─────────────────────────────────────────────────
+interface MusicGenResult {
   id?: string;
   audioUrl: string;
+  audioBase64?: string;
   imageUrl?: string | null;
   title: string;
 }
 
-// ── Suno AI Generator panel ───────────────────────────────────────────────────
-function SunoGenerator({
+// ── ElevenLabs AI Generator panel ─────────────────────────────────────────────
+function MusicGenerator({
   accountId,
   onUploaded,
 }: {
@@ -44,7 +45,7 @@ function SunoGenerator({
   const [uploading, setUploading] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [result, setResult] = useState<SunoResult | null>(null);
+  const [result, setResult] = useState<MusicGenResult | null>(null);
   const [uploadName, setUploadName] = useState("");
   const [done, setDone] = useState(false);
   const [playing, setPlaying] = useState(false);
@@ -66,7 +67,7 @@ function SunoGenerator({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Generation failed");
-      const r = data as SunoResult;
+      const r = data as MusicGenResult;
       setResult(r);
       setUploadName(r.title || prompt.slice(0, 40));
     } catch (err: unknown) {
@@ -95,15 +96,26 @@ function SunoGenerator({
     setUploadError(null);
 
     try {
-      // 1. Download audio server-side (avoids CORS on Suno CDN)
-      const dlRes = await fetch(
-        `/api/generate-moh?url=${encodeURIComponent(result.audioUrl)}`
-      );
-      if (!dlRes.ok) throw new Error(`Download failed: ${dlRes.status}`);
-      const blob = await dlRes.blob();
-      const file = new File([blob], `${uploadName.replace(/\s+/g, "-")}.mp3`, {
-        type: blob.type || "audio/mpeg",
-      });
+      // 1. Create File from base64 (ElevenLabs returns inline) or proxy-download URL
+      let file: File;
+      if (result.audioBase64) {
+        const bin = atob(result.audioBase64);
+        const arr = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+        const blob = new Blob([arr], { type: "audio/mpeg" });
+        file = new File([blob], `${uploadName.replace(/\s+/g, "-")}.mp3`, {
+          type: "audio/mpeg",
+        });
+      } else {
+        const dlRes = await fetch(
+          `/api/generate-moh?url=${encodeURIComponent(result.audioUrl)}`
+        );
+        if (!dlRes.ok) throw new Error(`Download failed: ${dlRes.status}`);
+        const blob = await dlRes.blob();
+        file = new File([blob], `${uploadName.replace(/\s+/g, "-")}.mp3`, {
+          type: blob.type || "audio/mpeg",
+        });
+      }
 
       // 2. Upload to music options library
       await uploadMusicOption(accountId, file, uploadName);
@@ -136,7 +148,7 @@ function SunoGenerator({
         </div>
         <div>
           <h2 className="text-sm font-semibold text-gray-900">Generate AI Music</h2>
-          <p className="text-xs text-gray-400">Powered by Suno AI · takes ~1 minute</p>
+          <p className="text-xs text-gray-400">Powered by ElevenLabs · ~15 seconds</p>
         </div>
       </div>
 
@@ -223,7 +235,7 @@ function SunoGenerator({
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-purple-900 truncate">{result.title}</p>
                   <p className="text-xs text-purple-500 truncate">
-                    {result.audioUrl.split("?")[0].split("/").pop()}
+                    {result.audioUrl.startsWith("data:") ? "AI-generated" : result.audioUrl.split("?")[0].split("/").pop()}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -298,7 +310,7 @@ function SunoGenerator({
               {generating ? (
                 <>
                   <span className="animate-spin inline-block w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full" />
-                  Generating… (~1 min)
+                  Generating… (~15 sec)
                 </>
               ) : (
                 <>
@@ -383,7 +395,7 @@ export default function MusicOptionsPage() {
       </div>
 
       {/* AI Generator */}
-      <SunoGenerator
+      <MusicGenerator
         accountId={accountId}
         onUploaded={() =>
           queryClient.invalidateQueries({ queryKey: qk.musicOptions.all(accountId) })

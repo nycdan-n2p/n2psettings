@@ -300,7 +300,7 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
             className="w-full py-2 text-sm font-medium bg-[#1a73e8] text-white rounded-lg hover:bg-[#1557b0] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
             {tCommon("next")}
           </button>
-          <FixItButton targetStage="architecture_hardware" />
+          <FixItButton targetStage="verification_holidays" />
         </div>
       </CardShell>
     );
@@ -562,7 +562,7 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
             {t("routing.finishRouting")}
           </button>
         </div>
-        <FixItButton targetStage="architecture_hardware" />
+        <FixItButton targetStage="verification_holidays" />
       </div>
     </CardShell>
   );
