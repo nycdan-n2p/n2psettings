@@ -116,8 +116,8 @@
       "virtualFax": "Fax virtual",
       "sipTrunking": "Tronco SIP",
       "sipTieLines": "Linhas SIP",
-      "webhooksApi": "Webhooks/API",
-      "apiSetup": "Configuração de API",
+      "webhooks": "Webhooks",
+      "apiKeys": "Chaves de API",
       "voicemailSettings": "Config. de caixa postal",
       "musicOptions": "Opções de música",
       "companyDirectory": "Diretório da empresa",
@@ -131,7 +131,8 @@
       "overview": "Visão geral",
       "settings": "Configurações",
       "callHistory": "Histórico de chamadas",
-      "callBlocking": "Bloqueio de chamadas"
+      "callBlocking": "Bloqueio de chamadas",
+      "emergencySettings": "Configurações de emergência"
     }
   },
 
@@ -1185,6 +1186,30 @@
     "adding": "Adicionando...",
     "deleteTitle": "Remover Contato 911",
     "tooltip": "Estes contatos recebem notificações SMS quando o 911 é discado de qualquer ramal."
+  },
+
+  "emergencySettingsPage": {
+    "title": "Configurações de Emergência",
+    "subtitle": "Contatos notificados por SMS quando qualquer ramal discar 911. Exigido pela Lei de Kari.",
+    "karisLawNotice": "A Lei de Kari exige que sistemas telefônicos de múltiplas linhas notifiquem um contato de segurança no local quando o 911 for discado. Adicione os números abaixo para manter a conformidade.",
+    "addButton": "Adicionar Número",
+    "colNumber": "Número",
+    "colOwner": "Responsável",
+    "colAddedOn": "Adicionado Em",
+    "loading": "Carregando...",
+    "search": "Pesquisar números...",
+    "addTitle": "Adicionar Contato de Emergência",
+    "editTitle": "Editar Contato de Emergência",
+    "labelPhoneNumber": "Número de telefone",
+    "labelOwnerName": "Responsável / Nome do contato",
+    "placeholderOptional": "Opcional",
+    "cancel": "Cancelar",
+    "saving": "Salvando...",
+    "saveButton": "Salvar",
+    "deleteTitle": "Remover Contato de Emergência",
+    "deleteMessage": "Remover",
+    "editTooltip": "Editar",
+    "deleteTooltip": "Remover"
   },
 
   "numberPortingPage": {

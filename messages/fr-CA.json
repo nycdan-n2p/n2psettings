@@ -116,8 +116,8 @@
       "virtualFax": "Télécopieur virtuel",
       "sipTrunking": "Trunk SIP",
       "sipTieLines": "Lignes SIP",
-      "webhooksApi": "Webhooks/API",
-      "apiSetup": "Configuration API",
+      "webhooks": "Webhooks",
+      "apiKeys": "Clés API",
       "voicemailSettings": "Paramètres messagerie",
       "musicOptions": "Options musicales",
       "companyDirectory": "Répertoire d'entreprise",
@@ -131,7 +131,8 @@
       "overview": "Aperçu",
       "settings": "Paramètres",
       "callHistory": "Historique des appels",
-      "callBlocking": "Blocage d'appels"
+      "callBlocking": "Blocage d'appels",
+      "emergencySettings": "Paramètres d'urgence"
     }
   },
 
@@ -1185,6 +1186,30 @@
     "adding": "Ajout...",
     "deleteTitle": "Supprimer le contact 911",
     "tooltip": "Ces contacts reçoivent des SMS quand le 911 est composé depuis une extension."
+  },
+
+  "emergencySettingsPage": {
+    "title": "Paramètres d'urgence",
+    "subtitle": "Contacts notifiés par SMS quand une extension compose le 911. Requis pour la conformité à la loi de Kari.",
+    "karisLawNotice": "La loi de Kari exige que les systèmes téléphoniques multi-lignes notifient un contact de sécurité sur place lorsque le 911 est composé. Ajoutez les numéros ci-dessous pour rester en conformité.",
+    "addButton": "Ajouter un numéro",
+    "colNumber": "Numéro",
+    "colOwner": "Responsable",
+    "colAddedOn": "Ajouté le",
+    "loading": "Chargement...",
+    "search": "Rechercher des numéros...",
+    "addTitle": "Ajouter un contact d'urgence",
+    "editTitle": "Modifier un contact d'urgence",
+    "labelPhoneNumber": "Numéro de téléphone",
+    "labelOwnerName": "Responsable / Nom du contact",
+    "placeholderOptional": "Optionnel",
+    "cancel": "Annuler",
+    "saving": "Enregistrement...",
+    "saveButton": "Enregistrer",
+    "deleteTitle": "Supprimer le contact d'urgence",
+    "deleteMessage": "Supprimer",
+    "editTooltip": "Modifier",
+    "deleteTooltip": "Supprimer"
   },
 
   "numberPortingPage": {

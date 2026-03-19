@@ -94,15 +94,14 @@ function ucassNav(base: string): NavGroup[] {
       items: [
         { href: `${base}/sip-trunking`, label: "SIP Trunking", icon: Cable },
         { href: `${base}/sip-tie-lines`, label: "SIP Tie-Lines", icon: Link2 },
-        { href: `${base}/settings/webhooks`, label: "Webhooks/API", icon: Webhook },
-        { href: `${base}/settings/api-setup`, label: "API Setup", icon: KeyRound },
+        { href: `${base}/settings/webhooks`, label: "Webhooks", icon: Webhook },
+        { href: `${base}/settings/api-setup`, label: "API Keys", icon: KeyRound },
       ],
     },
     {
       label: "Compliance",
       items: [
-        { href: `${base}/settings/911-contacts`, label: "911 Contacts", icon: AlertTriangle },
-        { href: `${base}/settings/karis-law`, label: "Kari's Law", icon: AlertTriangle, feature: "EmergencyCallNotification" },
+        { href: `${base}/settings/911-contacts`, label: "Emergency Settings", icon: AlertTriangle },
         { href: `${base}/settings/trust-center`, label: "Trust Center", icon: Shield },
       ],
     },

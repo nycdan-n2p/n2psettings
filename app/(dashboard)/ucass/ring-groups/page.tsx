@@ -25,7 +25,69 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Modal } from "@/components/settings/Modal";
 import { TextInput } from "@/components/settings/TextInput";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
-import { Pencil, Trash2, ChevronDown, X } from "lucide-react";
+import { Pencil, Trash2, ChevronDown, X, Zap, LayoutDashboard, Users } from "lucide-react";
+
+// ── Call Center Essentials upsell banner ──────────────────────────────────────
+const DISMISS_KEY = "cce-upsell-ring-groups-dismissed";
+
+function CallCenterUpsellBanner() {
+  const [visible, setVisible] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem(DISMISS_KEY) !== "1";
+  });
+
+  const dismiss = () => {
+    localStorage.setItem(DISMISS_KEY, "1");
+    setVisible(false);
+  };
+
+  if (!visible) return null;
+
+  return (
+    <div className="relative mb-6 rounded-xl border border-[#1a73e8]/30 bg-gradient-to-r from-[#e8f0fe] to-[#f3e8ff] p-4 flex items-start gap-4">
+      <div className="shrink-0 w-9 h-9 rounded-lg bg-[#1a73e8] flex items-center justify-center">
+        <Zap className="w-4 h-4 text-white" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-gray-900 mb-1">
+          Ready to handle higher call volumes?
+        </p>
+        <p className="text-xs text-gray-600 leading-relaxed mb-3">
+          Ring Groups work great for simple routing — but growing teams need more.{" "}
+          <span className="font-semibold text-gray-800">Call Center Essentials</span> unlocks:
+        </p>
+        <ul className="text-xs text-gray-700 space-y-1 mb-3">
+          <li className="flex items-center gap-2">
+            <LayoutDashboard className="w-3.5 h-3.5 text-[#1a73e8] shrink-0" />
+            <span><span className="font-medium">Call Queues</span> — priority routing, overflow handling &amp; hold music</span>
+          </li>
+          <li className="flex items-center gap-2">
+            <LayoutDashboard className="w-3.5 h-3.5 text-[#1a73e8] shrink-0" />
+            <span><span className="font-medium">Wallboard</span> — live queue &amp; agent performance at a glance</span>
+          </li>
+          <li className="flex items-center gap-2">
+            <Users className="w-3.5 h-3.5 text-[#1a73e8] shrink-0" />
+            <span><span className="font-medium">Supervisor Panel</span> — monitor, whisper &amp; barge into live calls</span>
+          </li>
+        </ul>
+        <a
+          href="mailto:sales@net2phone.com?subject=Call Center Essentials"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#1a73e8] text-white text-xs font-medium rounded-md hover:bg-[#1557b0] transition-colors"
+        >
+          <Zap className="w-3 h-3" />
+          Talk to Sales
+        </a>
+      </div>
+      <button
+        onClick={dismiss}
+        className="shrink-0 p-1 rounded hover:bg-black/10 text-gray-400 hover:text-gray-600 transition-colors"
+        aria-label="Dismiss"
+      >
+        <X className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
 
 // ── Avatar helpers ───────────────────────────────────────────────────────────
 const AVATAR_COLORS = [
@@ -270,6 +332,8 @@ export default function RingGroupsPage() {
           Add Ring Group
         </button>
       </div>
+
+      <CallCenterUpsellBanner />
 
       {isLoading ? (
         <div className="py-12 flex justify-center"><Loader variant="inline" label={t("loading")} /></div>

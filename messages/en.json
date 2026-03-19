@@ -116,8 +116,8 @@
       "virtualFax": "Virtual Fax",
       "sipTrunking": "SIP Trunking",
       "sipTieLines": "SIP Tie-Lines",
-      "webhooksApi": "Webhooks/API",
-      "apiSetup": "API Setup",
+      "webhooks": "Webhooks",
+      "apiKeys": "API Keys",
       "voicemailSettings": "Voicemail Settings",
       "musicOptions": "Music Options",
       "companyDirectory": "Company Directory",
@@ -131,7 +131,8 @@
       "overview": "Overview",
       "settings": "Settings",
       "callHistory": "Call History",
-      "callBlocking": "Call Blocking"
+      "callBlocking": "Call Blocking",
+      "emergencySettings": "Emergency Settings"
     }
   },
 
@@ -1185,6 +1186,30 @@
     "adding": "Adding...",
     "deleteTitle": "Remove 911 Contact",
     "tooltip": "These contacts receive SMS notifications when 911 is dialed from any extension."
+  },
+
+  "emergencySettingsPage": {
+    "title": "Emergency Settings",
+    "subtitle": "Contacts notified by SMS when any extension dials 911. Required for Kari's Law compliance.",
+    "karisLawNotice": "Kari's Law requires that multi-line telephone systems (MLTS) notify a designated on-site security contact when 911 is dialed. Add the contact numbers below to stay compliant.",
+    "addButton": "Add Number",
+    "colNumber": "Number",
+    "colOwner": "Owner",
+    "colAddedOn": "Added On",
+    "loading": "Loading...",
+    "search": "Search numbers...",
+    "addTitle": "Add Emergency Contact",
+    "editTitle": "Edit Emergency Contact",
+    "labelPhoneNumber": "Phone number",
+    "labelOwnerName": "Owner / Contact name",
+    "placeholderOptional": "Optional",
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "saveButton": "Save",
+    "deleteTitle": "Remove Emergency Contact",
+    "deleteMessage": "Remove",
+    "editTooltip": "Edit",
+    "deleteTooltip": "Remove"
   },
 
   "numberPortingPage": {

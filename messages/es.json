@@ -116,8 +116,8 @@
       "virtualFax": "Fax virtual",
       "sipTrunking": "Troncal SIP",
       "sipTieLines": "Líneas SIP",
-      "webhooksApi": "Webhooks/API",
-      "apiSetup": "Configuración de API",
+      "webhooks": "Webhooks",
+      "apiKeys": "Claves de API",
       "voicemailSettings": "Configuración de buzón",
       "musicOptions": "Opciones de música",
       "companyDirectory": "Directorio de empresa",
@@ -131,7 +131,8 @@
       "overview": "Resumen",
       "settings": "Configuración",
       "callHistory": "Historial de llamadas",
-      "callBlocking": "Bloqueo de llamadas"
+      "callBlocking": "Bloqueo de llamadas",
+      "emergencySettings": "Configuración de emergencia"
     }
   },
 
@@ -1185,6 +1186,30 @@
     "adding": "Agregando...",
     "deleteTitle": "Eliminar Contacto 911",
     "tooltip": "Estos contactos reciben notificaciones SMS cuando se marca 911 desde cualquier extensión."
+  },
+
+  "emergencySettingsPage": {
+    "title": "Configuración de Emergencia",
+    "subtitle": "Contactos notificados por SMS cuando cualquier extensión marca 911. Requerido para el cumplimiento de la Ley de Kari.",
+    "karisLawNotice": "La Ley de Kari exige que los sistemas telefónicos de múltiples líneas notifiquen a un contacto de seguridad en el lugar cuando se marca 911. Agregue los números de contacto a continuación para cumplir con la normativa.",
+    "addButton": "Agregar Número",
+    "colNumber": "Número",
+    "colOwner": "Responsable",
+    "colAddedOn": "Agregado El",
+    "loading": "Cargando...",
+    "search": "Buscar números...",
+    "addTitle": "Agregar Contacto de Emergencia",
+    "editTitle": "Editar Contacto de Emergencia",
+    "labelPhoneNumber": "Número de teléfono",
+    "labelOwnerName": "Responsable / Nombre de contacto",
+    "placeholderOptional": "Opcional",
+    "cancel": "Cancelar",
+    "saving": "Guardando...",
+    "saveButton": "Guardar",
+    "deleteTitle": "Eliminar Contacto de Emergencia",
+    "deleteMessage": "Eliminar",
+    "editTooltip": "Editar",
+    "deleteTooltip": "Eliminar"
   },
 
   "numberPortingPage": {

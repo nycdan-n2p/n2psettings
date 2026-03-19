@@ -1,6 +1,5 @@
 "use client";
 import { useTranslations } from "next-intl";
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApp } from "@/contexts/AppContext";
@@ -8,6 +7,7 @@ import { qk } from "@/lib/query-keys";
 import {
   fetchKarisLaw,
   addKarisLawNumber,
+  updateKarisLawNumber,
   deleteKarisLawNumber,
   type KariLawEntry,
 } from "@/lib/api/karis-law";
@@ -16,7 +16,7 @@ import { Modal } from "@/components/settings/Modal";
 import { TextInput } from "@/components/settings/TextInput";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import { Loader } from "@/components/ui/Loader";
-import { Phone, Trash2, Info } from "lucide-react";
+import { Phone, Pencil, Trash2, AlertTriangle } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
 function formatPhone(s: string): string {
@@ -27,24 +27,36 @@ function formatPhone(s: string): string {
   return s;
 }
 
-export default function E911ContactsPage() {
-  const t = useTranslations("contacts911Page");
+export default function EmergencySettingsPage() {
+  const t = useTranslations("emergencySettingsPage");
   const { bootstrap } = useApp();
   const accountId = bootstrap?.account?.accountId ?? 0;
   const queryClient = useQueryClient();
-  const [modalOpen, setModalOpen] = useState(false);
-  const [formNumber, setFormNumber] = useState("");
-  const [deleteTarget, setDeleteTarget] = useState<KariLawEntry | null>(null);
 
-  const { data: contacts = [], isLoading } = useQuery({
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<KariLawEntry | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<KariLawEntry | null>(null);
+  const [formNumber, setFormNumber] = useState("");
+  const [formOwner, setFormOwner] = useState("");
+
+  const { data: entries = [], isLoading } = useQuery({
     queryKey: qk.karis.all(accountId),
     queryFn: () => fetchKarisLaw(accountId),
     enabled: !!accountId,
   });
 
   const addMutation = useMutation({
-    mutationFn: (number: string) =>
-      addKarisLawNumber(accountId, { number }),
+    mutationFn: (payload: { number: string; ownerName?: string }) =>
+      addKarisLawNumber(accountId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: qk.karis.all(accountId) });
+      closeModal();
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: number; payload: Partial<KariLawEntry> }) =>
+      updateKarisLawNumber(accountId, id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: qk.karis.all(accountId) });
       closeModal();
@@ -59,39 +71,61 @@ export default function E911ContactsPage() {
     },
   });
 
-  const openAdd = () => {
+  const openAddModal = () => {
+    setEditingEntry(null);
     setFormNumber("");
+    setFormOwner("");
+    setModalOpen(true);
+  };
+
+  const openEditModal = (entry: KariLawEntry) => {
+    setEditingEntry(entry);
+    setFormNumber(entry.number);
+    setFormOwner(entry.ownerName ?? "");
     setModalOpen(true);
   };
 
   const closeModal = () => {
     setModalOpen(false);
+    setEditingEntry(null);
     setFormNumber("");
+    setFormOwner("");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    addMutation.mutate(formNumber);
+    if (editingEntry) {
+      updateMutation.mutate({
+        id: editingEntry.id,
+        payload: { number: formNumber, ownerName: formOwner || undefined },
+      });
+    } else {
+      addMutation.mutate({ number: formNumber, ownerName: formOwner || undefined });
+    }
   };
 
   const columns: ColumnDef<KariLawEntry>[] = [
     {
       id: "number",
-      header: "NUMBER",
+      header: t("colNumber"),
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Phone className="w-4 h-4 text-gray-400" />
-          <span className="text-[0.65rem]">🇺🇸</span>
           <span>{formatPhone(row.original.number)}</span>
         </div>
       ),
     },
     {
-      id: "addedOn",
-      header: "ADDED ON",
+      accessorKey: "ownerName",
+      header: t("colOwner"),
+      cell: ({ row }) => row.original.ownerName ?? "—",
+    },
+    {
+      id: "createdAt",
+      header: t("colAddedOn"),
       cell: ({ row }) =>
         row.original.createdAt
-          ? new Date(row.original.createdAt).toLocaleDateString("en-US", {
+          ? new Date(row.original.createdAt).toLocaleDateString(undefined, {
               month: "short",
               day: "numeric",
               year: "numeric",
@@ -99,23 +133,25 @@ export default function E911ContactsPage() {
           : "—",
     },
     {
-      id: "addedBy",
-      header: "ADDED BY",
-      cell: ({ row }) =>
-        row.original.addedBy ?? row.original.ownerName ?? "—",
-    },
-    {
       id: "actions",
       header: "",
       cell: ({ row }) => (
-        <button
-          onClick={() => setDeleteTarget(row.original)}
-          className="p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700"
-          title="Delete"
-          aria-label="Delete"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+        <div className="flex gap-1">
+          <button
+            onClick={() => openEditModal(row.original)}
+            className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
+            title={t("editTooltip")}
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setDeleteTarget(row.original)}
+            className="p-1.5 rounded hover:bg-red-50 text-red-500"
+            title={t("deleteTooltip")}
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
       ),
     },
   ];
@@ -124,26 +160,20 @@ export default function E911ContactsPage() {
     <div>
       <div className="flex items-start justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">
-            911 / EMERGENCY CALL NOTIFICATION
-          </h1>
-          <p className="text-sm text-gray-600 mt-1 flex items-center gap-2">
-            Contacts on this list will be notified by SMS when any extension
-            dials 911.
-            <span
-              className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-200 text-gray-600 text-xs cursor-help"
-              title="These contacts receive SMS notifications when 911 is dialed from any extension."
-            >
-              <Info className="w-3 h-3" />
-            </span>
-          </p>
+          <h1 className="text-2xl font-medium text-gray-900">{t("title")}</h1>
+          <p className="text-sm text-gray-600 mt-1">{t("subtitle")}</p>
         </div>
         <button
-          onClick={openAdd}
-          className="shrink-0 px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium uppercase"
+          onClick={openAddModal}
+          className="shrink-0 px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium"
         >
-          ADD NUMBER
+          {t("addButton")}
         </button>
+      </div>
+
+      <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg mb-6">
+        <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+        <p className="text-sm text-amber-800">{t("karisLawNotice")}</p>
       </div>
 
       {isLoading ? (
@@ -153,20 +183,30 @@ export default function E911ContactsPage() {
       ) : (
         <DataTable
           columns={columns}
-          data={contacts}
+          data={entries}
           searchPlaceholder={t("search")}
         />
       )}
 
-      <Modal isOpen={modalOpen} onClose={closeModal} title={t("addTitle")}>
+      <Modal
+        isOpen={modalOpen}
+        onClose={closeModal}
+        title={editingEntry ? t("editTitle") : t("addTitle")}
+      >
         <form onSubmit={handleSubmit}>
           <TextInput
             label={t("labelPhoneNumber")}
             value={formNumber}
             onChange={setFormNumber}
             type="tel"
-            placeholder="e.g. 19734384842 or (973) 438-4842"
+            placeholder="e.g. (973) 438-4842"
             required
+          />
+          <TextInput
+            label={t("labelOwnerName")}
+            value={formOwner}
+            onChange={setFormOwner}
+            placeholder={t("placeholderOptional")}
           />
           <div className="flex justify-end gap-2 mt-4">
             <button
@@ -174,14 +214,18 @@ export default function E911ContactsPage() {
               onClick={closeModal}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
             >
-              Cancel
+              {t("cancel")}
             </button>
             <button
               type="submit"
-              disabled={addMutation.isPending}
+              disabled={addMutation.isPending || updateMutation.isPending}
               className="px-4 py-2 text-sm font-medium text-white bg-[#1a73e8] rounded-md hover:bg-[#1557b0] disabled:opacity-50"
             >
-              {addMutation.isPending ? t("adding") : t("addButton")}
+              {addMutation.isPending || updateMutation.isPending
+                ? t("saving")
+                : editingEntry
+                ? t("saveButton")
+                : t("addButton")}
             </button>
           </div>
         </form>
@@ -192,7 +236,7 @@ export default function E911ContactsPage() {
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
         title={t("deleteTitle")}
-        message={`Remove ${deleteTarget ? formatPhone(deleteTarget.number) : ""} from emergency notifications?`}
+        message={`${t("deleteMessage")} ${deleteTarget ? formatPhone(deleteTarget.number) : ""}?`}
       />
     </div>
   );
