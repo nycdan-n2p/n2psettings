@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ConciergeProvider } from "@/contexts/ConciergeContext";
 import { ConciergeOverlay } from "@/components/concierge/ConciergeOverlay";
+import { AssistantProvider } from "@/contexts/AssistantContext";
 import { Loader } from "@/components/ui/Loader";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { useApp } from "@/contexts/AppContext";
@@ -62,11 +63,13 @@ export default function WelcomeShell({ children }: { children: React.ReactNode }
   }
 
   return (
-    <ConciergeProvider>
-      {children}
-      <ErrorBoundary context="Concierge">
-        <ConciergeOverlay />
-      </ErrorBoundary>
-    </ConciergeProvider>
+    <AssistantProvider>
+      <ConciergeProvider>
+        {children}
+        <ErrorBoundary context="Concierge">
+          <ConciergeOverlay />
+        </ErrorBoundary>
+      </ConciergeProvider>
+    </AssistantProvider>
   );
 }
