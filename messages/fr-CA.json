@@ -177,6 +177,9 @@
       "urlInvalid": "Veuillez saisir une URL valide."
     },
     "verification": {
+      "e911Label": "Adresse physique (E911 / service d'urgence)",
+      "e911Hint": "Les sites affichent souvent plusieurs adresses. Confirmez l'adresse où le service doit être enregistré pour les appels d'urgence — modifiez si l'extraction automatique est erronée.",
+      "e911Placeholder": "Rue, ville, province, code postal (lieu de service)",
       "locationLabel": "Emplacement",
       "timezoneLabel": "Fuseau horaire",
       "businessHours": "Heures d'affaires",
@@ -271,6 +274,9 @@
       "firstName": "Prénom",
       "lastName": "Nom",
       "emailAddress": "Courriel",
+      "extension": "Poste",
+      "extensionHelper": "Les postes aident à faire le lien avec les CDR et accélèrent le provisionnement. Ajoutez-les si vous les connaissez; attribution possible plus tard.",
+      "extensionsMissingBanner": "Aucun poste saisi pour l'instant — ce n'est pas bloquant, mais les renseigner réduit les allers-retours avec l'onboarding.",
       "removeUser": "Retirer {name}",
       "addPerson": "Ajouter une personne",
       "confirmUsers": "Continuer avec {count} {count, plural, one {utilisateur} other {utilisateurs}}",

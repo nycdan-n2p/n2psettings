@@ -61,6 +61,7 @@ export async function parseCSV(file: File): Promise<OnboardingUser[]> {
             firstName: ["first_name", "firstname", "first", "first name", "given_name", "givenname"],
             lastName:  ["last_name",  "lastname",  "last", "last name", "surname", "family_name", "familyname"],
             email:     ["email", "email_address", "e-mail", "e_mail", "email address"],
+            extension: ["extension", "ext", "extension_number", "extensionnumber", "phone_ext"],
           };
           const opts = aliases[key] ?? [key];
           for (const a of opts) {
@@ -73,13 +74,16 @@ export async function parseCSV(file: File): Promise<OnboardingUser[]> {
         const fiCol = col("firstName");
         const laCol = col("lastName");
         const emCol = col("email");
+        const exCol = col("extension");
 
         const users: OnboardingUser[] = lines.slice(1).map((line) => {
           const cells = line.split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
+          const extVal = exCol >= 0 ? cells[exCol] : "";
           return {
             firstName: fiCol >= 0 ? cells[fiCol] : "",
             lastName:  laCol >= 0 ? cells[laCol] : "",
             email:     emCol >= 0 ? cells[emCol] : "",
+            ...(extVal ? { extension: extVal } : {}),
           };
         }).filter((u) => u.firstName || u.email);
 

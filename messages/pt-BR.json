@@ -177,6 +177,9 @@
       "urlInvalid": "Por favor, insira uma URL válida."
     },
     "verification": {
+      "e911Label": "Endereço físico (E911 / emergência)",
+      "e911Hint": "Sites costumam listar várias localizações. Confirme o endereço onde o serviço deve ser registrado para chamadas de emergência — corrija se a extração automática estiver errada.",
+      "e911Placeholder": "Rua, cidade, estado, CEP (local do serviço)",
       "locationLabel": "Localização",
       "timezoneLabel": "Fuso horário",
       "businessHours": "Horário comercial",
@@ -271,6 +274,9 @@
       "firstName": "Nome",
       "lastName": "Sobrenome",
       "emailAddress": "E-mail",
+      "extension": "Ramal",
+      "extensionHelper": "Ramais ajudam a cruzar dados de CDR e agilizar o provisionamento. Inclua se souber; podem ser definidos depois.",
+      "extensionsMissingBanner": "Nenhum ramal informado ainda — tudo bem por ora, mas informar ramais reduz idas e vindas com o onboarding.",
       "removeUser": "Remover {name}",
       "addPerson": "Adicionar pessoa",
       "confirmUsers": "Continuar com {count} {count, plural, one {usuário} other {usuários}}",

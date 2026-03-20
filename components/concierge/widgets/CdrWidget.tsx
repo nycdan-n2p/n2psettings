@@ -161,6 +161,8 @@ export function CdrWidget({ onMessages }: { onMessages: (msgs: string[]) => void
       updates.portingQueue = {
         ...config.portingQueue,
         numbers: analysis.inboundNumbers,
+        numberIntent: "port",
+        skipped: false,
       };
     }
     updateConfig(updates);

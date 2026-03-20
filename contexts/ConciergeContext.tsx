@@ -129,6 +129,12 @@ export interface OnboardingData {
   holidays: { date: string; name: string }[];
   portingQueue: {
     skipped: boolean;
+    /** Set when user completes a porting decision path (port / new numbers / skip). */
+    numberIntent?: "port" | "new" | "skipped";
+    /** New number procurement (when not porting). */
+    newNumberAreaCode?: string;
+    newNumberQuantity?: number | null;
+    newNumberOnePerTeamMember?: boolean;
     numbers: string[];
     providerName: string;
     accountNumber: string;
@@ -167,6 +173,9 @@ export const EMPTY_CONFIG: OnboardingData = {
   holidays: [],
   portingQueue: {
     skipped: false,
+    newNumberAreaCode: "",
+    newNumberQuantity: null,
+    newNumberOnePerTeamMember: false,
     numbers: [],
     providerName: "",
     accountNumber: "",
@@ -255,6 +264,32 @@ function reducer(state: ConciergeState, action: ConciergeAction): ConciergeState
 
 const STORAGE_KEY = "n2p_concierge_state";
 
+/** Merge saved config with defaults so new portingQueue / scraped fields never break old localStorage. */
+export function mergeOnboardingConfig(saved: Partial<OnboardingData> | undefined): OnboardingData {
+  const s = saved ?? {};
+  return {
+    ...EMPTY_CONFIG,
+    ...s,
+    scraped: { ...EMPTY_CONFIG.scraped, ...(s.scraped ?? {}) },
+    portingQueue: {
+      ...EMPTY_CONFIG.portingQueue,
+      ...(s.portingQueue ?? {}),
+      contact: { ...EMPTY_PORTING_CONTACT, ...(s.portingQueue?.contact ?? {}) },
+    },
+    cdrAnalysis: {
+      ...EMPTY_CONFIG.cdrAnalysis,
+      ...(s.cdrAnalysis ?? {}),
+      recommendations: {
+        ...EMPTY_CONFIG.cdrAnalysis.recommendations,
+        ...(s.cdrAnalysis?.recommendations ?? {}),
+      },
+    },
+    welcomeMenu: { ...EMPTY_CONFIG.welcomeMenu, ...(s.welcomeMenu ?? {}) },
+    routingConfig: { ...EMPTY_CONFIG.routingConfig, ...(s.routingConfig ?? {}) },
+    afterHours: { ...EMPTY_CONFIG.afterHours, ...(s.afterHours ?? {}) },
+  };
+}
+
 function loadSaved(): Partial<ConciergeState> {
   if (typeof window === "undefined") return {};
   try {
@@ -272,7 +307,7 @@ const initialState: ConciergeState = (() => {
     isOpen: false,
     isTransitioning: false,
     stage: saved.stage ?? "welcome_scrape",
-    config: { ...EMPTY_CONFIG, ...(saved.config ?? {}) },
+    config: mergeOnboardingConfig(saved.config),
   };
 })();
 

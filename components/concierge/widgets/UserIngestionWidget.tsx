@@ -110,6 +110,15 @@ export function UserRow({ user, index, onUpdate, onRemove }: {
           className={inputCls(!!user.lastName)}
         />
       </td>
+      <td className="px-2 py-1.5 w-[14%]">
+        <input
+          value={user.extension ?? ""}
+          onChange={(e) => onUpdate(index, "extension", e.target.value)}
+          placeholder={t("users.extension")}
+          aria-label={`Extension for row ${index + 1}`}
+          className={inputCls(true)}
+        />
+      </td>
       <td className="px-2 py-1.5">
         <div className="flex items-center gap-1.5">
           <input
@@ -149,6 +158,7 @@ export function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[
   const [users, setUsers]   = useState<OnboardingUser[]>(config.users.length ? config.users : []);
   const [newFirst, setNewFirst] = useState("");
   const [newLast, setNewLast]   = useState("");
+  const [newExt, setNewExt]     = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [csvLoading, setCsvLoading] = useState(false);
   const [csvError, setCsvError]     = useState("");
@@ -172,8 +182,16 @@ export function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[
       return;
     }
     setValidationErrors([]);
-    setUsers((u) => [...u, { firstName: newFirst.trim(), lastName: newLast.trim(), email: newEmail.trim() }]);
-    setNewFirst(""); setNewLast(""); setNewEmail("");
+    setUsers((u) => [
+      ...u,
+      {
+        firstName: newFirst.trim(),
+        lastName: newLast.trim(),
+        email: newEmail.trim(),
+        ...(newExt.trim() ? { extension: newExt.trim() } : {}),
+      },
+    ]);
+    setNewFirst(""); setNewLast(""); setNewExt(""); setNewEmail("");
   };
 
   const handleCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -250,6 +268,7 @@ export function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[
           {t("users.foundFromCsv", { count: users.length })}
         </p>
       )}
+      <p className="text-xs text-gray-500 mb-2">{t("users.extensionHelper")}</p>
       <div className="flex items-center justify-between mb-3">
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("users.teamMembers")}</p>
         <button
@@ -272,12 +291,19 @@ export function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[
               {t("users.missingEmailsCount", { count: missingFields.length })}
             </p>
           )}
+          {users.length > 0 && users.every((u) => !(u.extension && String(u.extension).trim())) && (
+            <p className="flex items-start gap-1.5 text-xs text-blue-800 bg-blue-50 border border-blue-100 rounded-lg px-2.5 py-2 mb-2" role="status">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-blue-600" aria-hidden="true" />
+              {t("users.extensionsMissingBanner")}
+            </p>
+          )}
           <div className="mb-3 rounded-xl overflow-hidden border border-[#e8eaed]">
             <table className="w-full text-xs" aria-label="Team members">
               <thead>
                 <tr className="bg-[#f8f9fa]">
-                  <th className="px-2 py-2 text-left font-semibold text-gray-500 w-[22%]">{t("users.firstName")}</th>
-                  <th className="px-2 py-2 text-left font-semibold text-gray-500 w-[22%]">{t("users.lastName")}</th>
+                  <th className="px-2 py-2 text-left font-semibold text-gray-500 w-[18%]">{t("users.firstName")}</th>
+                  <th className="px-2 py-2 text-left font-semibold text-gray-500 w-[18%]">{t("users.lastName")}</th>
+                  <th className="px-2 py-2 text-left font-semibold text-gray-500 w-[12%]">{t("users.extension")}</th>
                   <th className="px-2 py-2 text-left font-semibold text-gray-500">{t("users.emailAddress")}</th>
                   <th className="px-2 py-2 w-6"><span className="sr-only">{t("common.remove")}</span></th>
                 </tr>
@@ -293,13 +319,16 @@ export function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[
       )}
 
       {/* Add new row */}
-      <div className="grid grid-cols-3 gap-2 mb-1">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-1">
         <input placeholder={t("users.firstName")} value={newFirst} onChange={(e) => setNewFirst(e.target.value)}
           aria-label="New user first name"
           className="px-2.5 py-1.5 text-sm border border-[#dadce0] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1a73e8] bg-white" />
         <input placeholder={t("users.lastName")} value={newLast} onChange={(e) => setNewLast(e.target.value)}
           aria-label="New user last name"
           className="px-2.5 py-1.5 text-sm border border-[#dadce0] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1a73e8] bg-white" />
+        <input placeholder={t("users.extension")} value={newExt} onChange={(e) => setNewExt(e.target.value)}
+          aria-label="New user extension"
+          className="px-2.5 py-1.5 text-sm border border-[#dadce0] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1a73e8] bg-white sm:col-span-1 col-span-2" />
         <input placeholder={t("users.emailAddress")} value={newEmail}
           onChange={(e) => { setNewEmail(e.target.value); setValidationErrors([]); }}
           onKeyDown={(e) => e.key === "Enter" && addRow()}

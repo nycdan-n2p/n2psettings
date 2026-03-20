@@ -177,6 +177,9 @@
       "urlInvalid": "Please enter a valid website URL."
     },
     "verification": {
+      "e911Label": "Physical address (E911 / emergency service)",
+      "e911Hint": "Websites often list multiple locations. Confirm the street address where service should be registered for emergency calling — edit if the scrape picked the wrong one.",
+      "e911Placeholder": "Street, city, state, ZIP (service location)",
       "locationLabel": "Location",
       "timezoneLabel": "Timezone",
       "businessHours": "Business Hours",
@@ -271,6 +274,9 @@
       "firstName": "First",
       "lastName": "Last",
       "emailAddress": "Email",
+      "extension": "Ext.",
+      "extensionHelper": "Extensions help match CDR data and speed up provisioning. Add them if you know them; they can be assigned later.",
+      "extensionsMissingBanner": "No extensions entered yet — fine for now, but adding them reduces back-and-forth with onboarding.",
       "removeUser": "Remove {name}",
       "addPerson": "Add person",
       "confirmUsers": "Continue with {count} {count, plural, one {user} other {users}}",

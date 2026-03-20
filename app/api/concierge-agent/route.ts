@@ -30,7 +30,7 @@ const TOOLS: Anthropic.Tool[] = [
         patch: {
           type: "object",
           description:
-            "Partial OnboardingData object. Top-level keys: name, companyName, websiteUrl, scraped, holidays, portingQueue, users (array of { firstName, lastName, email?, extension?, department? }), departments (string[]), assignmentsDone (boolean — set true after user-dept assignments are done), routingType (ring_groups|call_queues), licensingVerified, hasHardphones, phoneType (softphone|hardphone|both), welcomeMenu ({ enabled, greetingType: tts|upload|none, greetingText, menuOptions: [{ key, destinationType, destinationName }], allowExtensionDialing, playWaitMessage, allowBargingThrough, configured? }), routingConfig ({ groupName, scheduleType: 24_7|business_hours|custom, customSchedule?: { name, weekDays, start, end }, tiers: [{ userEmails, rings }], ringStrategy: ring_all|round_robin|longest_idle|linear|fewest_calls, maxWaitTime, maxCapacity }), afterHours ({ action: voicemail|greeting|forward, forwardNumber?, greetingText? }), cdrAnalysis (set analyzed/skipped/approvedRecommendation flags).",
+            "Partial OnboardingData object. Top-level keys: name, companyName, websiteUrl, scraped (location, timezone, hours, phones, address — address is E911/service location), holidays, portingQueue ({ skipped, numberIntent: port|new|skipped, numbers[], newNumberAreaCode, newNumberQuantity, newNumberOnePerTeamMember, provider fields, contact }), users (array of { firstName, lastName, email?, extension?, department? }), departments (string[]), assignmentsDone (boolean — set true after user-dept assignments are done), routingType (ring_groups|call_queues), licensingVerified, hasHardphones, phoneType (softphone|hardphone|both), welcomeMenu ({ enabled, greetingType: tts|upload|none, greetingText, menuOptions: [{ key, destinationType, destinationName }], allowExtensionDialing, playWaitMessage, allowBargingThrough, configured? }), routingConfig ({ groupName, scheduleType: 24_7|business_hours|custom, customSchedule?: { name, weekDays, start, end }, tiers: [{ userEmails, rings }], ringStrategy: ring_all|round_robin|longest_idle|linear|fewest_calls, maxWaitTime, maxCapacity }), afterHours ({ action: voicemail|greeting|forward, forwardNumber?, greetingText? }), cdrAnalysis (set analyzed/skipped/approvedRecommendation flags).",
         },
       },
       required: ["patch"],
@@ -39,7 +39,7 @@ const TOOLS: Anthropic.Tool[] = [
   {
     name: "research_website",
     description:
-      "Analyze a company website URL and extract: city/location, timezone, business hours, and phone numbers. Call this as soon as you have the website URL.",
+      "Analyze a company website URL and extract: city/location, timezone, business hours, phone numbers, and best-effort street address. Call this as soon as you have the website URL. The address must be confirmed with the user next stage (E911 — sites may list multiple locations).",
     input_schema: {
       type: "object",
       properties: {
@@ -150,13 +150,14 @@ function buildSystemPrompt(
 - The user may type "Name · URL" or just a URL — extract the URL from whatever they send.
 - As SOON as you have the URL, call research_website(url) immediately. Do NOT ask about timezone, location, or hours — scrape them.
 - If config already has scraped data (scraped.timezone or scraped.phones populated), skip scraping — just call advance_stage.
-- After research_website returns, call update_config({ name, websiteUrl, companyName, scraped: {location,timezone,hours,phones,address} }), then call advance_stage.`,
+- After research_website returns, call update_config({ name, websiteUrl, companyName, scraped: {location,timezone,hours,phones,address} }), then call advance_stage.
+- Note for next stage: scraped.address (if any) is a best guess — the user must confirm the physical service address for E911; many sites list multiple locations.`,
 
     verification_holidays: `You are at the VERIFY & HOLIDAYS stage. You have already scraped the website.
 - IMPORTANT: If config.name is already set, do NOT ask for the name again. You already have it.
-- Proactively present what you found (location, timezone, hours, phones) in a markdown table.
-- Frame it as "Here's what I found for [company] — does everything look right?" rather than asking open questions.
-- Allow the user to correct any field inline. Call update_config with any corrections.
+- Proactively present what you found in a markdown table: **physical address (E911)** — config.scraped.address (stress that websites often have multiple addresses; they must confirm the correct service location), location, timezone, hours, phones.
+- Frame it as "Here's what I found for [company] — does everything look right?" The widget lets them edit address, location, timezone, and hours before continuing.
+- Allow the user to correct any field inline. Call update_config({ scraped: { ... } }) with any corrections including address.
 - Then ask: "Should I load standard US public holidays into your schedule?"
 - WAIT for explicit confirmation or decline (yes/no/sure/skip). Do NOT advance until the user replies.
 - Once they reply: call update_config({ holidays: <loaded holidays or []> }), then call advance_stage.
@@ -173,15 +174,17 @@ function buildSystemPrompt(
 - Do NOT call advance_stage before receiving one of the above prefixed messages.`,
 
     porting: `You are at the PORTING stage.
-- Briefly introduce: "The porting widget below will guide you through the 3-step process — or you can skip it to handle later."
-- The widget handles everything: number selection, provider details, billing address, and API submission.
-- If the user message starts with "[porting-done]": they completed the form and the widget ALREADY saved all portingQueue data to config. Do NOT call update_config — just acknowledge the summary and call advance_stage.
-- If the user says skip or "skip porting": call update_config({ portingQueue: { ...config.portingQueue, skipped: true } }), then call advance_stage.
-- Do NOT ask for provider details in chat — the widget collects all of that.`,
+- Briefly introduce: "Choose whether to port existing numbers, request new numbers (area code / quantity), or skip for now — the widget below handles it."
+- Three paths: (1) Port existing numbers — 3-step flow + API submit. (2) Need new numbers — collects area code and quantity or one-per-team-member. (3) Skip for now — optional notes for onboarding.
+- If the user message starts with "[porting-done]": they completed port submission; widget saved portingQueue. Do NOT call update_config — acknowledge and call advance_stage.
+- If the message starts with "[porting-new-numbers]": they chose new number procurement; widget saved numberIntent "new" and fields. Do NOT call update_config — acknowledge and call advance_stage.
+- If the message mentions skipping porting / "Please call advance_stage" after skip: widget already saved numberIntent "skipped" and optional notes. Do NOT call update_config — acknowledge and call advance_stage.
+- If the user says skip only in chat without widget completing: call update_config({ portingQueue: { ...config.portingQueue, skipped: true, numberIntent: "skipped" } }), then advance_stage.
+- Do NOT ask for provider details in chat — the widget collects those for the port path.`,
 
     user_ingestion: `You are at the USER INGESTION stage. Team members are REQUIRED — at least one.
-- Introduce the step: users can type names/emails in chat OR use the form widget below.
-- If the user types a name/email pair, call update_config({ users: [...existing, newUser] }) immediately.
+- Introduce the step: users can type names/emails in chat OR use the form widget below. Mention that **extensions** (if known) speed up onboarding and CDR matching — the widget has an extension column; if they type users in chat, ask whether they know extension numbers.
+- If the user types a name/email pair, call update_config({ users: [...existing, newUser] }) immediately (include extension if they provide it).
 - IMPORTANT: If you receive a message starting with "[form]", the widget has ALREADY saved the complete data to config (including firstName, lastName, email for every user). Do NOT call update_config — the data is already persisted. Just acknowledge and call advance_stage immediately. Do NOT ask for details again.
 - Do NOT call advance_stage until config.users.length >= 1. The system blocks advance with 0 users.
 - When the user says they're done (or after processing a [form] message) AND there is at least one user, call advance_stage.`,
@@ -243,6 +246,9 @@ After ALL 3 sub-steps are answered and saved, call advance_stage. Do NOT call ad
 BEFORE presenting the blueprint, check the config for completeness:
 - If config.users.length === 0: warn the user and ask if they want to go back to add users first.
 - If config.scraped.timezone is empty: note it will default to UTC.
+- If config.scraped.address is empty or unclear: flag as an onboarding blocker — E911 / physical service address must be confirmed before go-live.
+- If no user has extension filled: note as a common gap (not always blocking) — reduces back-and-forth.
+- Phone plan: if portingQueue.numberIntent is "port", confirm which numbers are ported; if "new", restate area code / quantity or one-per-member; if "skipped" or missing, flag as TBD for new vs ported DIDs.
 - If config.departments.length === 0: note that no departments will be created.
 - If config.routingType is missing: ask which routing type to use before proceeding.
 

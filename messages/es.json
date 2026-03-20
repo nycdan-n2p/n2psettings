@@ -177,6 +177,9 @@
       "urlInvalid": "Por favor ingrese una URL válida."
     },
     "verification": {
+      "e911Label": "Dirección física (E911 / emergencias)",
+      "e911Hint": "Los sitios suelen listar varias ubicaciones. Confirme la dirección donde debe registrarse el servicio para llamadas de emergencia — corríjala si el rastreo eligió una incorrecta.",
+      "e911Placeholder": "Calle, ciudad, estado, código postal (ubicación del servicio)",
       "locationLabel": "Ubicación",
       "timezoneLabel": "Zona horaria",
       "businessHours": "Horario comercial",
@@ -271,6 +274,9 @@
       "firstName": "Nombre",
       "lastName": "Apellido",
       "emailAddress": "Correo electrónico",
+      "extension": "Ext.",
+      "extensionHelper": "Las extensiones ayudan a cruzar CDR y agilizar el aprovisionamiento. Agréguelas si las conoce; se pueden asignar después.",
+      "extensionsMissingBanner": "Aún no hay extensiones — está bien por ahora, pero añadirlas reduce el intercambio con onboarding.",
       "removeUser": "Eliminar {name}",
       "addPerson": "Agregar persona",
       "confirmUsers": "Continuar con {count} {count, plural, one {usuario} other {usuarios}}",

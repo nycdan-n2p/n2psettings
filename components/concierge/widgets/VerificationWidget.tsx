@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Phone } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useConcierge } from "@/contexts/ConciergeContext";
@@ -14,10 +14,21 @@ export function VerificationWidget({ onMessages }: { onMessages: (msgs: string[]
   const [editHours, setEditHours] = useState<Record<string, string>>(scraped.hours);
   const [editTimezone, setEditTimezone] = useState(scraped.timezone);
   const [editLocation, setEditLocation] = useState(scraped.location);
+  const [editAddress, setEditAddress] = useState(scraped.address ?? "");
+
+  useEffect(() => {
+    setEditAddress(scraped.address ?? "");
+  }, [scraped.address]);
 
   const handleHolidayChoice = (yes: boolean) => {
     updateConfig({
-      scraped: { ...scraped, hours: editHours, timezone: editTimezone, location: editLocation },
+      scraped: {
+        ...scraped,
+        hours: editHours,
+        timezone: editTimezone,
+        location: editLocation,
+        address: editAddress.trim(),
+      },
     });
     if (yes) {
       onMessages(["Yes, load public holidays"]);
@@ -31,6 +42,19 @@ export function VerificationWidget({ onMessages }: { onMessages: (msgs: string[]
   return (
     <CardShell>
       <div className="space-y-4">
+        <div>
+          <label htmlFor="verify-e911-address" className="block text-xs font-medium text-gray-600 mb-1">{t("verification.e911Label")}</label>
+          <p className="text-xs text-gray-500 mb-1.5">{t("verification.e911Hint")}</p>
+          <textarea
+            id="verify-e911-address"
+            value={editAddress}
+            onChange={(e) => setEditAddress(e.target.value)}
+            rows={3}
+            placeholder={t("verification.e911Placeholder")}
+            className="w-full px-2.5 py-1.5 text-sm border border-[#dadce0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1a73e8] bg-white resize-y min-h-[4rem]"
+          />
+        </div>
+
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label htmlFor="verify-location" className="block text-xs font-medium text-gray-600 mb-1">{t("verification.locationLabel")}</label>

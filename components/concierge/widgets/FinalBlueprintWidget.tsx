@@ -28,8 +28,42 @@ export function FinalBlueprintWidget({
     .join("\n");
 
   const usersRows = config.users
-    .map((u) => `| ${u.firstName} ${u.lastName} | ${u.email} | ${u.department ?? "\u2014"} |`)
+    .map((u) =>
+      `| ${u.firstName} ${u.lastName} | ${u.email ?? "\u2014"} | ${u.extension?.trim() || "\u2014"} | ${u.department ?? "\u2014"} |`
+    )
     .join("\n");
+
+  const pq = config.portingQueue;
+  const phonePlanSummary = (() => {
+    if (pq.numberIntent === "new") {
+      const qty = pq.newNumberOnePerTeamMember
+        ? `One per team member (${config.users.length} users)`
+        : `Quantity: ${pq.newNumberQuantity ?? "\u2014"}`;
+      return `**New numbers** (no port) — area code: ${pq.newNumberAreaCode?.trim() || "not specified"}; ${qty}`;
+    }
+    if (pq.numberIntent === "port" || (!pq.skipped && pq.numbers.length > 0)) {
+      return pq.numbers.length
+        ? `**Porting** ${pq.numbers.length} number(s): ${pq.numbers.join(", ")}`
+        : "**Porting** — numbers to be finalized";
+    }
+    if (pq.skipped || pq.numberIntent === "skipped") {
+      const bits = ["**Skipped porting** for now"];
+      if (pq.newNumberAreaCode?.trim()) bits.push(`area code note: ${pq.newNumberAreaCode.trim()}`);
+      if (pq.newNumberOnePerTeamMember) bits.push("intent: one per team member");
+      if (pq.newNumberQuantity != null && pq.newNumberQuantity > 0) bits.push(`qty note: ${pq.newNumberQuantity}`);
+      return bits.join(". ");
+    }
+    return "**Phone plan** — not finalized (new vs ported TBD)";
+  })();
+
+  const e911Summary = config.scraped.address?.trim()
+    ? config.scraped.address.trim().replace(/\|/g, "\\|")
+    : "**Not confirmed** — E911 / physical service address still needed before go-live.";
+
+  const extensionsSummary =
+    config.users.length > 0 && config.users.every((u) => !(u.extension && String(u.extension).trim()))
+      ? "No extensions captured (optional; recommended to reduce onboarding back-and-forth)."
+      : "Extensions: captured for at least one user.";
 
   const routingLabel = config.routingType === "ring_groups" ? "Ring Groups" : "Call Queues";
   const routingDetail = config.routingConfig.groupName
@@ -49,14 +83,16 @@ export function FinalBlueprintWidget({
 
 | Field | Value |
 |---|---|
+| E911 / service address | ${e911Summary} |
 | Location | ${config.scraped.location} |
 | Timezone | ${config.scraped.timezone} |
+| Phone plan | ${phonePlanSummary} |
 | Routing | ${routingDetail} |
 | Welcome Menu | ${config.welcomeMenu.enabled ? "Enabled" : "Disabled"} |
 | After-Hours | ${afterHoursLabel} |
 | Departments | ${config.departments.join(", ") || "\u2014"} |
 | Users | ${config.users.length} |
-| Numbers to Port | ${config.portingQueue.numbers.length || "\u2014"} |
+| Extensions | ${extensionsSummary} |
 | Holidays | ${config.holidays.length > 0 && config.holidays[0]?.date !== "__auto__" ? config.holidays.length : config.holidays.length > 0 ? "Auto-loaded" : "None"} |
 
 ### Business Hours
@@ -87,9 +123,9 @@ ${config.routingConfig.tiers.map((t, i) => `| Tier ${i + 1} | ${t.userEmails.len
 
 ### Team Members
 
-| Name | Email | Department |
-|---|---|---|
-${usersRows || "| \u2014 | \u2014 | \u2014 |"}
+| Name | Email | Extension | Department |
+|---|---|---|---|
+${usersRows || "| \u2014 | \u2014 | \u2014 | \u2014 |"}
 `.trim();
 
   return (

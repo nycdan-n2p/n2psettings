@@ -17,7 +17,15 @@ import {
 } from "@/lib/utils/validation";
 import { CardShell, ValidationErrors, FixItButton } from "./shared";
 
-type PortingStep = "decide" | "numbers" | "provider" | "address" | "submitting" | "done";
+type PortingStep =
+  | "decide"
+  | "new_numbers"
+  | "skip_optional"
+  | "numbers"
+  | "provider"
+  | "address"
+  | "submitting"
+  | "done";
 
 function field(
   label: string,
@@ -48,7 +56,7 @@ export function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => 
   const accountId = bootstrap?.account?.accountId ?? 0;
   const phones = config.scraped.phones;
 
-  const [step, setStep] = useState<PortingStep>(phones.length > 0 ? "numbers" : "decide");
+  const [step, setStep] = useState<PortingStep>("decide");
   const [selected, setSelected] = useState<Set<string>>(new Set(phones));
   const [phoneStats, setPhoneStats] = useState<{ maxPhoneNumbers: number; phoneNumbersInUse: number } | null>(null);
 
@@ -64,6 +72,14 @@ export function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => 
     : null;
   const overLimit = availableSlots != null && selected.size > availableSlots;
   const [manualNum, setManualNum] = useState("");
+
+  const pq = config.portingQueue;
+  const [newAreaCode, setNewAreaCode] = useState(pq.newNumberAreaCode ?? "");
+  const [newQty, setNewQty] = useState(pq.newNumberQuantity != null ? String(pq.newNumberQuantity) : "");
+  const [newOnePerMember, setNewOnePerMember] = useState(pq.newNumberOnePerTeamMember ?? false);
+  const [skipAreaCode, setSkipAreaCode] = useState("");
+  const [skipQty, setSkipQty] = useState("");
+  const [skipOnePerMember, setSkipOnePerMember] = useState(false);
 
   const [providerName, setProviderName]     = useState(config.portingQueue.providerName);
   const [accountNumber, setAccountNumber]   = useState(config.portingQueue.accountNumber);
@@ -110,9 +126,57 @@ export function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => 
     setManualNum("");
   };
 
-  const handleSkip = () => {
-    updateConfig({ portingQueue: { ...config.portingQueue, skipped: true, numbers: [] } });
-    onMessages(["Skip porting \u2014 I don\u2019t have numbers to port right now or will handle it later."]);
+  const handleSkipFinalize = (optional: {
+    areaCode: string;
+    quantity: number | null;
+    onePerMember: boolean;
+  }) => {
+    updateConfig({
+      portingQueue: {
+        ...config.portingQueue,
+        skipped: true,
+        numbers: [],
+        numberIntent: "skipped",
+        newNumberAreaCode: optional.areaCode.trim(),
+        newNumberQuantity: optional.quantity,
+        newNumberOnePerTeamMember: optional.onePerMember,
+      },
+    });
+    const parts = ["Skip porting for now \u2014 will handle numbers later."];
+    if (optional.areaCode.trim()) parts.push(`Area code note: ${optional.areaCode.trim()}.`);
+    if (optional.onePerMember) parts.push("Prefer one new number per team member.");
+    else if (optional.quantity != null && optional.quantity > 0) parts.push(`Rough quantity: ${optional.quantity}.`);
+    onMessages([`${parts.join(" ")} Please call advance_stage.`]);
+  };
+
+  const handleNewNumbersDone = () => {
+    const qtyParsed = newQty.trim() === "" ? null : parseInt(newQty, 10);
+    if (newOnePerMember) {
+      if (config.users.length === 0) {
+        setValidationErrors(["Add at least one team member first (Team step), or enter a specific quantity instead of \u201cone per team member.\u201d"]);
+        return;
+      }
+    } else if (qtyParsed == null || Number.isNaN(qtyParsed) || qtyParsed < 1) {
+      setValidationErrors(["Enter how many new numbers you need, or check \u201cone per team member.\u201d"]);
+      return;
+    }
+    setValidationErrors([]);
+    const quantity = newOnePerMember ? null : qtyParsed;
+    updateConfig({
+      portingQueue: {
+        ...config.portingQueue,
+        skipped: true,
+        numbers: [],
+        numberIntent: "new",
+        newNumberAreaCode: newAreaCode.trim(),
+        newNumberQuantity: quantity,
+        newNumberOnePerTeamMember: newOnePerMember,
+      },
+    });
+    const qtyNote = newOnePerMember ? `${config.users.length} (one per team member)` : String(quantity);
+    onMessages([
+      `[porting-new-numbers] New number procurement: area code ${newAreaCode.trim() || "(not specified)"}, quantity ${qtyNote}. Not porting existing numbers. Please call advance_stage.`,
+    ]);
   };
 
   const handleNumbersNext = () => {
@@ -122,7 +186,14 @@ export function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => 
       return;
     }
     setValidationErrors([]);
-    updateConfig({ portingQueue: { ...config.portingQueue, numbers: Array.from(selected) } });
+    updateConfig({
+      portingQueue: {
+        ...config.portingQueue,
+        numbers: Array.from(selected),
+        numberIntent: "port",
+        skipped: false,
+      },
+    });
     setStep("provider");
   };
 
@@ -175,6 +246,8 @@ export function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => 
           onboardId: data.onboardId,
           signLink: data.signUrl ?? "",
           status: data.status,
+          numberIntent: "port",
+          skipped: false,
         },
       });
       setStep("done");
@@ -191,23 +264,126 @@ export function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => 
     return (
       <CardShell>
         <div className="space-y-3">
-          <p className="text-sm font-medium text-gray-700">Do you have existing numbers to port to net2phone?</p>
-          <p className="text-xs text-gray-500">Porting transfers your current phone numbers. It takes 2&ndash;4 weeks and requires your provider&apos;s account details and a signed Letter of Authorization.</p>
+          <p className="text-sm font-medium text-gray-700">How do you want to handle phone numbers?</p>
+          <p className="text-xs text-gray-500">
+            <strong className="font-medium text-gray-700">Port</strong> moves your existing numbers (2&ndash;4 weeks, LOA).
+            <strong className="font-medium text-gray-700"> New numbers</strong> means ordering DIDs (area code / quantity).
+            You can also skip and decide later.
+          </p>
+          {phones.length > 0 && (
+            <p className="text-xs text-[#1a73e8] bg-[#e8f0fe] border border-[#dadce0] rounded-lg px-3 py-2">
+              We found {phones.length} number{phones.length !== 1 ? "s" : ""} on your site &mdash; you can select them in the next step if you port.
+            </p>
+          )}
           <div className="flex flex-col gap-2 pt-1">
             <button
+              type="button"
               onClick={() => setStep("numbers")}
               className="flex items-center justify-center gap-2 py-2.5 text-sm font-semibold bg-[#1a73e8] text-white rounded-xl hover:bg-[#1557b0] transition-colors"
             >
-              <Phone className="w-4 h-4" aria-hidden="true" /> Yes, I have numbers to port
+              <Phone className="w-4 h-4" aria-hidden="true" /> Port existing numbers
             </button>
             <button
-              onClick={handleSkip}
+              type="button"
+              onClick={() => { setValidationErrors([]); setStep("new_numbers"); }}
+              className="flex items-center justify-center gap-2 py-2.5 text-sm font-medium text-gray-800 bg-white border border-[#dadce0] rounded-xl hover:bg-[#f8f9fa] transition-colors"
+            >
+              <Plus className="w-4 h-4" aria-hidden="true" /> Need new numbers (no porting)
+            </button>
+            <button
+              type="button"
+              onClick={() => { setValidationErrors([]); setStep("skip_optional"); }}
               className="flex items-center justify-center gap-2 py-2.5 text-sm font-medium text-gray-600 bg-[#f8f9fa] border border-[#dadce0] rounded-xl hover:bg-[#f1f3f4] transition-colors"
             >
-              <SkipForward className="w-4 h-4" aria-hidden="true" /> Skip &mdash; I&apos;ll handle this later
+              <SkipForward className="w-4 h-4" aria-hidden="true" /> Skip for now
             </button>
           </div>
           <FixItButton targetStage="licensing" />
+        </div>
+      </CardShell>
+    );
+  }
+
+  if (step === "new_numbers") {
+    return (
+      <CardShell>
+        <div className="space-y-3">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">New number procurement</p>
+          <p className="text-xs text-gray-600">
+            Tell us what you need so onboarding can order DIDs. You can refine this later with sales.
+          </p>
+          {field("Preferred area code (optional)", newAreaCode, setNewAreaCode, { placeholder: "e.g. 212", id: "new-npa" })}
+          <label className="flex items-center gap-2 text-xs font-medium text-gray-700 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={newOnePerMember}
+              onChange={(e) => {
+                setNewOnePerMember(e.target.checked);
+                if (e.target.checked) setNewQty("");
+              }}
+              className="accent-[#1a73e8] rounded"
+            />
+            One new number per team member ({config.users.length} member{config.users.length !== 1 ? "s" : ""} in roster)
+          </label>
+          {!newOnePerMember && (
+            <div>
+              {field("How many new numbers?", newQty, setNewQty, { placeholder: "e.g. 5", id: "new-qty" })}
+              <p className="text-xs text-gray-400 mt-1">Required unless you choose one per team member.</p>
+            </div>
+          )}
+          <ValidationErrors errors={validationErrors} />
+          <div className="flex gap-2 pt-1">
+            <button type="button" onClick={() => { setValidationErrors([]); setStep("decide"); }} className="px-3 py-2 text-sm text-gray-500 border border-[#dadce0] rounded-lg hover:bg-[#f8f9fa]">Back</button>
+            <button type="button" onClick={handleNewNumbersDone} className="flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold bg-[#1a73e8] text-white rounded-lg hover:bg-[#1557b0]">
+              Continue <ArrowRight className="w-4 h-4" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      </CardShell>
+    );
+  }
+
+  if (step === "skip_optional") {
+    const skipQtyNum = skipQty.trim() === "" ? null : parseInt(skipQty, 10);
+    return (
+      <CardShell>
+        <div className="space-y-3">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Skip porting</p>
+          <p className="text-xs text-gray-600">
+            Optional: any early notes for your onboarding team (area code, rough count). Leave blank if unknown.
+          </p>
+          {field("Area code (optional)", skipAreaCode, setSkipAreaCode, { placeholder: "e.g. 415", id: "skip-npa" })}
+          <label className="flex items-center gap-2 text-xs font-medium text-gray-700 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={skipOnePerMember}
+              onChange={(e) => {
+                setSkipOnePerMember(e.target.checked);
+                if (e.target.checked) setSkipQty("");
+              }}
+              className="accent-[#1a73e8] rounded"
+            />
+            Likely one number per team member
+          </label>
+          {!skipOnePerMember && (
+            field("Approx. quantity (optional)", skipQty, setSkipQty, { placeholder: "e.g. 3", id: "skip-qty" })
+          )}
+          <div className="flex gap-2 pt-1">
+            <button type="button" onClick={() => setStep("decide")} className="px-3 py-2 text-sm text-gray-500 border border-[#dadce0] rounded-lg hover:bg-[#f8f9fa]">Back</button>
+            <button
+              type="button"
+              onClick={() =>
+                handleSkipFinalize({
+                  areaCode: skipAreaCode,
+                  quantity: skipOnePerMember ? null : skipQtyNum != null && !Number.isNaN(skipQtyNum) ? skipQtyNum : null,
+                  onePerMember: skipOnePerMember,
+                })
+              }
+              className="flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold bg-[#1a73e8] text-white rounded-lg hover:bg-[#1557b0]"
+            >
+              Continue <ArrowRight className="w-4 h-4" aria-hidden="true" />
+            </button>
+          </div>
         </div>
       </CardShell>
     );
@@ -268,12 +444,16 @@ export function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => 
               ))}
             </div>
           )}
-          <div className="flex gap-2 pt-1">
-            <button onClick={handleSkip}
+          <div className="flex gap-2 pt-1 flex-wrap">
+            <button type="button" onClick={() => { setValidationErrors([]); setStep("decide"); }}
+              className="px-3 py-2 text-sm text-gray-500 border border-[#dadce0] rounded-lg hover:bg-[#f8f9fa]">
+              Back
+            </button>
+            <button type="button" onClick={() => { setValidationErrors([]); setStep("skip_optional"); }}
               className="px-3 py-2 text-sm text-gray-500 border border-[#dadce0] rounded-lg hover:bg-[#f8f9fa]">
               Skip porting
             </button>
-            <button onClick={handleNumbersNext} disabled={selected.size === 0 || overLimit}
+            <button type="button" onClick={handleNumbersNext} disabled={selected.size === 0 || overLimit}
               className="flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold bg-[#1a73e8] text-white rounded-lg hover:bg-[#1557b0] disabled:opacity-40 transition-colors">
               Port {selected.size} number{selected.size !== 1 ? "s" : ""} <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </button>
