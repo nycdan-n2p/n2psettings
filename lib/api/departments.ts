@@ -131,21 +131,47 @@ export async function assignUserToDepartment(
   deptId: number
 ): Promise<void> {
   const api = await getApiClient();
-  await api.patch<V1Response<unknown>>(
+  // Fetch current memberships so we can append rather than replace
+  let existing: { id: number }[] = [];
+  try {
+    const res = await api.get<V1Response<{ members?: Array<{ id?: number }> }>>(
+      `/accounts/${accountId}/users/${userId}`
+    );
+    existing = (res.data.data?.members ?? [])
+      .map((m) => ({ id: m.id as number }))
+      .filter((m) => m.id != null);
+  } catch { /* if fetch fails, fall back to just the new dept */ }
+
+  // Skip if already a member
+  if (existing.some((m) => m.id === deptId)) return;
+
+  await api.put<V1Response<unknown>>(
     `/accounts/${accountId}/users/${userId}`,
-    { deptId }
+    { members: [...existing, { id: deptId }] }
   );
 }
 
-/** Unassign a user from their department */
+/** Remove a user from a specific department without affecting their other memberships. */
 export async function unassignUserFromDepartment(
   accountId: number,
-  userId: number
+  userId: number,
+  deptId: number
 ): Promise<void> {
   const api = await getApiClient();
-  await api.patch<V1Response<unknown>>(
+  // Fetch current memberships so we only remove the target dept
+  let existing: { id: number }[] = [];
+  try {
+    const res = await api.get<V1Response<{ members?: Array<{ id?: number }> }>>(
+      `/accounts/${accountId}/users/${userId}`
+    );
+    existing = (res.data.data?.members ?? [])
+      .map((m) => ({ id: m.id as number }))
+      .filter((m) => m.id != null);
+  } catch { /* if fetch fails, send an empty list as a safe fallback */ }
+
+  await api.put<V1Response<unknown>>(
     `/accounts/${accountId}/users/${userId}`,
-    { deptId: null }
+    { members: existing.filter((m) => m.id !== deptId) }
   );
 }
 

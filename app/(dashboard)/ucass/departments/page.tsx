@@ -516,7 +516,7 @@ function DepartmentEditModal({
   });
 
   const unassignMutation = useMutation({
-    mutationFn: (userId: number) => unassignUserFromDepartment(accountId, userId),
+    mutationFn: (userId: number) => unassignUserFromDepartment(accountId, userId, department.deptId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: qk.departments.all(accountId) });
       queryClient.invalidateQueries({ queryKey: lightKeys.users(accountId) });
