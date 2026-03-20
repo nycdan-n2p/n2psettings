@@ -22,6 +22,17 @@ function MiniBar({ value, max, color }: { value: number; max: number; color: str
 }
 
 // ── summary markdown renderer (basic) ────────────────────────────────────────
+
+/** Renders **bold** markers as React <strong> nodes — no HTML injection. */
+function renderBold(text: string): React.ReactNode {
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, i) =>
+    part.startsWith("**") && part.endsWith("**")
+      ? <strong key={i}>{part.slice(2, -2)}</strong>
+      : part
+  );
+}
+
 function SummaryText({ text }: { text: string }) {
   const lines = text.split("\n").filter(Boolean);
   return (
@@ -30,15 +41,15 @@ function SummaryText({ text }: { text: string }) {
         if (line.startsWith("# ")) return <h3 key={i} className="font-semibold text-gray-900">{line.slice(2)}</h3>;
         if (line.startsWith("## ")) return <h4 key={i} className="font-medium text-gray-800">{line.slice(3)}</h4>;
         if (line.startsWith("- ") || line.startsWith("• ") || line.match(/^\*\s/)) {
-          const content = line.replace(/^[-•*]\s+/, "").replace(/\*\*(.*?)\*\*/g, "$1");
+          const content = line.replace(/^[-•*]\s+/, "");
           return (
             <div key={i} className="flex gap-2 text-sm text-gray-700">
               <span className="text-[#1a73e8] mt-0.5 shrink-0">•</span>
-              <span dangerouslySetInnerHTML={{ __html: content.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") }} />
+              <span>{renderBold(content)}</span>
             </div>
           );
         }
-        return <p key={i} className="text-sm text-gray-700">{line.replace(/\*\*(.*?)\*\*/g, "$1")}</p>;
+        return <p key={i} className="text-sm text-gray-700">{renderBold(line)}</p>;
       })}
     </div>
   );

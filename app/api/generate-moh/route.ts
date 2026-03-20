@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { put } from "@vercel/blob";
+import { checkSsrf } from "@/lib/server/ssrf-guard";
 
 /**
  * AI Music-on-Hold generator using ElevenLabs Music API.
@@ -65,6 +66,11 @@ export async function GET(request: NextRequest) {
   const url = request.nextUrl.searchParams.get("url");
   if (!url) {
     return NextResponse.json({ error: "Missing url param" }, { status: 400 });
+  }
+
+  const ssrf = checkSsrf(url);
+  if (!ssrf.ok) {
+    return NextResponse.json({ error: "Invalid or disallowed URL" }, { status: 400 });
   }
 
   try {
