@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { useConcierge } from "@/contexts/ConciergeContext";
 import { WelcomeAgentAvatar } from "@/components/welcome/WelcomeAgentAvatar";
+import { LocaleSelector } from "@/components/ui/LocaleSelector";
 
 const welcomeFont = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -48,6 +49,7 @@ export default function WelcomePage() {
             className="hidden sm:block h-px flex-1 max-w-[120px] mx-4 bg-gradient-to-r from-cyan-400 via-violet-500 to-fuchsia-500 rounded-full opacity-80"
             aria-hidden="true"
           />
+          <LocaleSelector className="text-[#475569]" />
         </header>
 
         <main className="flex-1 flex flex-col items-center justify-center px-6 sm:px-10 pb-24 sm:pb-32">

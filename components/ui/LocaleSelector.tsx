@@ -16,7 +16,7 @@ export function LocaleSelector({ className = "" }: { className?: string }) {
   return (
     <div className={`relative group ${className}`}>
       <button
-        className="flex items-center gap-1 p-2 rounded-full hover:bg-white/20 transition-colors"
+        className="flex items-center gap-1 px-2.5 py-1.5 rounded-full hover:bg-black/[0.06] transition-colors"
         title={t("label")}
         aria-label={t("label")}
         aria-haspopup="listbox"
