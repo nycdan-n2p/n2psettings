@@ -52,22 +52,21 @@ export default function WelcomePage() {
 
         <main className="flex-1 flex flex-col items-center justify-center px-6 sm:px-10 pb-24 sm:pb-32">
           <div className="max-w-2xl w-full text-center space-y-6 motion-safe:animate-[welcomeFade_0.8s_ease-out_both]">
+            {/* Account confirmed pill */}
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">
+              <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <circle cx="8" cy="8" r="7.5" stroke="currentColor" strokeWidth="1" />
+                <path d="M5 8.5l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              {t("confirmedLabel")}
+            </div>
+
             <h1 className="text-4xl sm:text-5xl md:text-[3.25rem] font-extrabold tracking-tight leading-[1.08] text-[#0f172a]">
               {t("headlinePrefix")}{" "}
               <span className="bg-gradient-to-r from-sky-500 via-violet-600 to-fuchsia-500 bg-clip-text text-transparent">
                 {t("headlineAccent")}
               </span>
             </h1>
-
-            <p className="text-lg sm:text-xl font-semibold text-[#1e293b] max-w-xl mx-auto leading-snug">
-              <span className="text-[#0f172a]">{t("taglineSimple")}</span>{" "}
-              <span className="text-[#0f172a]">{t("taglineReliable")}</span>
-              <br className="sm:hidden" />
-              <span className="bg-gradient-to-r from-sky-500 via-violet-600 to-fuchsia-500 bg-clip-text text-transparent">
-                {" "}
-                {t("taglineFlexible")}
-              </span>
-            </p>
 
             <p className="text-sm sm:text-base text-[#475569] max-w-md mx-auto leading-relaxed">
               {t("subcopy")}
@@ -83,7 +82,7 @@ export default function WelcomePage() {
                 {t("ctaOpen")}
               </button>
               {!isOpen && (
-                <p className="text-xs text-[#64748b] max-w-[200px] sm:max-w-none">{t("ctaHint")}</p>
+                <p className="text-xs text-[#64748b]">{t("ctaHint")}</p>
               )}
             </div>
           </div>
