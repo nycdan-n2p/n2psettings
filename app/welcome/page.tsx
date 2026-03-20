@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { useConcierge } from "@/contexts/ConciergeContext";
@@ -15,14 +14,6 @@ const welcomeFont = Plus_Jakarta_Sans({
 export default function WelcomePage() {
   const t = useTranslations("welcomeLanding");
   const { open, isOpen } = useConcierge();
-  const openedRef = useRef(false);
-
-  useEffect(() => {
-    if (openedRef.current) return;
-    openedRef.current = true;
-    const tmr = window.setTimeout(() => open(), 400);
-    return () => window.clearTimeout(tmr);
-  }, [open]);
 
   return (
     <div
