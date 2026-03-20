@@ -1,6 +1,6 @@
 # net2phone Settings App
 
-A Google Admin–style settings console for net2phone UCaaS, built with Next.js 14. Manages team members, call routing, phone numbers, devices, SMS/10DLC registration, 911 contacts, and more — plus an AI-driven onboarding agent ("The Concierge") that guides new accounts through full system configuration.
+A Google Admin–style settings console for net2phone UCaaS, built with Next.js 14. Manages team members, call routing, phone numbers, devices, SMS/10DLC registration, 911 contacts, and more — plus an AI-driven onboarding concierge that activates new accounts from a branded welcome landing page through full system configuration.
 
 ---
 
@@ -9,15 +9,16 @@ A Google Admin–style settings console for net2phone UCaaS, built with Next.js 
 1. [Tech Stack](#tech-stack)
 2. [Features](#features)
 3. [The Concierge — AI Onboarding Agent](#the-concierge--ai-onboarding-agent)
-4. [Internationalization (i18n)](#internationalization-i18n)
-5. [API Routes](#api-routes)
-6. [Proxy Architecture](#proxy-architecture)
-7. [MCP Server](#mcp-server)
-8. [Local Development](#local-development)
-9. [Environment Variables](#environment-variables)
-10. [Deployment (Vercel)](#deployment-vercel)
-11. [Security](#security)
-12. [Known Limitations](#known-limitations)
+4. [Welcome Landing Page (`/welcome`)](#welcome-landing-page-welcome)
+5. [Internationalization (i18n)](#internationalization-i18n)
+6. [API Routes](#api-routes)
+7. [Proxy Architecture](#proxy-architecture)
+8. [MCP Server](#mcp-server)
+9. [Local Development](#local-development)
+10. [Environment Variables](#environment-variables)
+11. [Deployment (Vercel)](#deployment-vercel)
+12. [Security](#security)
+13. [Known Limitations](#known-limitations)
 
 ---
 
@@ -93,10 +94,6 @@ A Google Admin–style settings console for net2phone UCaaS, built with Next.js 
 
 The Concierge is an AI-powered conversational onboarding agent that guides new accounts through the entire setup process. It uses Anthropic Claude via SSE streaming and calls the same MCP tools the settings UI uses — so every step results in real data written to the net2phone backend.
 
-### New-account welcome URL
-
-- **`/welcome`** — Branded first-run landing (e.g. `https://n2psettings.vercel.app/welcome`). Requires sign-in; unauthenticated users are sent to **`/login?returnUrl=/welcome`**. The assistant opens automatically; when the flow finishes, users are routed to **`/ucass/onboarding`** (settings onboarding hub).
-
 ### Onboarding Stages
 
 | # | Stage key | What happens |
@@ -148,6 +145,56 @@ components/concierge/
 
 ---
 
+## Welcome Landing Page (`/welcome`)
+
+New accounts receive an email with a link to **`https://n2psettings.vercel.app/welcome`** after purchasing. This is the first touchpoint with the product.
+
+### User flow
+
+```
+Email link → /welcome
+  → (if not signed in) /login?returnUrl=/welcome → /welcome
+  → User clicks "Start Setup"
+  → Concierge overlay opens (welcome mode)
+  → Onboarding flow (8 stages)
+  → Flow complete → /ucass/onboarding (settings hub)
+```
+
+### Page design
+
+- **Net2phone branded** — pastel blue→violet→pink gradient background, `Plus_Jakarta_Sans` typeface, gradient-accent CTA button
+- **"Account confirmed" pill** — green checkmark signals the paid account is ready
+- **Headline:** *"Let's get your phone system live."*
+- **Steps card** — briefly explains what the assistant will do (learn business info → set up team/routing → activate)
+- **Language selector** — globe icon + locale code in the top-right header; sets `NEXT_LOCALE` cookie and reloads; supports EN / ES / PT-BR / FR-CA
+- **No auto-open** — assistant only opens when the user clicks "Start Setup"
+
+### Concierge welcome mode
+
+When the overlay is open on `/welcome`, it switches to a wider, more polished shell:
+
+| Feature | Default (dashboard) | Welcome mode |
+|---|---|---|
+| Panel width | `max-w-2xl` | `max-w-3xl` |
+| Header | Blue icon + title | Gradient avatar + gradient hairline |
+| Backdrop | Click to dismiss | Non-dismissible (pointer-events-none) |
+| Progress bar | Solid blue | Blue→violet→fuchsia gradient |
+| Done CTA | "Close" | "Open Settings & continue →" → `/ucass/onboarding` |
+
+### Key files
+
+```
+app/welcome/
+├── page.tsx          # Landing UI — headline, steps card, CTA
+├── layout.tsx        # Metadata (title/description)
+└── WelcomeShell.tsx  # Auth gate + AssistantProvider + ConciergeProvider
+
+components/welcome/
+└── WelcomeAgentAvatar.tsx   # SVG agent mark (slate + blue gradient)
+```
+
+---
+
 ## Internationalization (i18n)
 
 The app ships with full multi-language support powered by [`next-intl`](https://next-intl-docs.vercel.app/).
@@ -195,6 +242,7 @@ components/ui/LocaleSelector.tsx  # Globe icon dropdown in the TopBar
 - Top navigation groups and items (`nav.*`)
 - TopBar controls (`topbar.*`)
 - The full Concierge agent UI — all 8 stages, all widget labels, error messages, placeholders (`concierge.*`)
+- Welcome landing page (`welcomeLanding.*`)
 - Sidekick / N2P Assistant (`assistant.*`)
 - Schedules, Ring Groups, Team Members sections
 - Error boundary and error pages (`errors.*`)
@@ -287,6 +335,8 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000).
 
 **Login:** Paste your OAuth2 refresh token on the login page. Obtain it from [app.net2phone.com](https://app.net2phone.com): DevTools → Application → Local Storage → `n2p_refresh_token`.
+
+**Testing the welcome flow:** Navigate to `http://localhost:3000/welcome`. If not signed in you'll be redirected to `/login?returnUrl=/welcome`, then back to the landing. Click "Start Setup" to open the onboarding assistant.
 
 > If you get `invalid_grant`, the token may be expired. Log back in at app.net2phone.com and copy a fresh `n2p_refresh_token`.
 
