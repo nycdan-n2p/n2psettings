@@ -68,13 +68,24 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Missing url param" }, { status: 400 });
   }
 
+  // Only allow Vercel Blob storage URLs — this endpoint exists solely to
+  // proxy hold-music files stored there. Reject anything else outright so
+  // the allowed domain is an explicit allowlist, not just a blocklist.
+  let parsed: URL;
+  try { parsed = new URL(url); } catch {
+    return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
+  }
+  if (!parsed.hostname.endsWith(".blob.vercel-storage.com")) {
+    return NextResponse.json({ error: "URL not allowed" }, { status: 400 });
+  }
+  // Belt-and-suspenders: also run the generic SSRF guard
   const ssrf = checkSsrf(url);
   if (!ssrf.ok) {
     return NextResponse.json({ error: "Invalid or disallowed URL" }, { status: 400 });
   }
 
   try {
-    const res = await fetch(url);
+    const res = await fetch(parsed.toString());
     if (!res.ok) {
       return NextResponse.json({ error: `Upstream ${res.status}` }, { status: 502 });
     }
