@@ -215,16 +215,37 @@ export function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[
   };
 
   const handleConfirm = () => {
+    // If the user filled in the input row but didn't click "Add person", flush it now
+    let finalUsers = users;
+    if (newFirst.trim() && newEmail.trim()) {
+      const v = validateUser({ firstName: newFirst, lastName: newLast, email: newEmail });
+      if (!v.valid) { setValidationErrors(v.errors); return; }
+      if (newEmailStatus === "taken") { setValidationErrors([t("users.takenError")]); return; }
+      const pending: OnboardingUser = {
+        firstName: newFirst.trim(),
+        lastName: newLast.trim(),
+        email: newEmail.trim(),
+        ...(newExt.trim() ? { extension: newExt.trim() } : {}),
+      };
+      finalUsers = [...users, pending];
+      setUsers(finalUsers);
+      setNewFirst(""); setNewLast(""); setNewExt(""); setNewEmail("");
+      setValidationErrors([]);
+    }
+    if (finalUsers.length === 0) return;
     setCsvJustImported(false);
-    updateConfig({ users });
-    const list = users.map((u) =>
+    updateConfig({ users: finalUsers });
+    const list = finalUsers.map((u) =>
       `${u.firstName} ${u.lastName ?? ""} <${u.email ?? ""}>${u.department ? ` [${u.department}]` : ""}`
     ).join("; ");
-    onMessages([`[form] ${users.length} user${users.length !== 1 ? "s" : ""} confirmed: ${list}. Please call update_config with these users then advance_stage.`]);
+    onMessages([`[form] ${finalUsers.length} user${finalUsers.length !== 1 ? "s" : ""} confirmed: ${list}. Please call update_config with these users then advance_stage.`]);
   };
 
   const missingFields = users.filter((u) => !u.firstName || !u.email);
   const addDisabled = !newFirst.trim() || !newEmail.trim() || newEmailStatus === "checking" || newEmailStatus === "taken";
+  // Confirm is enabled if: the table has users OR the input row has a valid pending entry
+  const pendingValid = newFirst.trim() && newEmail.trim() && newEmailStatus !== "taken" && newEmailStatus !== "checking";
+  const confirmEnabled = (users.length > 0 && missingFields.length === 0) || (users.length === 0 && !!pendingValid);
 
   if (mode === "choose") {
     return (
@@ -347,13 +368,13 @@ export function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[
         <Plus className="w-3.5 h-3.5" aria-hidden="true" /> {t("users.addPerson")}
       </button>
 
-      <button onClick={handleConfirm} disabled={users.length === 0 || missingFields.length > 0}
+      <button onClick={handleConfirm} disabled={!confirmEnabled}
         className="w-full py-2 text-sm font-medium bg-[#1a73e8] text-white rounded-lg hover:bg-[#1557b0] disabled:opacity-40 transition-colors"
-        title={users.length === 0 ? t("users.teamRequired") : missingFields.length > 0 ? t("users.missingEmails") : undefined}
+        title={!confirmEnabled && missingFields.length > 0 ? t("users.missingEmails") : undefined}
       >
-        {t("users.confirmUsers", { count: users.length })}
+        {t("users.confirmUsers", { count: users.length + (pendingValid ? 1 : 0) })}
       </button>
-      {users.length === 0 && (
+      {users.length === 0 && !pendingValid && (
         <p className="text-xs text-center text-amber-600 mt-1.5">{t("users.teamRequired")}</p>
       )}
       {missingFields.length > 0 && users.length > 0 && (
