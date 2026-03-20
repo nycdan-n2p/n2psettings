@@ -1,6 +1,6 @@
 # net2phone Settings App
 
-A Google Admin–style settings console for net2phone UCaaS, built with Next.js 14. Manages team members, call routing, phone numbers, devices, SMS/10DLC registration, 911 contacts, and more — plus an AI-driven onboarding concierge that activates new accounts from a branded welcome landing page through full system configuration.
+A Google Admin–style settings console for net2phone UCaaS, built with Next.js 16. Manages team members, call routing, phone numbers, devices, SMS/10DLC registration, 911 contacts, and more — plus an AI-driven onboarding concierge that activates new accounts from a branded welcome landing page through full system configuration.
 
 ---
 
@@ -26,7 +26,7 @@ A Google Admin–style settings console for net2phone UCaaS, built with Next.js 
 
 | Layer | Library |
 |---|---|
-| Framework | Next.js 14 (App Router) |
+| Framework | Next.js 16 (App Router) |
 | Language | TypeScript |
 | Styling | Tailwind CSS |
 | Data fetching | TanStack Query (React Query) |
@@ -314,7 +314,7 @@ The MCP server is also compatible with Claude Desktop. See `n2p-mcp/README.md` f
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20.9.0+ (required by Next.js 16; use `nvm use 20` if you have nvm)
 - An active net2phone account with admin access
 - Anthropic API key (for the Concierge and CDR analysis)
 
@@ -391,9 +391,11 @@ npm i -g vercel
 vercel --prod
 ```
 
-The project is a standard Next.js 14 App Router app and deploys to Vercel with zero configuration.
+The project is a Next.js 16 App Router app and deploys to Vercel with zero configuration.
 
 **Important note on onboarding state storage:** `app/api/onboarding-state/route.ts` currently writes to `os.tmpdir()`, which is ephemeral on Vercel's serverless platform. For production multi-user deployments, replace the file-based store with **Vercel KV** (Redis). The GET/PUT/DELETE handler interface is self-contained and is a simple swap.
+
+**Node.js version:** Set the Node.js version to **20.x** in Vercel → Project Settings → General → Node.js Version. The `engines` field in `package.json` and `.nvmrc` both pin `>=20.9.0`.
 
 ---
 
@@ -415,7 +417,8 @@ The following security controls are in place:
 
 ### SSRF Protection
 - `lib/server/ssrf-guard.ts` — blocks private IP ranges, loopback, AWS/GCP metadata endpoints, and non-HTTP schemes before any server-side fetch of a user-supplied URL
-- Applied to `/api/research-website`
+- Applied to `/api/research-website` and `/api/generate-moh`
+- `/api/generate-moh` additionally enforces an **explicit domain allowlist** — only `*.blob.vercel-storage.com` URLs are accepted; all other domains are rejected before `fetch` is called
 
 ### Proxy Path Validation
 - `lib/server/proxy-guard.ts` — rejects path traversal sequences (`../`) and unsafe characters in all 4 proxy routes
@@ -432,6 +435,9 @@ The following security controls are in place:
 - `concierge-agent` route enforces a 200-message cap and 2 MB body size limit
 - `analyze-cdr` route enforces a 5 MB body size limit
 - CDR content is truncated to 40,000 characters before being sent to the AI
+
+### XSS Prevention
+- AI-generated markdown in `components/calls/AnalyzeModal.tsx` is rendered via a pure React `renderBold()` helper — `**bold**` markers are converted to `<strong>` React nodes; `dangerouslySetInnerHTML` is not used anywhere in the call analysis UI
 
 ### Concurrency
 - `onboarding-state` writes use an optimistic locking scheme (`clientVersion` timestamp comparison) and atomic file rename to prevent partial writes and stale overwrites
