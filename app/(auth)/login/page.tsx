@@ -1,15 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { setTokens } from "@/lib/auth";
 import { Loader } from "@/components/ui/Loader";
 
 type Mode = "password" | "token";
 
-export default function LoginPage() {
+function LoginPageInner() {
   const t = useTranslations("login");
+  const searchParams = useSearchParams();
+  const returnUrl = searchParams.get("returnUrl");
   const [mode, setMode] = useState<Mode>("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -57,7 +59,11 @@ export default function LoginPage() {
       }
 
       setTokens(data);
-      router.push("/");
+      const safeReturn =
+        returnUrl && returnUrl.startsWith("/") && !returnUrl.startsWith("//")
+          ? returnUrl
+          : "/";
+      router.push(safeReturn);
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : t("authFailed"));
@@ -166,5 +172,17 @@ export default function LoginPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-[#f8f9fa]">
+        <Loader variant="full" label="Loading…" />
+      </div>
+    }>
+      <LoginPageInner />
+    </Suspense>
   );
 }

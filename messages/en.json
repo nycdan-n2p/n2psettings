@@ -155,6 +155,8 @@
     "send": "Send",
     "thinking": "Thinking…",
     "progressLabel": "Onboarding progress",
+    "welcomeTitle": "Setup Assistant",
+    "welcomeDoneCta": "Open Settings & continue →",
     "stages": {
       "welcome_scrape": "Welcome",
       "verification_holidays": "Verification",
@@ -216,8 +218,10 @@
       "strategy": "Strategy",
       "afterHours": "After Hours",
       "welcomeMenu": "Welcome Menu",
-      "suggestedGreeting": "Suggested Greeting",
-      "menuOptions": "Menu Options"
+      "suggestedGreeting": "Suggested greeting (full text)",
+      "menuOptions": "Menu options",
+      "whyThisSetup": "How this addresses your CDR",
+      "menuKey": "Key {key}:"
     },
     "porting": {
       "decideQuestion": "Do you have existing numbers to port to net2phone?",
@@ -1307,6 +1311,22 @@
   "productsPage": {
     "title": "Products",
     "subtitle": "Select a product to manage its settings."
+  },
+  "welcomeLanding": {
+    "badge": "Guided setup",
+    "headlinePrefix": "Welcome to",
+    "headlineAccent": "smarter calling.",
+    "taglineSimple": "Simple.",
+    "taglineReliable": "Reliable.",
+    "taglineFlexible": "Flexible.",
+    "subcopy": "Your AI setup assistant learns your business, configures routing, team, and numbers — so you reach first value fast.",
+    "ctaOpen": "Open Setup Assistant",
+    "ctaHint": "The assistant opens automatically in a moment.",
+    "cardTitle": "What happens next",
+    "step1": "Share your site and company basics — we pull hours, timezone, and numbers.",
+    "step2": "Confirm your team, queues, and how calls should route.",
+    "step3": "Review the blueprint — then we build your configuration.",
+    "footer": "© net2phone · Enterprise-grade voice, messaging, and meetings."
   },
   "onboardingPage": {
     "title": "Welcome to net2phone",

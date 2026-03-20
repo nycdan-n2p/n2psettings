@@ -155,6 +155,8 @@
     "send": "Enviar",
     "thinking": "Pensando…",
     "progressLabel": "Progreso de configuración",
+    "welcomeTitle": "Asistente de configuración",
+    "welcomeDoneCta": "Abrir ajustes y continuar →",
     "stages": {
       "welcome_scrape": "Bienvenida",
       "verification_holidays": "Verificación",
@@ -216,8 +218,10 @@
       "strategy": "Estrategia",
       "afterHours": "Fuera de horario",
       "welcomeMenu": "Menú de bienvenida",
-      "suggestedGreeting": "Saludo sugerido",
-      "menuOptions": "Opciones de menú"
+      "suggestedGreeting": "Saludo sugerido (texto completo)",
+      "menuOptions": "Opciones de menú",
+      "whyThisSetup": "Cómo esto responde a su CDR",
+      "menuKey": "Tecla {key}:"
     },
     "porting": {
       "decideQuestion": "¿Tiene números existentes para portar a net2phone?",
@@ -1307,6 +1311,22 @@
   "productsPage": {
     "title": "Productos",
     "subtitle": "Seleccione un producto para gestionar su configuración."
+  },
+  "welcomeLanding": {
+    "badge": "Configuración guiada",
+    "headlinePrefix": "Bienvenido a",
+    "headlineAccent": "llamadas más inteligentes.",
+    "taglineSimple": "Simple.",
+    "taglineReliable": "Confiable.",
+    "taglineFlexible": "Flexible.",
+    "subcopy": "Su asistente de IA aprende su negocio, configura enrutamiento, equipo y números — para obtener valor rápido.",
+    "ctaOpen": "Abrir asistente de configuración",
+    "ctaHint": "El asistente se abre automáticamente en un momento.",
+    "cardTitle": "Qué sigue",
+    "step1": "Comparta su sitio y datos de la empresa — extraemos horarios, zona horaria y números.",
+    "step2": "Confirme equipo, colas y cómo deben enrutarse las llamadas.",
+    "step3": "Revise el plan — luego creamos su configuración.",
+    "footer": "© net2phone · Voz, mensajes y reuniones de nivel empresarial."
   },
   "onboardingPage": {
     "title": "Bienvenido a net2phone",

@@ -80,7 +80,7 @@ Required output fields:
   * suggestedGreeting: string — a suggested TTS greeting using "our company" as placeholder, mention the queues found. e.g. "Thank you for calling. Press 1 for Front Desk, Press 2 for Surgery Line."
   * menuOptions: array of { key: string, destinationType: "department", destinationName: string } — one per queue found, keys starting at "1"
 
-- summary: string — a 2-3 sentence natural language summary written in first person from the AI agent's perspective, e.g. "Based on your CDR, I found 5 agents: Sarah (101), Mike (102), Elena (103), Jessica (104), and Dr. Aris (107). I also noticed significant after-hours missed calls and queue congestion — I recommend setting up a Call Queue with Round Robin routing and a voicemail greeting after hours."
+- summary: string — 3-5 sentences in first person. MUST explicitly connect your recommendations to the insights above: e.g. why call_queues vs ring_groups addresses abandon/hold issues, why round_robin (or chosen strategy) spreads load across agents, why greeting vs voicemail fits after-hours patterns, and how the welcome menu options map to queues found. Do not only list settings — explain the problem-to-fix link.
 
 CDR data:
 ${safecsv}`;
@@ -88,7 +88,7 @@ ${safecsv}`;
   try {
     const response = await client.messages.create({
       model: "claude-sonnet-4-6",
-      max_tokens: 2048,
+      max_tokens: 3072,
       messages: [{ role: "user", content: prompt }],
     });
 

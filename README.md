@@ -93,6 +93,10 @@ A Google Admin–style settings console for net2phone UCaaS, built with Next.js 
 
 The Concierge is an AI-powered conversational onboarding agent that guides new accounts through the entire setup process. It uses Anthropic Claude via SSE streaming and calls the same MCP tools the settings UI uses — so every step results in real data written to the net2phone backend.
 
+### New-account welcome URL
+
+- **`/welcome`** — Branded first-run landing (e.g. `https://n2psettings.vercel.app/welcome`). Requires sign-in; unauthenticated users are sent to **`/login?returnUrl=/welcome`**. The assistant opens automatically; when the flow finishes, users are routed to **`/ucass/onboarding`** (settings onboarding hub).
+
 ### Onboarding Stages
 
 | # | Stage key | What happens |

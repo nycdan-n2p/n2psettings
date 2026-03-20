@@ -155,6 +155,8 @@
     "send": "Enviar",
     "thinking": "Pensando…",
     "progressLabel": "Progresso da configuração",
+    "welcomeTitle": "Assistente de configuração",
+    "welcomeDoneCta": "Abrir configurações e continuar →",
     "stages": {
       "welcome_scrape": "Boas-vindas",
       "verification_holidays": "Verificação",
@@ -216,8 +218,10 @@
       "strategy": "Estratégia",
       "afterHours": "Fora do horário",
       "welcomeMenu": "Menu de boas-vindas",
-      "suggestedGreeting": "Saudação sugerida",
-      "menuOptions": "Opções do menu"
+      "suggestedGreeting": "Saudação sugerida (texto completo)",
+      "menuOptions": "Opções do menu",
+      "whyThisSetup": "Como isso responde ao seu CDR",
+      "menuKey": "Tecla {key}:"
     },
     "porting": {
       "decideQuestion": "Você tem números existentes para portar para a net2phone?",
@@ -1307,6 +1311,22 @@
   "productsPage": {
     "title": "Produtos",
     "subtitle": "Selecione um produto para gerenciar suas configurações."
+  },
+  "welcomeLanding": {
+    "badge": "Configuração guiada",
+    "headlinePrefix": "Bem-vindo à",
+    "headlineAccent": "telefonia mais inteligente.",
+    "taglineSimple": "Simples.",
+    "taglineReliable": "Confiável.",
+    "taglineFlexible": "Flexível.",
+    "subcopy": "Seu assistente de IA aprende seu negócio, configura roteamento, equipe e números — para você obter valor rápido.",
+    "ctaOpen": "Abrir assistente de configuração",
+    "ctaHint": "O assistente abre automaticamente em instantes.",
+    "cardTitle": "O que vem a seguir",
+    "step1": "Compartilhe seu site e dados da empresa — extraímos horários, fuso e números.",
+    "step2": "Confirme equipe, filas e como as chamadas devem rotear.",
+    "step3": "Revise o blueprint — então criamos sua configuração.",
+    "footer": "© net2phone · Voz, mensagens e reuniões de nível empresarial."
   },
   "onboardingPage": {
     "title": "Bem-vindo à net2phone",

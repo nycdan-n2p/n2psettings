@@ -64,6 +64,8 @@ export interface CdrInsights {
     suggestedGreeting: string;
     menuOptions: MenuOption[];
   };
+  /** Natural-language tie-in: how recommendations address CDR insights (from analyze-cdr API). */
+  summary: string;
   approvedRecommendation: boolean;
 }
 
@@ -216,6 +218,7 @@ export const EMPTY_CONFIG: OnboardingData = {
       suggestedGreeting: "",
       menuOptions: [],
     },
+    summary: "",
     approvedRecommendation: false,
   },
 };

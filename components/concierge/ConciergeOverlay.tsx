@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { X, Sparkles, RotateCcw, Send, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useConcierge, STAGE_ORDER, type ConciergeStage } from "@/contexts/ConciergeContext";
@@ -8,6 +9,7 @@ import { useConciergeAgent } from "@/hooks/useConciergeAgent";
 import { ProgressBar } from "./ProgressBar";
 import { MessageBubble } from "./MessageBubble";
 import { StageWidget } from "./StageWidgets";
+import { WelcomeAgentAvatar } from "@/components/welcome/WelcomeAgentAvatar";
 
 // ── Focus trap — keeps Tab/Shift-Tab inside the dialog ──────────────────────
 
@@ -67,6 +69,10 @@ const STAGES_WITH_FORM: ConciergeStage[] = [
 export function ConciergeOverlay() {
   const t = useTranslations("concierge");
   const tCommon = useTranslations("common");
+  const pathname = usePathname();
+  const router = useRouter();
+  const isWelcomePage =
+    pathname === "/welcome" || pathname?.replace(/\/$/, "") === "/welcome";
 
   const {
     isOpen, isTransitioning, stage, config, close,
@@ -112,6 +118,17 @@ export function ConciergeOverlay() {
     }
   }, [input, sendMessage]);
 
+  const handleClose = useCallback(() => {
+    close();
+  }, [close]);
+
+  const handleDoneOrClose = useCallback(() => {
+    close();
+    if (isWelcomePage) {
+      router.push("/ucass/onboarding");
+    }
+  }, [close, isWelcomePage, router]);
+
   if (!isOpen) return null;
 
   const isDone   = stage === "done";
@@ -125,18 +142,18 @@ export function ConciergeOverlay() {
 
   return (
     <>
-      {/* Backdrop — dim app to ~80% visibility when Concierge is open */}
+      {/* Backdrop — welcome: light veil, no click-to-dismiss so first-run users stay in flow */}
       <div
-        className={`fixed inset-0 bg-black/20 z-40 transition-opacity duration-500 motion-reduce:duration-0 ${
-          isTransitioning ? "opacity-0" : "opacity-100"
-        }`}
+        className={`fixed inset-0 z-40 transition-opacity duration-500 motion-reduce:duration-0 ${
+          isWelcomePage ? "bg-slate-900/15 pointer-events-none" : "bg-black/20"
+        } ${isTransitioning ? "opacity-0" : "opacity-100"}`}
         aria-hidden="true"
-        onClick={close}
+        onClick={isWelcomePage ? undefined : handleClose}
       />
 
       {/* Dialog wrapper */}
       <div
-        className="fixed z-50 inset-0 flex items-center justify-center pointer-events-none"
+        className="fixed z-50 inset-0 flex items-center justify-center pointer-events-none p-3 sm:p-4"
         role="dialog"
         aria-modal="true"
         aria-label={t("title")}
@@ -144,9 +161,13 @@ export function ConciergeOverlay() {
         <div
           ref={dialogRef}
           className={`
-            w-full max-w-2xl mx-4 bg-white rounded-2xl shadow-2xl flex flex-col
-            max-h-[90vh] pointer-events-auto
+            w-full ${isWelcomePage ? "max-w-3xl" : "max-w-2xl"} mx-auto bg-white rounded-2xl flex flex-col
+            max-h-[min(90vh,880px)] pointer-events-auto overflow-hidden
             transition-all duration-700 ease-in-out motion-reduce:duration-0
+            ${isWelcomePage
+              ? "shadow-[0_24px_80px_-12px_rgba(15,23,42,0.2)] ring-1 ring-white/80 bg-gradient-to-b from-white via-white to-[#f8fafc]"
+              : "shadow-2xl"
+            }
             ${isTransitioning
               ? "translate-x-[calc(50vw_-_80px)] scale-[0.35] opacity-0"
               : "translate-x-0 scale-100 opacity-100"
@@ -154,44 +175,68 @@ export function ConciergeOverlay() {
           `}
           style={{ transformOrigin: "center center" }}
           onKeyDown={(e) => {
-            if (e.key === "Escape") close();
+            if (e.key === "Escape") handleClose();
           }}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#e8eaed] bg-white rounded-t-2xl shrink-0">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-[#1a73e8] flex items-center justify-center shadow-sm">
-                <Sparkles className="w-4 h-4 text-white" />
+          <div className="shrink-0 rounded-t-2xl overflow-hidden">
+            <div
+              className={`flex items-center justify-between px-5 py-3.5 ${
+                isWelcomePage
+                  ? "border-b border-violet-100/80 bg-gradient-to-r from-[#f0f9ff] via-white to-[#faf5ff]"
+                  : "border-b border-[#e8eaed] bg-white"
+              }`}
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                {isWelcomePage ? (
+                  <div className="shrink-0 rounded-xl p-0.5 bg-gradient-to-br from-sky-400 via-violet-500 to-fuchsia-500 shadow-sm">
+                    <div className="rounded-[10px] bg-white p-0.5">
+                      <WelcomeAgentAvatar size={34} />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-[#1a73e8] flex items-center justify-center shadow-sm shrink-0">
+                    <Sparkles className="w-4 h-4 text-white" />
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <h2 className={`text-sm font-semibold truncate ${isWelcomePage ? "text-[#0f172a]" : "text-gray-900"}`}>
+                    {isWelcomePage ? t("welcomeTitle") : t("title")}
+                  </h2>
+                  <p className={`text-xs truncate ${isWelcomePage ? "text-[#64748b]" : "text-gray-400"}`}>
+                    {t.rich("progressLabel")} {Math.min(stageIdx + 1, 7)} / 7
+                    {config.companyName ? ` \u00b7 ${config.companyName}` : ""}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-sm font-semibold text-gray-900">{t("title")}</h2>
-                <p className="text-xs text-gray-400">
-                  {t.rich("progressLabel")} {Math.min(stageIdx + 1, 7)} / 7
-                  {config.companyName ? ` \u00b7 ${config.companyName}` : ""}
-                </p>
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  onClick={handleReset}
+                  className="p-1.5 rounded-full hover:bg-[#f1f3f4] text-gray-400 transition-colors"
+                  title={t("reset")}
+                  aria-label={t("reset")}
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={handleClose}
+                  className="p-1.5 rounded-full hover:bg-[#f1f3f4] text-gray-400 transition-colors"
+                  aria-label={tCommon("close")}
+                >
+                  <X className="w-[18px] h-[18px]" />
+                </button>
               </div>
             </div>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={handleReset}
-                className="p-1.5 rounded-full hover:bg-[#f1f3f4] text-gray-400 transition-colors"
-                title={t("reset")}
-                aria-label={t("reset")}
-              >
-                <RotateCcw className="w-4 h-4" />
-              </button>
-              <button
-                onClick={close}
-                className="p-1.5 rounded-full hover:bg-[#f1f3f4] text-gray-400 transition-colors"
-                aria-label={tCommon("close")}
-              >
-                <X className="w-[18px] h-[18px]" />
-              </button>
-            </div>
+            {isWelcomePage && (
+              <div
+                className="h-0.5 w-full bg-gradient-to-r from-cyan-400 via-violet-500 to-fuchsia-500 opacity-80"
+                aria-hidden="true"
+              />
+            )}
           </div>
 
           {/* Progress bar */}
-          {!isDone && <ProgressBar currentStage={stage} />}
+          {!isDone && <ProgressBar currentStage={stage} welcomeAccent={isWelcomePage} />}
 
           {/* Messages */}
           <div
@@ -284,12 +329,23 @@ export function ConciergeOverlay() {
 
           {/* Done footer */}
           {isDone && (
-            <div className="px-5 py-4 border-t border-[#e8eaed] bg-[#f8f9fa] rounded-b-2xl shrink-0">
+            <div
+              className={`px-5 py-4 border-t rounded-b-2xl shrink-0 ${
+                isWelcomePage
+                  ? "border-violet-100 bg-gradient-to-r from-[#f0f9ff] to-[#faf5ff]"
+                  : "border-[#e8eaed] bg-[#f8f9fa]"
+              }`}
+            >
               <button
-                onClick={close}
-                className="w-full py-2.5 text-sm font-medium bg-[#1a73e8] text-white rounded-xl hover:bg-[#1557b0] transition-colors"
+                type="button"
+                onClick={handleDoneOrClose}
+                className={`w-full py-2.5 text-sm font-semibold text-white rounded-xl transition-colors ${
+                  isWelcomePage
+                    ? "bg-gradient-to-r from-[#1a73e8] via-[#6366f1] to-[#a855f7] hover:opacity-95 shadow-md shadow-indigo-500/20"
+                    : "bg-[#1a73e8] hover:bg-[#1557b0]"
+                }`}
               >
-                {t("stages.done")} →
+                {isWelcomePage ? t("welcomeDoneCta") : `${t("stages.done")} →`}
               </button>
             </div>
           )}

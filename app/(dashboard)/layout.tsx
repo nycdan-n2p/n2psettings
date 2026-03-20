@@ -22,7 +22,8 @@ import { Sparkles, X } from "lucide-react";
 const BANNER_DISMISSED_KEY = "n2p_onboarding_banner_dismissed";
 
 function FirstTimeSetupBanner() {
-  const { open, stage } = useConcierge();
+  const { stage } = useConcierge();
+  const router = useRouter();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -45,7 +46,11 @@ function FirstTimeSetupBanner() {
         <Sparkles className="w-4 h-4 shrink-0 text-[#1a73e8]" aria-hidden="true" />
         <span className="truncate"><span className="hidden sm:inline">New account? </span>Get set up in minutes.</span>
         <button
-          onClick={() => { open(); dismiss(); }}
+          type="button"
+          onClick={() => {
+            dismiss();
+            router.push("/welcome");
+          }}
           className="font-semibold underline hover:no-underline shrink-0"
         >
           Start guided setup →

@@ -155,6 +155,8 @@
     "send": "Envoyer",
     "thinking": "En train de réfléchir…",
     "progressLabel": "Progression de la configuration",
+    "welcomeTitle": "Assistant de configuration",
+    "welcomeDoneCta": "Ouvrir les paramètres et continuer →",
     "stages": {
       "welcome_scrape": "Bienvenue",
       "verification_holidays": "Vérification",
@@ -216,8 +218,10 @@
       "strategy": "Stratégie",
       "afterHours": "Après les heures",
       "welcomeMenu": "Menu d'accueil",
-      "suggestedGreeting": "Message d'accueil suggéré",
-      "menuOptions": "Options du menu"
+      "suggestedGreeting": "Message d'accueil suggéré (texte intégral)",
+      "menuOptions": "Options du menu",
+      "whyThisSetup": "Comment cela répond à votre CDR",
+      "menuKey": "Touche {key} :"
     },
     "porting": {
       "decideQuestion": "Avez-vous des numéros existants à porter vers net2phone?",
@@ -1307,6 +1311,22 @@
   "productsPage": {
     "title": "Produits",
     "subtitle": "Sélectionnez un produit pour gérer ses paramètres."
+  },
+  "welcomeLanding": {
+    "badge": "Configuration guidée",
+    "headlinePrefix": "Bienvenue dans",
+    "headlineAccent": "la téléphonie plus intelligente.",
+    "taglineSimple": "Simple.",
+    "taglineReliable": "Fiable.",
+    "taglineFlexible": "Flexible.",
+    "subcopy": "Votre assistant IA apprend votre entreprise, configure le routage, l'équipe et les numéros — pour une valeur rapide.",
+    "ctaOpen": "Ouvrir l'assistant de configuration",
+    "ctaHint": "L'assistant s'ouvre automatiquement dans un instant.",
+    "cardTitle": "La suite",
+    "step1": "Partagez votre site et les infos entreprise — nous extrayons les heures, fuseau et numéros.",
+    "step2": "Confirmez l'équipe, les files et le routage des appels.",
+    "step3": "Validez le plan — puis nous créons votre configuration.",
+    "footer": "© net2phone · Voix, messagerie et réunions de calibre entreprise."
   },
   "onboardingPage": {
     "title": "Bienvenue sur net2phone",

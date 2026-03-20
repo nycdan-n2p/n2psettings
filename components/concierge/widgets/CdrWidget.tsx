@@ -41,7 +41,7 @@ export function CdrWidget({ onMessages }: { onMessages: (msgs: string[]) => void
           queues: config.cdrAnalysis.queues,
           insights: config.cdrAnalysis.insights,
           recommendations: config.cdrAnalysis.recommendations,
-          summary: "",
+          summary: config.cdrAnalysis.summary ?? "",
         }
       : null
   );
@@ -82,6 +82,7 @@ export function CdrWidget({ onMessages }: { onMessages: (msgs: string[]) => void
           queues: result.queues ?? [],
           insights: result.insights ?? [],
           recommendations: result.recommendations ?? config.cdrAnalysis.recommendations,
+          summary: typeof result.summary === "string" ? result.summary : "",
         },
       });
       setStep("review");
@@ -339,17 +340,39 @@ export function CdrWidget({ onMessages }: { onMessages: (msgs: string[]) => void
       )}
 
       {/* Recommendation */}
-      <div className="mb-4 bg-[#e6f4ea] rounded-xl p-3 border border-[#ceead6]">
-        <p className="text-xs font-semibold text-[#34a853] mb-1">{t("cdr.recommendations")}</p>
+      <div className="mb-4 bg-[#e6f4ea] rounded-xl p-3 border border-[#ceead6] space-y-2">
+        <p className="text-xs font-semibold text-[#34a853]">{t("cdr.recommendations")}</p>
+        {analysis.summary?.trim() && (
+          <div className="rounded-lg bg-white/80 border border-[#ceead6] px-2.5 py-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-[#188038] mb-1">{t("cdr.whyThisSetup")}</p>
+            <p className="text-xs text-[#3c4043] leading-relaxed whitespace-pre-wrap">{analysis.summary.trim()}</p>
+          </div>
+        )}
         <p className="text-xs text-[#3c4043]">
           <strong>{t("cdr.routingType")}:</strong> {rec.routingType === "call_queues" ? "Call Queues" : "Ring Groups"} &nbsp;|&nbsp;
           <strong>{t("cdr.strategy")}:</strong> {rec.strategy.replace(/_/g, " ")} &nbsp;|&nbsp;
           <strong>{t("cdr.afterHours")}:</strong> {rec.afterHoursAction}
         </p>
         {rec.welcomeMenuEnabled && rec.suggestedGreeting && (
-          <p className="text-xs text-[#3c4043] mt-1">
-            <strong>{t("cdr.welcomeMenu")}:</strong> &ldquo;{rec.suggestedGreeting.slice(0, 80)}{rec.suggestedGreeting.length > 80 ? "\u2026" : ""}&rdquo;
-          </p>
+          <div>
+            <p className="text-xs font-medium text-[#3c4043] mb-1">{t("cdr.suggestedGreeting")}</p>
+            <blockquote className="text-xs text-[#3c4043] leading-relaxed pl-2 border-l-2 border-[#34a853] max-h-40 overflow-y-auto pr-1 bg-white/60 rounded-r-md py-1.5">
+              {rec.suggestedGreeting}
+            </blockquote>
+          </div>
+        )}
+        {rec.welcomeMenuEnabled && rec.menuOptions && rec.menuOptions.length > 0 && (
+          <div>
+            <p className="text-xs font-medium text-[#3c4043] mb-1">{t("cdr.menuOptions")}</p>
+            <ul className="text-xs text-[#3c4043] space-y-0.5 list-disc list-inside">
+              {rec.menuOptions.map((o, i) => (
+                <li key={i}>
+                  <strong>{t("cdr.menuKey", { key: o.key })}</strong> {o.destinationName}
+                  {o.destinationType ? ` (${o.destinationType})` : ""}
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </div>
 
