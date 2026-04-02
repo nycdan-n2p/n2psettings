@@ -28,7 +28,7 @@ const DISMISS_KEY = "team-members-license-upsell-dismissed";
 function LicenseLimitBanner({ onDismiss }: { onDismiss: () => void }) {
   const t = useTranslations("teamMembersPage");
   return (
-    <div className="relative mb-6 rounded-xl border border-[#1a73e8]/30 bg-gradient-to-r from-[#e8f0fe] to-[#f3e8ff] p-4 flex items-start gap-4">
+    <div className="relative mb-6 rounded-[16px] border border-[#1a73e8]/30 bg-gradient-to-r from-[#e8f0fe] to-[#f3e8ff] p-4 flex items-start gap-4">
       <div className="shrink-0 w-9 h-9 rounded-lg bg-[#1a73e8] flex items-center justify-center">
         <UserPlus className="w-4 h-4 text-white" />
       </div>
@@ -123,7 +123,7 @@ function DepartmentDropdown({ departmentsStr }: { departmentsStr?: string | null
             left: pos.left,
             zIndex: 9999,
           }}
-          className="w-64 bg-white rounded-xl shadow-xl border border-[#dadce0] overflow-hidden"
+          className="w-64 bg-white rounded-[16px] shadow-xl border border-[#dadce0] overflow-hidden"
         >
           <div className="flex items-center justify-between px-3 py-2 border-b border-[#f1f3f4] bg-[#f8f9fa]">
             <span className="text-xs font-semibold text-gray-600">{total} dept{total !== 1 ? "s" : ""}</span>

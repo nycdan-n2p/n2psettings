@@ -153,7 +153,7 @@ function getInitialMessage(onboardingConfig: Record<string, unknown> | null): Di
 function UserBubble({ text }: { text: string }) {
   return (
     <div className="flex justify-end mb-3">
-      <div className="max-w-[75%] bg-[#1a73e8] text-white rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm whitespace-pre-wrap">
+      <div className="max-w-[75%] bg-[#1a73e8] text-white rounded-[20px] rounded-tr-sm px-4 py-2.5 text-sm whitespace-pre-wrap">
         {text}
       </div>
     </div>
@@ -166,7 +166,7 @@ function AssistantBubble({ text, isLoading }: { text: string; isLoading?: boolea
       <div className="w-7 h-7 rounded-full bg-[#1a73e8] flex items-center justify-center flex-shrink-0 mt-0.5">
         <Bot className="w-3.5 h-3.5 text-white" />
       </div>
-      <div className="max-w-[80%] bg-white border border-[#dadce0] rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm text-gray-800 shadow-sm">
+      <div className="max-w-[80%] bg-white border border-[#dadce0] rounded-[20px] rounded-tl-sm px-4 py-2.5 text-sm text-gray-800 shadow-sm">
         {isLoading ? (
           <span className="flex items-center gap-1.5 text-gray-400">
             <Loader2 className="w-3.5 h-3.5 animate-spin" />

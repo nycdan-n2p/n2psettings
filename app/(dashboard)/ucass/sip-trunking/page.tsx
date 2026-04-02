@@ -168,19 +168,19 @@ function SIPTrunkingContent() {
               <EmptyRow message={t("noTrunks")} />
             ) : (
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 text-sm">
+                <table className="n2p-table min-w-full text-sm">
                   <thead>
-                    <tr className="bg-gray-50">
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">ID</th>
+                    <tr>
+                      <th>Name</th>
+                      <th>Status</th>
+                      <th>ID</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody>
                     {trunks.map((t, i) => (
-                      <tr key={t.id ?? i} className="hover:bg-gray-50">
-                        <td className="px-6 py-3 font-medium text-gray-900">{t.name ?? "—"}</td>
-                        <td className="px-6 py-3">
+                      <tr key={t.id ?? i}>
+                        <td className="font-medium">{t.name ?? "—"}</td>
+                        <td>
                           {t.status ? (
                             <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                               t.status === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-700"
@@ -189,7 +189,7 @@ function SIPTrunkingContent() {
                             </span>
                           ) : "—"}
                         </td>
-                        <td className="px-6 py-3 text-gray-500">{t.id ?? "—"}</td>
+                        <td>{t.id ?? "—"}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -204,18 +204,18 @@ function SIPTrunkingContent() {
               <EmptyRow message={t("noAddresses")} />
             ) : (
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 text-sm">
+                <table className="n2p-table min-w-full text-sm">
                   <thead>
-                    <tr className="bg-gray-50">
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Address</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">ID</th>
+                    <tr>
+                      <th>Address</th>
+                      <th>ID</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody>
                     {serviceAddresses.map((sa, i) => (
-                      <tr key={sa.id ?? i} className="hover:bg-gray-50">
-                        <td className="px-6 py-3 text-gray-900">{sa.address ?? "—"}</td>
-                        <td className="px-6 py-3 text-gray-500">{sa.id ?? "—"}</td>
+                      <tr key={sa.id ?? i}>
+                        <td>{sa.address ?? "—"}</td>
+                        <td>{sa.id ?? "—"}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -230,16 +230,16 @@ function SIPTrunkingContent() {
               <EmptyRow message={t("noPhoneNumbers")} />
             ) : (
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 text-sm">
+                <table className="n2p-table min-w-full text-sm">
                   <thead>
-                    <tr className="bg-gray-50">
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Number</th>
+                    <tr>
+                      <th>Number</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody>
                     {phoneNumbers.map((pn, i) => (
-                      <tr key={pn.number ?? i} className="hover:bg-gray-50">
-                        <td className="px-6 py-3 font-mono text-gray-900">{pn.number ?? "—"}</td>
+                      <tr key={pn.number ?? i}>
+                        <td className="font-mono">{pn.number ?? "—"}</td>
                       </tr>
                     ))}
                   </tbody>

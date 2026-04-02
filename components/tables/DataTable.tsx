@@ -21,6 +21,7 @@ interface DataTableProps<TData> {
   searchPlaceholder?: string;
   initialSorting?: SortingState;
   pageSize?: number;
+  flush?: boolean;
 }
 
 export function DataTable<TData>({
@@ -30,6 +31,7 @@ export function DataTable<TData>({
   searchPlaceholder = "Search...",
   initialSorting = [],
   pageSize = 20,
+  flush = false,
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>(initialSorting);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -71,14 +73,14 @@ export function DataTable<TData>({
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
             placeholder={searchPlaceholder}
-            className="w-full max-w-sm px-3 py-2 border border-[#dadce0] rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#1a73e8]"
+            className="n2p-table-search-input w-full max-w-sm px-3 py-2 bg-[#F6F6F9] rounded-[12px] text-sm focus:outline-none"
           />
         </div>
       )}
-      <div className="border border-[#dadce0] rounded-lg bg-white">
+      <div className="rounded-lg bg-white">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[500px]">
-            <thead className="bg-[#f8f9fa] sticky top-0">
+          <table className="n2p-table w-full text-sm min-w-[500px]">
+            <thead className="sticky top-0">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
@@ -87,9 +89,7 @@ export function DataTable<TData>({
                     return (
                       <th
                         key={header.id}
-                        className={`px-4 py-3 text-left font-medium text-gray-700 ${
-                          canSort ? "cursor-pointer select-none hover:bg-gray-100" : ""
-                        }`}
+                        className={`${canSort ? "cursor-pointer select-none hover:bg-gray-100" : ""}`}
                         onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
                       >
                         <div className="flex items-center gap-1">
@@ -127,12 +127,9 @@ export function DataTable<TData>({
               </tr>
             ) : (
               table.getRowModel().rows.map((row) => (
-                <tr
-                  key={row.id}
-                  className="border-t border-[#dadce0] hover:bg-[#f8f9fa]"
-                >
+                <tr key={row.id}>
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-4 py-3">
+                    <td key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -164,7 +161,7 @@ export function DataTable<TData>({
                 <button
                   onClick={() => table.previousPage()}
                   disabled={!table.getCanPreviousPage()}
-                  className="p-2 border border-[#dadce0] rounded-md hover:bg-[#f8f9fa] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-2 rounded-[12px] bg-[#F6F6F9] hover:bg-[#eeeff4] disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-label="Previous page"
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -172,7 +169,7 @@ export function DataTable<TData>({
                 <button
                   onClick={() => table.nextPage()}
                   disabled={!table.getCanNextPage()}
-                  className="p-2 border border-[#dadce0] rounded-md hover:bg-[#f8f9fa] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-2 rounded-[12px] bg-[#F6F6F9] hover:bg-[#eeeff4] disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-label="Next page"
                 >
                   <ChevronRight className="w-4 h-4" />

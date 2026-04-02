@@ -53,7 +53,7 @@ export default function WelcomeShell({ children }: { children: React.ReactNode }
           <button
             type="button"
             onClick={() => window.location.reload()}
-            className="px-4 py-2 rounded-xl bg-[#1a73e8] text-white text-sm font-medium hover:bg-[#1557b0]"
+            className="px-4 py-2 rounded-[16px] bg-[#1a73e8] text-white text-sm font-medium hover:bg-[#1557b0]"
           >
             Retry
           </button>

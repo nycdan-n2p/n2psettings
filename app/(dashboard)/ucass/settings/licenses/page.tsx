@@ -16,23 +16,23 @@ export default function LicensesPage() {
       {licenses.length === 0 ? (
         <p className="text-sm text-gray-500">{t("noLicenses")}</p>
       ) : (
-        <div className="bg-white rounded-lg border border-[#dadce0] overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-[#f8f9fa]">
+        <div className="bg-white rounded-3xl overflow-hidden">
+          <table className="n2p-table w-full text-sm">
+            <thead>
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-700">{t("colLicense")}</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-700">{t("colCode")}</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-700">{t("colQuantity")}</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-700">{t("colStatus")}</th>
+                <th>{t("colLicense")}</th>
+                <th>{t("colCode")}</th>
+                <th>{t("colQuantity")}</th>
+                <th>{t("colStatus")}</th>
               </tr>
             </thead>
             <tbody>
               {licenses.map((lic, i) => (
-                <tr key={i} className="border-t border-[#dadce0]">
-                  <td className="px-4 py-3 text-gray-900">{lic.name ?? "—"}</td>
-                  <td className="px-4 py-3 text-gray-600 font-mono text-xs">{lic.licenseCode ?? lic.code ?? "—"}</td>
-                  <td className="px-4 py-3 text-gray-600">{lic.unlimited ? t("unlimited") : (lic.quantity ?? "—")}</td>
-                  <td className="px-4 py-3">
+                <tr key={i}>
+                  <td>{lic.name ?? "—"}</td>
+                  <td className="font-mono text-xs">{lic.licenseCode ?? lic.code ?? "—"}</td>
+                  <td>{lic.unlimited ? t("unlimited") : (lic.quantity ?? "—")}</td>
+                  <td>
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{t("activeStatus")}</span>
                   </td>
                 </tr>

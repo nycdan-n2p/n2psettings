@@ -1,15 +1,24 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { ChevronDown, ChevronRight, Lock, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useApp } from "@/contexts/AppContext";
 import { useAssistant } from "@/contexts/AssistantContext";
 import { useSidebar } from "@/contexts/SidebarContext";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getNavForProduct } from "@/lib/config/nav";
 import { getProductFromPath, PRODUCTS } from "@/lib/config/products";
+
+const PRODUCT_ICON_SRC: Record<string, string> = {
+  ucass: "/sidebar-icons/unite.svg",
+  agent: "/sidebar-icons/agent.svg",
+  huddle: "/sidebar-icons/huddle.svg",
+  coach: "/sidebar-icons/coach.svg",
+  ucontact: "/sidebar-icons/ucontact.svg",
+};
 
 const NAV_GROUP_KEYS: Record<string, string> = {
   "Overview": "groups.overview",
@@ -24,7 +33,7 @@ const NAV_GROUP_KEYS: Record<string, string> = {
   "AI Agent": "groups.aiAgent",
   "Huddle": "groups.huddle",
   "Coach": "groups.coach",
-  "Ucontact": "groups.ucontact",
+  "uContact": "groups.ucontact",
 };
 
 const NAV_ITEM_KEYS: Record<string, string> = {
@@ -78,7 +87,6 @@ function NavGroupSection({ group }: { group: NavGroup }) {
   const pathname = usePathname();
   const { bootstrap } = useApp();
   const { open: openAssistant } = useAssistant();
-  const [expanded, setExpanded] = useState(true);
   const t = useTranslations("nav");
   const tAny = t as unknown as (key: string) => string;
 
@@ -100,73 +108,59 @@ function NavGroupSection({ group }: { group: NavGroup }) {
 
   return (
     <div className="mb-1">
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider hover:bg-[#e8eaed] rounded-md"
-      >
-        {expanded ? (
-          <ChevronDown className="w-4 h-4" />
-        ) : (
-          <ChevronRight className="w-4 h-4" />
-        )}
+      <div className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-400 uppercase tracking-wider">
         {groupLabel}
-      </button>
-      {expanded && (
-        <div className="space-y-0.5">
-          {visibleItems.map((item) => {
-            const Icon = item.icon;
-            if (item.action === "openAssistant") {
-              return (
-                <button
-                  key={item.label}
-                  onClick={openAssistant}
-                  className="flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors text-gray-700 hover:bg-[#e8eaed] w-full text-left"
-                >
-                  <Icon className="w-5 h-5 shrink-0" />
-                  {itemLabel(item.label)}
-                </button>
-              );
-            }
-            if (item.href?.startsWith("http")) {
-              return (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors text-gray-700 hover:bg-[#e8eaed]"
-                >
-                  <Icon className="w-5 h-5 shrink-0" />
-                  {itemLabel(item.label)}
-                </a>
-              );
-            }
-            const href = item.href!;
-            const isActive = pathname === href || pathname.startsWith(`${href}/`);
-            const locked = isLocked(item);
+      </div>
+      <div className="space-y-0.5">
+        {visibleItems.map((item) => {
+          if (item.action === "openAssistant") {
             return (
-              <Link
-                key={href}
-                href={href}
-                prefetch={false}
-                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
-                  isActive
-                    ? "bg-[#e8f0fe] text-[#1a73e8] font-medium"
-                    : locked
-                    ? "text-gray-400 hover:bg-[#e8eaed] hover:text-gray-600"
-                    : "text-gray-700 hover:bg-[#e8eaed]"
-                }`}
+              <button
+                key={item.label}
+                onClick={openAssistant}
+                className="flex items-center gap-3 px-3 py-2 rounded-[var(--control-radius)] text-sm transition-colors text-gray-700 hover:bg-[rgba(167,167,190,0.10)] w-full text-left"
               >
-                <Icon className="w-5 h-5 shrink-0" />
-                <span className="flex-1 min-w-0 truncate">{itemLabel(item.label)}</span>
-                {locked && (
-                  <Lock className="w-3 h-3 shrink-0 text-gray-400" />
-                )}
-              </Link>
+                {itemLabel(item.label)}
+              </button>
             );
-          })}
-        </div>
-      )}
+          }
+          if (item.href?.startsWith("http")) {
+            return (
+              <a
+                key={item.href}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 px-3 py-2 rounded-[var(--control-radius)] text-sm transition-colors text-gray-700 hover:bg-[rgba(167,167,190,0.10)]"
+              >
+                {itemLabel(item.label)}
+              </a>
+            );
+          }
+          const href = item.href!;
+          const isActive = pathname === href || pathname.startsWith(`${href}/`);
+          const locked = isLocked(item);
+          return (
+            <Link
+              key={href}
+              href={href}
+              prefetch={false}
+              className={`flex items-center gap-3 px-3 py-2 rounded-[var(--control-radius)] text-sm transition-colors ${
+                isActive
+                  ? "bg-[rgba(167,167,190,0.10)] text-gray-900 font-medium"
+                  : locked
+                  ? "text-gray-400 hover:bg-[rgba(167,167,190,0.10)] hover:text-gray-600"
+                  : "text-gray-700 hover:bg-[rgba(167,167,190,0.10)]"
+              }`}
+            >
+              <span className="flex-1 min-w-0 truncate">{itemLabel(item.label)}</span>
+              {locked && (
+                <Lock className="w-3 h-3 shrink-0 text-gray-400" />
+              )}
+            </Link>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -174,8 +168,8 @@ function NavGroupSection({ group }: { group: NavGroup }) {
 export function Sidebar() {
   const pathname = usePathname();
   const productId = getProductFromPath(pathname);
-  const [productsExpanded, setProductsExpanded] = useState(true);
-  const uniteExpanded = productId === "ucass";
+  const [uniteExpanded, setUniteExpanded] = useState(pathname.startsWith("/ucass"));
+  const wasUcassRef = useRef(pathname.startsWith("/ucass"));
   const t = useTranslations("nav");
   const { mobileOpen, setMobileOpen } = useSidebar();
 
@@ -186,19 +180,26 @@ export function Sidebar() {
     setMobileOpen(false);
   }, [pathname, setMobileOpen]);
 
+  useEffect(() => {
+    const isUcass = pathname.startsWith("/ucass");
+    if (isUcass && !wasUcassRef.current) {
+      setUniteExpanded(true);
+    } else if (!isUcass) {
+      setUniteExpanded(false);
+    }
+    wasUcassRef.current = isUcass;
+  }, [pathname]);
+
   const navContent = (
     <nav className="p-3">
       <div className="mb-2">
-        <p className="px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
-          {t("sidebar.apps")}
-        </p>
         <Link
           href="/products"
           prefetch={false}
-          className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
+          className={`flex items-center gap-3 px-3 py-2 rounded-[var(--control-radius)] text-sm transition-colors ${
             pathname === "/products"
-              ? "bg-[#e8f0fe] text-[#1a73e8] font-medium"
-              : "text-gray-700 hover:bg-[#e8eaed]"
+              ? "bg-[rgba(167,167,190,0.10)] text-gray-900 font-medium"
+              : "text-gray-700 hover:bg-[rgba(167,167,190,0.10)]"
           }`}
         >
           {t("items.overview")}
@@ -206,27 +207,17 @@ export function Sidebar() {
       </div>
 
       <div className="mb-1">
-        <button
-          onClick={() => setProductsExpanded(!productsExpanded)}
-          className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider hover:bg-[#e8eaed] rounded-md"
-        >
-          {productsExpanded ? (
-            <ChevronDown className="w-4 h-4" />
-          ) : (
-            <ChevronRight className="w-4 h-4" />
-          )}
-          {t("sidebar.products")}
-        </button>
-
-        {productsExpanded && (
-          <div className="mt-0.5 space-y-0.5">
+        <div className="mt-0.5 space-y-0.5">
             {PRODUCTS.map((product) => {
-              const Icon = product.icon;
-              const isActive = productId === product.id;
+              const isActive =
+                product.id === "ucass"
+                  ? pathname.startsWith("/ucass")
+                  : pathname.startsWith(`/${product.id}`);
               const href =
                 product.id === "ucass"
                   ? "/ucass/dashboard"
                   : product.basePath;
+              const iconSrc = PRODUCT_ICON_SRC[product.id];
 
               if (product.id === "ucass") {
                 return (
@@ -234,13 +225,26 @@ export function Sidebar() {
                     <Link
                       href={href}
                       prefetch={false}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
+                      onClick={(e) => {
+                        if (pathname.startsWith("/ucass")) {
+                          e.preventDefault();
+                          setUniteExpanded((v) => !v);
+                        }
+                      }}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-[var(--control-radius)] text-sm transition-colors ${
                         isActive
-                          ? "bg-[#e8f0fe] text-[#1a73e8] font-medium"
-                          : "text-gray-700 hover:bg-[#e8eaed]"
+                          ? "bg-[rgba(167,167,190,0.10)] text-gray-900 font-medium"
+                          : "text-gray-700 hover:bg-[rgba(167,167,190,0.10)]"
                       }`}
                     >
-                      <Icon className="w-5 h-5 shrink-0" />
+                      <Image
+                        src={iconSrc}
+                        alt=""
+                        aria-hidden="true"
+                        width={20}
+                        height={20}
+                        className="w-5 h-5 shrink-0 rounded-[6px]"
+                      />
                       {product.shortName}
                       {uniteExpanded ? (
                         <ChevronDown className="w-4 h-4 ml-auto" />
@@ -264,19 +268,25 @@ export function Sidebar() {
                   key={product.id}
                   href={href}
                   prefetch={false}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
+                  className={`flex items-center gap-3 px-3 py-2 rounded-[var(--control-radius)] text-sm transition-colors ${
                     isActive
-                      ? "bg-[#e8f0fe] text-[#1a73e8] font-medium"
-                      : "text-gray-700 hover:bg-[#e8eaed]"
+                      ? "bg-[rgba(167,167,190,0.10)] text-gray-900 font-medium"
+                      : "text-gray-700 hover:bg-[rgba(167,167,190,0.10)]"
                   }`}
                 >
-                  <Icon className="w-5 h-5 shrink-0" />
+                  <Image
+                    src={iconSrc}
+                    alt=""
+                    aria-hidden="true"
+                    width={20}
+                    height={20}
+                    className="w-5 h-5 shrink-0 rounded-[6px]"
+                  />
                   {product.shortName}
                 </Link>
               );
             })}
-          </div>
-        )}
+        </div>
       </div>
     </nav>
   );
@@ -295,17 +305,17 @@ export function Sidebar() {
       {/* Sidebar: drawer on mobile, static on desktop */}
       <aside
         className={`
-          w-64 shrink-0 bg-white border-r border-[#dadce0] overflow-y-auto
+          w-64 h-full shrink-0 bg-[#F6F6F9] overflow-y-auto
           fixed lg:static inset-y-0 left-0 top-14 lg:top-0 z-50 lg:z-auto
           transform transition-transform duration-200 ease-out
           ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         `}
       >
-        <div className="flex items-center justify-between px-3 py-3 border-b border-[#e8eaed] lg:hidden">
+        <div className="flex items-center justify-between px-3 py-3 lg:hidden">
           <span className="text-sm font-medium text-gray-700">Menu</span>
           <button
             onClick={() => setMobileOpen(false)}
-            className="p-2 rounded-md hover:bg-[#e8eaed] text-gray-600"
+            className="p-2 rounded-[var(--control-radius)] hover:bg-[rgba(167,167,190,0.10)] text-gray-600"
             aria-label="Close menu"
           >
             <X className="w-5 h-5" />

@@ -279,21 +279,21 @@ export function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => 
             <button
               type="button"
               onClick={() => setStep("numbers")}
-              className="flex items-center justify-center gap-2 py-2.5 text-sm font-semibold bg-[#1a73e8] text-white rounded-xl hover:bg-[#1557b0] transition-colors"
+              className="flex items-center justify-center gap-2 py-2.5 text-sm font-semibold bg-[#1a73e8] text-white rounded-[16px] hover:bg-[#1557b0] transition-colors"
             >
               <Phone className="w-4 h-4" aria-hidden="true" /> Port existing numbers
             </button>
             <button
               type="button"
               onClick={() => { setValidationErrors([]); setStep("new_numbers"); }}
-              className="flex items-center justify-center gap-2 py-2.5 text-sm font-medium text-gray-800 bg-white border border-[#dadce0] rounded-xl hover:bg-[#f8f9fa] transition-colors"
+              className="flex items-center justify-center gap-2 py-2.5 text-sm font-medium text-gray-800 bg-white border border-[#dadce0] rounded-[16px] hover:bg-[#f8f9fa] transition-colors"
             >
               <Plus className="w-4 h-4" aria-hidden="true" /> Need new numbers (no porting)
             </button>
             <button
               type="button"
               onClick={() => { setValidationErrors([]); setStep("skip_optional"); }}
-              className="flex items-center justify-center gap-2 py-2.5 text-sm font-medium text-gray-600 bg-[#f8f9fa] border border-[#dadce0] rounded-xl hover:bg-[#f1f3f4] transition-colors"
+              className="flex items-center justify-center gap-2 py-2.5 text-sm font-medium text-gray-600 bg-[#f8f9fa] border border-[#dadce0] rounded-[16px] hover:bg-[#f1f3f4] transition-colors"
             >
               <SkipForward className="w-4 h-4" aria-hidden="true" /> Skip for now
             </button>
@@ -561,7 +561,7 @@ export function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => 
           </div>
         </div>
         {signUrl ? (
-          <div className="rounded-xl border border-[#e8eaed] bg-[#f8f9fa] p-3 space-y-2">
+          <div className="rounded-[16px] border border-[#e8eaed] bg-[#f8f9fa] p-3 space-y-2">
             <p className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
               <Lock className="w-3.5 h-3.5" aria-hidden="true" /> Sign your Letter of Authorization (LOA)
             </p>

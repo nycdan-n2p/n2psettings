@@ -51,7 +51,7 @@ export class ErrorBoundary extends Component<Props, State> {
     return (
       <div
         role="alert"
-        className="flex flex-col items-center justify-center gap-4 p-8 text-center rounded-2xl border border-red-200 bg-red-50"
+        className="flex flex-col items-center justify-center gap-4 p-8 text-center rounded-[20px] border border-red-200 bg-red-50"
       >
         <AlertCircle className="w-8 h-8 text-red-500" aria-hidden="true" />
         <div className="space-y-1">

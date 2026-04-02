@@ -15,9 +15,9 @@ export default function UcontactProductPage() {
         {t("ucontactSubtitle")}
       </p>
 
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <h2 className="text-lg font-medium text-gray-900">Ucontact Settings</h2>
+          <h2 className="text-lg font-medium text-gray-900">uContact Settings</h2>
         </div>
         <div className="px-6 py-6">
           <p className="text-sm text-gray-600 mb-4">

@@ -92,7 +92,7 @@ export function UserRow({ user, index, onUpdate, onRemove }: {
   const t = useTranslations("concierge");
   return (
     <tr className="bg-white group">
-      <td className="px-2 py-1.5">
+      <td>
         <input
           value={user.firstName}
           onChange={(e) => onUpdate(index, "firstName", e.target.value)}
@@ -101,7 +101,7 @@ export function UserRow({ user, index, onUpdate, onRemove }: {
           className={inputCls(!!user.firstName)}
         />
       </td>
-      <td className="px-2 py-1.5">
+      <td>
         <input
           value={user.lastName ?? ""}
           onChange={(e) => onUpdate(index, "lastName", e.target.value)}
@@ -110,7 +110,7 @@ export function UserRow({ user, index, onUpdate, onRemove }: {
           className={inputCls(!!user.lastName)}
         />
       </td>
-      <td className="px-2 py-1.5 w-[14%]">
+      <td className="w-[14%]">
         <input
           value={user.extension ?? ""}
           onChange={(e) => onUpdate(index, "extension", e.target.value)}
@@ -119,7 +119,7 @@ export function UserRow({ user, index, onUpdate, onRemove }: {
           className={inputCls(true)}
         />
       </td>
-      <td className="px-2 py-1.5">
+      <td>
         <div className="flex items-center gap-1.5">
           <input
             value={emailInput}
@@ -137,7 +137,7 @@ export function UserRow({ user, index, onUpdate, onRemove }: {
           <span className="shrink-0"><EmailBadge status={status} hint={hint} /></span>
         </div>
       </td>
-      <td className="px-2 py-1.5 text-right">
+      <td className="text-right">
         <button
           onClick={() => onRemove(index)}
           className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -254,14 +254,14 @@ export function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => setMode("edit")}
-            className="flex flex-col items-center gap-2 p-4 border border-[#dadce0] rounded-xl hover:border-[#1a73e8] hover:bg-[#e8f0fe] transition-all group"
+            className="flex flex-col items-center gap-2 p-4 border border-[#dadce0] rounded-[16px] hover:border-[#1a73e8] hover:bg-[#e8f0fe] transition-all group"
           >
             <Users className="w-6 h-6 text-gray-400 group-hover:text-[#1a73e8]" aria-hidden="true" />
             <span className="text-sm font-medium text-gray-700 group-hover:text-[#1a73e8]">{t("users.manualEntry")}</span>
           </button>
           <button
             onClick={() => fileRef.current?.click()}
-            className="flex flex-col items-center gap-2 p-4 border border-[#dadce0] rounded-xl hover:border-[#1a73e8] hover:bg-[#e8f0fe] transition-all group"
+            className="flex flex-col items-center gap-2 p-4 border border-[#dadce0] rounded-[16px] hover:border-[#1a73e8] hover:bg-[#e8f0fe] transition-all group"
           >
             {csvLoading
               ? <Loader2 className="w-6 h-6 animate-spin text-[#1a73e8]" aria-hidden="true" />
@@ -318,18 +318,18 @@ export function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[
               {t("users.extensionsMissingBanner")}
             </p>
           )}
-          <div className="mb-3 rounded-xl overflow-hidden border border-[#e8eaed]">
-            <table className="w-full text-xs" aria-label="Team members">
+          <div className="mb-3 rounded-[16px] overflow-hidden border border-[#e8eaed]">
+            <table className="n2p-table w-full text-xs" aria-label="Team members">
               <thead>
-                <tr className="bg-[#f8f9fa]">
-                  <th className="px-2 py-2 text-left font-semibold text-gray-500 w-[18%]">{t("users.firstName")}</th>
-                  <th className="px-2 py-2 text-left font-semibold text-gray-500 w-[18%]">{t("users.lastName")}</th>
-                  <th className="px-2 py-2 text-left font-semibold text-gray-500 w-[12%]">{t("users.extension")}</th>
-                  <th className="px-2 py-2 text-left font-semibold text-gray-500">{t("users.emailAddress")}</th>
-                  <th className="px-2 py-2 w-6"><span className="sr-only">{t("common.remove")}</span></th>
+                <tr>
+                  <th className="w-[18%]">{t("users.firstName")}</th>
+                  <th className="w-[18%]">{t("users.lastName")}</th>
+                  <th className="w-[12%]">{t("users.extension")}</th>
+                  <th>{t("users.emailAddress")}</th>
+                  <th className="w-6"><span className="sr-only">{t("common.remove")}</span></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#f1f3f4]">
+              <tbody>
                 {users.map((u, i) => (
                   <UserRow key={i} user={u} index={i} onUpdate={updateUser} onRemove={removeUser} />
                 ))}

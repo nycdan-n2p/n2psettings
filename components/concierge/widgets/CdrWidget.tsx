@@ -196,13 +196,13 @@ export function CdrWidget({ onMessages }: { onMessages: (msgs: string[]) => void
         <div className="space-y-2">
           <button
             onClick={() => setStep("upload")}
-            className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium bg-[#1a73e8] text-white rounded-xl hover:bg-[#1557b0] transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium bg-[#1a73e8] text-white rounded-[16px] hover:bg-[#1557b0] transition-colors"
           >
             <Upload className="w-4 h-4" aria-hidden="true" /> {t("cdr.uploadNow")}
           </button>
           <button
             onClick={handleSkip}
-            className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium border border-[#e8eaed] text-[#3c4043] rounded-xl hover:bg-[#f1f3f4] transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium border border-[#e8eaed] text-[#3c4043] rounded-[16px] hover:bg-[#f1f3f4] transition-colors"
           >
             <SkipForward className="w-4 h-4" aria-hidden="true" /> {t("cdr.skipButton")}
           </button>
@@ -229,7 +229,7 @@ export function CdrWidget({ onMessages }: { onMessages: (msgs: string[]) => void
           onDragLeave={() => setDragging(false)}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
-          className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center gap-3 cursor-pointer transition-colors ${
+          className={`border-2 border-dashed rounded-[16px] p-8 flex flex-col items-center gap-3 cursor-pointer transition-colors ${
             dragging ? "border-[#1a73e8] bg-[#e8f0fe]" : "border-[#dadce0] hover:border-[#1a73e8] hover:bg-[#f8f9ff]"
           }`}
           role="button"
@@ -340,7 +340,7 @@ export function CdrWidget({ onMessages }: { onMessages: (msgs: string[]) => void
       )}
 
       {/* Recommendation */}
-      <div className="mb-4 bg-[#e6f4ea] rounded-xl p-3 border border-[#ceead6] space-y-2">
+      <div className="mb-4 bg-[#e6f4ea] rounded-[16px] p-3 border border-[#ceead6] space-y-2">
         <p className="text-xs font-semibold text-[#34a853]">{t("cdr.recommendations")}</p>
         {analysis.summary?.trim() && (
           <div className="rounded-lg bg-white/80 border border-[#ceead6] px-2.5 py-2">
@@ -379,13 +379,13 @@ export function CdrWidget({ onMessages }: { onMessages: (msgs: string[]) => void
       <div className="space-y-2">
         <button
           onClick={handleApprove}
-          className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-semibold bg-[#34a853] text-white rounded-xl hover:bg-[#2d9149] transition-colors"
+          className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-semibold bg-[#34a853] text-white rounded-[16px] hover:bg-[#2d9149] transition-colors"
         >
           <CheckSquare className="w-4 h-4" aria-hidden="true" /> {t("cdr.approveButton")}
         </button>
         <button
           onClick={handleManual}
-          className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium border border-[#e8eaed] text-[#3c4043] rounded-xl hover:bg-[#f1f3f4] transition-colors"
+          className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium border border-[#e8eaed] text-[#3c4043] rounded-[16px] hover:bg-[#f1f3f4] transition-colors"
         >
           {t("cdr.continueManually")}
         </button>

@@ -161,7 +161,7 @@ export function ConciergeOverlay() {
         <div
           ref={dialogRef}
           className={`
-            w-full ${isWelcomePage ? "max-w-3xl" : "max-w-2xl"} mx-auto bg-white rounded-2xl flex flex-col
+            w-full ${isWelcomePage ? "max-w-3xl" : "max-w-2xl"} mx-auto bg-white rounded-[20px] flex flex-col
             max-h-[min(90vh,880px)] pointer-events-auto overflow-hidden
             transition-all duration-700 ease-in-out motion-reduce:duration-0
             ${isWelcomePage
@@ -189,7 +189,7 @@ export function ConciergeOverlay() {
             >
               <div className="flex items-center gap-2.5 min-w-0">
                 {isWelcomePage ? (
-                  <div className="shrink-0 rounded-xl p-0.5 bg-gradient-to-br from-sky-400 via-violet-500 to-fuchsia-500 shadow-sm">
+                  <div className="shrink-0 rounded-[16px] p-0.5 bg-gradient-to-br from-sky-400 via-violet-500 to-fuchsia-500 shadow-sm">
                     <div className="rounded-[10px] bg-white p-0.5">
                       <WelcomeAgentAvatar size={34} />
                     </div>
@@ -339,7 +339,7 @@ export function ConciergeOverlay() {
               <button
                 type="button"
                 onClick={handleDoneOrClose}
-                className={`w-full py-2.5 text-sm font-semibold text-white rounded-xl transition-colors ${
+                className={`w-full py-2.5 text-sm font-semibold text-white rounded-[16px] transition-colors ${
                   isWelcomePage
                     ? "bg-gradient-to-r from-[#1a73e8] via-[#6366f1] to-[#a855f7] hover:opacity-95 shadow-md shadow-indigo-500/20"
                     : "bg-[#1a73e8] hover:bg-[#1557b0]"

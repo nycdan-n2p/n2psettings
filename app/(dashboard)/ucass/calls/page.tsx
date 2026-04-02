@@ -24,6 +24,7 @@ import {
 } from "@/lib/api/call-history";
 import { fetchVoicemails, fetchVoicemailAudioUrl, type VoicemailItem } from "@/lib/api/voicemails";
 import { AnalyzeModal } from "@/components/calls/AnalyzeModal";
+import { SegmentedTabs } from "@/components/ui/SegmentedTabs";
 import type { CallAnalysis } from "@/app/api/analyze-calls/route";
 import type { ColumnDef } from "@tanstack/react-table";
 
@@ -589,14 +590,14 @@ function RecordingsTab({
           <button
             onClick={() => setCursor(prevCursor)}
             disabled={!prevCursor}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 border border-[#dadce0] rounded-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 border border-[#dadce0] rounded-[12px] hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             <ChevronLeft className="w-4 h-4" /> Previous
           </button>
           <button
             onClick={() => setCursor(nextCursor)}
             disabled={!nextCursor}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 border border-[#dadce0] rounded-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 border border-[#dadce0] rounded-[12px] hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             Next <ChevronRight className="w-4 h-4" />
           </button>
@@ -736,21 +737,6 @@ export default function CallsPage() {
         : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
     }`;
 
-  const scopeBtn = (s: Scope, label: string) => (
-    <button
-      key={s}
-      type="button"
-      onClick={() => { setScope(s); setCursor(null); }}
-      className={`px-4 py-1.5 text-sm font-medium rounded-full border transition-colors ${
-        scope === s
-          ? "bg-[#1a73e8] text-white border-[#1a73e8]"
-          : "bg-white text-gray-700 border-[#dadce0] hover:bg-gray-50"
-      }`}
-    >
-      {label}
-    </button>
-  );
-
   return (
     <div>
       <div className="flex items-start justify-between mb-6">
@@ -759,13 +745,17 @@ export default function CallsPage() {
           <p className="text-sm text-gray-500 mt-1">Last 30 days</p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex gap-1">
-            {scopeBtn("mine", "Mine")}
-            {scopeBtn("company", "Company")}
-          </div>
+          <SegmentedTabs
+            value={scope}
+            onChange={(next) => { setScope(next); setCursor(null); }}
+            options={[
+              { value: "mine", label: "Mine" },
+              { value: "company", label: "Company" },
+            ]}
+          />
           <button
             onClick={() => { setCursor(null); refetchCalls(); }}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 border border-[#dadce0] rounded-md hover:bg-gray-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 border border-[#dadce0] rounded-[12px] hover:bg-gray-50"
           >
             <RefreshCw className="w-4 h-4" />
             Refresh
@@ -773,7 +763,7 @@ export default function CallsPage() {
           <button
             onClick={handleExportCsv}
             disabled={exporting}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 border border-[#dadce0] rounded-md hover:bg-gray-50 disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 border border-[#dadce0] rounded-[12px] hover:bg-gray-50 disabled:opacity-50"
           >
             <Download className="w-4 h-4" />
             {exporting ? "Exporting…" : "Export CSV"}
@@ -781,7 +771,7 @@ export default function CallsPage() {
           <button
             onClick={handleAnalyze}
             disabled={analyzing || !accountId}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-[#1a73e8] border border-[#1a73e8] rounded-md hover:bg-[#1557b0] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-[#1a73e8] border border-[#1a73e8] rounded-[12px] hover:bg-[#1557b0] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <BarChart2 className="w-4 h-4" />
             {analyzing ? "Analyzing…" : "Analyze Calls"}
@@ -810,40 +800,41 @@ export default function CallsPage() {
         </nav>
       </div>
 
-      <div className="bg-white rounded-b-xl border border-t-0 border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-b-xl overflow-hidden">
 
         {/* ── All Calls ── */}
         {tab === "all" && (
           <>
-            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <div className="py-4">
               <h2 className="text-base font-medium text-gray-900">
                 {scope === "mine" ? "My Calls" : "Company Calls"}{" "}
                 <span className="text-gray-400 font-normal">({cdrs.length})</span>
               </h2>
             </div>
             {callsLoading ? (
-              <div className="px-6 py-12 flex justify-center">
+              <div className="py-12 flex justify-center">
                 <Loader variant="inline" label="Loading calls…" />
               </div>
             ) : cdrs.length === 0 ? (
-              <div className="px-6 py-8 text-gray-500 text-sm">No calls found.</div>
+              <div className="py-8 text-gray-500 text-sm">No calls found.</div>
             ) : (
-              <div className="p-4">
+              <div className="p-0">
                 <DataTable
                   columns={callColumns}
                   data={cdrs}
                   searchPlaceholder="Search calls…"
                   initialSorting={[{ id: "callDate", desc: true }]}
                   pageSize={20}
+                  flush
                 />
                 {(prevCursor || nextCursor) && (
-                  <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+                  <div className="flex justify-between items-center pt-4">
                     <button onClick={() => setCursor(prevCursor)} disabled={!prevCursor}
-                      className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 border border-[#dadce0] rounded-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
+                      className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 border border-[#dadce0] rounded-[12px] hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
                       <ChevronLeft className="w-4 h-4" /> Previous
                     </button>
                     <button onClick={() => setCursor(nextCursor)} disabled={!nextCursor}
-                      className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 border border-[#dadce0] rounded-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
+                      className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 border border-[#dadce0] rounded-[12px] hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
                       Next <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
@@ -857,7 +848,7 @@ export default function CallsPage() {
         {tab === "voicemails" && (
           <>
             {/* Column headers */}
-            <div className="flex items-center gap-4 px-5 py-2 border-b border-gray-100 bg-gray-50/60">
+            <div className="flex items-center gap-4 px-4 py-2 border-b border-gray-100 bg-gray-50/60">
               <div className="w-10 shrink-0" />
               <div className="w-44 shrink-0 text-xs font-medium text-gray-400 uppercase tracking-wide">Caller</div>
               <div className="flex-1 text-xs font-medium text-gray-400 uppercase tracking-wide">
@@ -868,7 +859,7 @@ export default function CallsPage() {
             </div>
 
             {voicemailsLoading ? (
-              <div className="px-6 py-16 flex justify-center">
+              <div className="px-4 py-16 flex justify-center">
                 <Loader variant="inline" label="Loading voicemails…" />
               </div>
             ) : voicemails.length === 0 ? (

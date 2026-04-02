@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { loadEnv } from "@/lib/env";
 import { Bot } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 const DEFAULT_AGENT_URL = "https://agent.net2phone.com";
 
@@ -24,17 +25,15 @@ export default function AgentSettingsPage() {
         Configure your AI assistant. Settings are managed in the Agent application.
       </p>
 
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
         <div className="px-6 py-6">
-          <a
-            href={agentUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium"
+          <Button
+            variant="primary"
+            icon={<Bot className="w-4 h-4" />}
+            onClick={() => window.open(agentUrl, "_blank", "noopener,noreferrer")}
           >
-            <Bot className="w-4 h-4" />
             Open AI Agent →
-          </a>
+          </Button>
         </div>
       </div>
     </div>

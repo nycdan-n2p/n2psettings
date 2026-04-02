@@ -78,7 +78,7 @@ export function VerificationWidget({ onMessages }: { onMessages: (msgs: string[]
 
         <div>
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{t("verification.businessHours")}</p>
-          <div className="space-y-1.5 bg-white border border-[#e8eaed] rounded-xl overflow-hidden">
+          <div className="space-y-1.5 bg-white border border-[#e8eaed] rounded-[16px] overflow-hidden">
             {days.map((day) => (
               <div key={day} className="flex items-center gap-3 px-3 py-1.5 border-b border-[#f1f3f4] last:border-0">
                 <span className="text-xs font-medium text-gray-700 w-24 shrink-0">{day}</span>

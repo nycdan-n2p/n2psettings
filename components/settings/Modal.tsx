@@ -41,12 +41,12 @@ export function Modal({ isOpen, onClose, title, children, size = "md", headerCon
       <div
         className={`relative z-10 w-full bg-white mx-4 max-h-[90vh] overflow-hidden flex flex-col ${
           size === "2xl"
-            ? "max-w-4xl rounded-xl shadow-2xl"
+            ? "max-w-4xl rounded-[34px] shadow-2xl"
             : size === "xl"
-              ? "max-w-2xl rounded-xl shadow-2xl"
+              ? "max-w-2xl rounded-[34px] shadow-2xl"
               : size === "lg"
-                ? "max-w-[560px] rounded-xl shadow-2xl"
-                : "max-w-md rounded-lg shadow-xl"
+                ? "max-w-[560px] rounded-[34px] shadow-2xl"
+                : "max-w-md rounded-[34px] shadow-xl"
         }`}
         role="dialog"
         aria-modal="true"

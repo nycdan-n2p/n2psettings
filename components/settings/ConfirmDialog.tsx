@@ -31,7 +31,7 @@ export function ConfirmDialog({
         aria-hidden
       />
       <div
-        className="relative z-10 w-full max-w-sm bg-white rounded-lg shadow-xl mx-4 p-6"
+        className="relative z-10 w-full max-w-sm bg-white rounded-[34px] shadow-xl mx-4 p-6"
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="confirm-title"

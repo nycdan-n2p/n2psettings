@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 import {
   Search,
@@ -19,9 +20,9 @@ import { useApp } from "@/contexts/AppContext";
 import { useAssistant } from "@/contexts/AssistantContext";
 import { useConcierge } from "@/contexts/ConciergeContext";
 import { useSidebar } from "@/contexts/SidebarContext";
+import { useLocaleContext } from "@/contexts/LocaleContext";
 import { clearTokens } from "@/lib/auth";
 import { INTEGRATIONS } from "@/lib/config/integrations";
-import { LocaleSelector } from "@/components/ui/LocaleSelector";
 
 export function TopBar() {
   const t = useTranslations("topbar");
@@ -30,6 +31,7 @@ export function TopBar() {
   const { open: openAssistant } = useAssistant();
   const { open: openConcierge } = useConcierge();
   const { toggleMobile } = useSidebar();
+  const { locale, locales, localeNames, setLocale } = useLocaleContext();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -55,36 +57,40 @@ export function TopBar() {
   const unreadCount = bootstrap?.unreadVoicemailCount ?? 0;
 
   return (
-    <header className="h-14 flex items-center justify-between px-3 sm:px-4 text-white shrink-0 gap-2" style={{ background: "linear-gradient(to right, #0d1b4b, #5b21b6, #c026d3, #e91e8c)" }}>
+    <header className="h-14 flex items-center justify-between px-3 sm:px-4 text-gray-800 shrink-0 gap-2 bg-[#F6F6F9]">
       <div className="flex items-center gap-2 sm:gap-6 min-w-0">
         <button
           onClick={toggleMobile}
-          className="lg:hidden p-2 -ml-1 rounded-md hover:bg-white/20 transition-colors shrink-0"
+          className="hidden"
           aria-label="Open menu"
         >
           <Menu className="w-5 h-5" />
         </button>
         <Link href="/products" prefetch={false} className="flex items-center gap-1.5 sm:gap-2 font-medium min-w-0">
+          <Image
+            src="/net2phone-icon.png"
+            alt=""
+            aria-hidden="true"
+            width={32}
+            height={32}
+            className="w-8 h-8 shrink-0"
+          />
           <span className="text-base sm:text-lg font-semibold truncate">net2phone</span>
-          <span className="text-white/80 text-xs sm:text-sm hidden sm:inline">{t("products")}</span>
+          <span className="text-gray-500 text-xs sm:text-sm hidden sm:inline">{t("products")}</span>
         </Link>
-        <div className="hidden md:flex items-center gap-2 bg-white/20 rounded-md px-3 py-1.5 w-64">
-          <Search className="w-4 h-4 text-white/80" />
+        <div className="topbar-search-shell hidden md:flex items-center gap-2 bg-[#e5e7eb] rounded-[var(--control-radius)] px-3 py-1.5 w-64 ml-4">
+          <Search className="w-4 h-4 text-gray-500" />
           <input
             type="search"
             placeholder={t("searchPlaceholder")}
-            className="bg-transparent border-none outline-none text-sm placeholder:text-white/70 w-full"
+            className="topbar-search-input bg-transparent border-none outline-none text-sm placeholder:text-gray-500 w-full"
           />
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <span className="text-sm text-white/90 hidden sm:block">
-          {bootstrap?.account?.company ?? t("account")}
-        </span>
-        <LocaleSelector />
         <button
           onClick={openConcierge}
-          className="p-2 rounded-full hover:bg-white/20 transition-colors"
+          className="p-2 rounded-full hover:bg-[#e5e7eb] transition-colors"
           title={te("setupWizard")}
           aria-label={te("setupWizard")}
         >
@@ -92,7 +98,7 @@ export function TopBar() {
         </button>
         <button
           onClick={openAssistant}
-          className="p-2 rounded-full hover:bg-white/20 transition-colors"
+          className="p-2 rounded-full hover:bg-[#e5e7eb] transition-colors"
           title={t("assistantTitle")}
           aria-label={t("openAssistant")}
         >
@@ -101,7 +107,7 @@ export function TopBar() {
         <Link
           href="/ucass/voicemail"
           prefetch={false}
-          className="relative p-2 rounded-full hover:bg-white/20 transition-colors"
+          className="relative p-2 rounded-full hover:bg-[#e5e7eb] transition-colors"
           title={t("notifications")}
         >
           <Bell className="w-5 h-5" />
@@ -114,11 +120,11 @@ export function TopBar() {
         <div className="relative" ref={userMenuRef}>
           <button
             onClick={() => setUserMenuOpen((o) => !o)}
-            className="flex items-center gap-2 p-2 rounded-full hover:bg-white/20 transition-colors"
+            className="flex items-center gap-2 p-2 rounded-full hover:bg-[#e5e7eb] transition-colors"
             aria-expanded={userMenuOpen}
             aria-haspopup="true"
           >
-            <div className="w-8 h-8 rounded-full bg-white/30 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-[#e5e7eb] flex items-center justify-center">
               <User className="w-4 h-4" />
             </div>
             <ChevronDown className="w-4 h-4" />
@@ -155,6 +161,26 @@ export function TopBar() {
                     </a>
                   );
                 })}
+              </div>
+            </div>
+            <div className="border-b border-gray-100 px-3 py-2">
+              <p className="px-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">
+                Language
+              </p>
+              <div className="space-y-1">
+                {locales.map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => setLocale(l)}
+                    className={`w-full text-left text-sm -mx-2 px-2 py-1.5 rounded transition-colors ${
+                      l === locale
+                        ? "bg-gray-100 text-gray-900 font-medium"
+                        : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    {localeNames[l]}
+                  </button>
+                ))}
               </div>
             </div>
             <div className="border-b border-gray-100 px-3 py-2 space-y-1">

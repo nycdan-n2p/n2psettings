@@ -590,7 +590,7 @@ function ElevenLabsMusicGenerator({ onAssign }: { onAssign: (url: string, title:
   }
 
   return (
-    <div className="border border-purple-200 rounded-xl bg-purple-50/50 p-4 mb-4">
+    <div className="border border-purple-200 rounded-[16px] bg-purple-50/50 p-4 mb-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
@@ -955,7 +955,7 @@ export default function CallQueueEditPage() {
       )}
 
       {/* Card layout: tabs + content */}
-      <div className="bg-white rounded-xl border border-gray-200 flex min-h-[500px]">
+      <div className="bg-white rounded-[16px] border border-gray-200 flex min-h-[500px]">
         {/* Left tab nav */}
         <nav className="w-52 shrink-0 border-r border-gray-100 p-3 space-y-0.5">
           {TABS.map(({ id: tabId, label, icon: Icon }) => {

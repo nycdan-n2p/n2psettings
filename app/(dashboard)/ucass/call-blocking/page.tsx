@@ -17,6 +17,8 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Modal } from "@/components/settings/Modal";
 import { TextInput } from "@/components/settings/TextInput";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
+import { SegmentedTabs } from "@/components/ui/SegmentedTabs";
+import { Button } from "@/components/ui/Button";
 import { Trash2 } from "lucide-react";
 
 function CallBlockingContent() {
@@ -102,34 +104,20 @@ function CallBlockingContent() {
         Manage inbound and outbound block lists.
       </p>
       <div className="flex flex-wrap items-center gap-3 mb-4">
-        <div className="flex gap-2">
-          <button
-            onClick={() => setTab("inbound")}
-            className={`px-4 py-2 rounded-md text-sm font-medium ${
-              tab === "inbound"
-                ? "bg-[#1a73e8] text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            Inbound
-          </button>
-          <button
-            onClick={() => setTab("outbound")}
-            className={`px-4 py-2 rounded-md text-sm font-medium ${
-              tab === "outbound"
-                ? "bg-[#1a73e8] text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            Outbound
-          </button>
-        </div>
-        <button
+        <SegmentedTabs
+          value={tab}
+          onChange={setTab}
+          options={[
+            { value: "inbound", label: "Inbound" },
+            { value: "outbound", label: "Outbound" },
+          ]}
+        />
+        <Button
           onClick={openAddModal}
-          className="px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium"
+          variant="primary"
         >
           Add number
-        </button>
+        </Button>
       </div>
       {isLoading ? (
         <div className="py-8 text-gray-500">Loading...</div>

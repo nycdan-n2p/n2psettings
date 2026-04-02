@@ -171,7 +171,7 @@ function SettingsSection({
         <p className="text-xs text-gray-400 mt-1">Choose a user to receive all Ring Group SMS messages.</p>
       </div>
 
-      <div className="mb-6 p-4 rounded-xl border border-gray-200 flex items-center justify-between gap-4">
+      <div className="mb-6 p-4 rounded-[16px] border border-gray-200 flex items-center justify-between gap-4">
         <div>
           <p className="text-sm font-medium text-gray-800">Call Recording</p>
           <p className="text-xs text-gray-500 mt-0.5">Records all incoming and outgoing calls for this ring group.</p>
@@ -275,7 +275,7 @@ function RoutingSection({
 
       <div className="space-y-4">
         {timeBlocks.map((block, blockIdx) => (
-          <div key={block.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+          <div key={block.id} className="bg-white border border-gray-200 rounded-[16px] overflow-hidden shadow-sm">
             <div className="px-5 py-3.5 border-b border-gray-100 bg-gray-50/50 flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-[#e8f0fe] flex items-center justify-center shrink-0">
                 <Clock className="w-4 h-4 text-[#1a73e8]" />
@@ -382,7 +382,7 @@ function CallerIdSection({
     placeholder: string; hint: string; fieldName: string;
   }) {
     return (
-      <div className="mb-6 p-5 border border-gray-200 rounded-xl bg-white">
+      <div className="mb-6 p-5 border border-gray-200 rounded-[16px] bg-white">
         <h3 className="text-sm font-semibold text-gray-900 mb-0.5">{title}</h3>
         <p className="text-xs text-gray-500 mb-4">{desc}</p>
         <div className="space-y-2 mb-4">
@@ -436,7 +436,7 @@ function CallerIdSection({
       />
 
       {/* Preview */}
-      <div className="mb-6 p-5 bg-gray-50 border border-gray-200 rounded-xl">
+      <div className="mb-6 p-5 bg-gray-50 border border-gray-200 rounded-[16px]">
         <h3 className="text-sm font-semibold text-gray-800 mb-3">Preview</h3>
         <div className="grid grid-cols-2 gap-6">
           <div>
@@ -567,7 +567,7 @@ export default function RingGroupEditPage() {
       )}
 
       {/* Card with left nav */}
-      <div className="bg-white rounded-xl border border-gray-200 flex min-h-[600px]">
+      <div className="bg-white rounded-[16px] border border-gray-200 flex min-h-[600px]">
         <nav className="w-52 shrink-0 border-r border-gray-100 p-3 space-y-0.5">
           {TABS.map(({ id: tabId, label, icon: Icon }) => (
             <button key={tabId} onClick={() => { setActiveTab(tabId); setSaveError(null); }}

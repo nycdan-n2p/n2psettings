@@ -57,7 +57,7 @@ export default function BulkOperationsPage() {
         <>
           {/* Bulk load data */}
           {bulkData && (hasItems || Object.keys(bulkData).length > 1) && (
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden mb-6">
+            <div className="bg-white rounded-3xl shadow-sm overflow-hidden mb-6">
               <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
                 <h2 className="text-lg font-medium text-gray-900">
                   Bulk Load Status
@@ -66,30 +66,30 @@ export default function BulkOperationsPage() {
               <div className="px-6 py-4">
                 {hasItems ? (
                   <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
+                    <table className="n2p-table min-w-full">
                       <thead>
                         <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          <th>
                             Name
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          <th>
                             Status
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          <th>
                             ID
                           </th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-200">
+                      <tbody>
                         {items.map((item) => (
                           <tr key={item.id ?? item.name ?? JSON.stringify(item)}>
-                            <td className="px-6 py-3 text-sm text-gray-900">
+                            <td>
                               {item.name ?? "—"}
                             </td>
-                            <td className="px-6 py-3 text-sm text-gray-900">
+                            <td>
                               {item.status ?? "—"}
                             </td>
-                            <td className="px-6 py-3 text-sm text-gray-500">
+                            <td>
                               {item.id ?? "—"}
                             </td>
                           </tr>

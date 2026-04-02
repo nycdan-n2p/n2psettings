@@ -23,7 +23,7 @@ export default function CompanyPage() {
       <h1 className="text-2xl font-medium text-gray-900 mb-6">{t("title")}</h1>
       <p className="text-gray-600 mb-6">{t("subtitle")}</p>
 
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
           <h2 className="text-lg font-medium text-gray-900">{t("accountOverview")}</h2>
         </div>
