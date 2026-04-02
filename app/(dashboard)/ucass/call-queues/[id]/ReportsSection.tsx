@@ -13,6 +13,7 @@ import {
   type QueueAgent,
 } from "@/lib/api/call-queues";
 import { FileDown } from "lucide-react";
+import { SegmentedTabs } from "@/components/ui/SegmentedTabs";
 
 type TimePreset =
   | "today"
@@ -231,23 +232,20 @@ export function ReportsSection({
           Generate agent or queue activity reports for this call queue. Reports are available for calls from June 1, 2025 onward.
         </p>
 
-        <div className="flex gap-4 mb-4">
-          <button
-            onClick={() => { setReportType("agent"); setReportData(null); setError(null); }}
-            className={`px-4 py-2 rounded-lg text-sm font-medium ${
-              reportType === "agent" ? "bg-[#1a73e8] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            Agent Activity Report
-          </button>
-          <button
-            onClick={() => { setReportType("queue"); setReportData(null); setError(null); }}
-            className={`px-4 py-2 rounded-lg text-sm font-medium ${
-              reportType === "queue" ? "bg-[#1a73e8] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            Queue Activity Report
-          </button>
+        <div className="mb-4">
+          <SegmentedTabs
+            value={reportType}
+            onChange={(value) => {
+              setReportType(value);
+              setReportData(null);
+              setError(null);
+            }}
+            options={[
+              { value: "agent", label: "Agent Activity Report" },
+              { value: "queue", label: "Queue Activity Report" },
+            ]}
+            className="w-full max-w-[520px]"
+          />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -360,13 +358,13 @@ export function ReportsSection({
           </div>
 
           {Array.isArray(reportRows) && reportRows.length > 0 ? (
-            <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+            <div className="rounded-lg overflow-hidden bg-white">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-[#f8f9fa]">
+                <table className="n2p-table w-full text-sm">
+                  <thead>
                     <tr>
                       {Object.keys(reportRows[0] as Record<string, unknown>).map((k) => (
-                        <th key={k} className="px-4 py-3 text-left font-medium text-gray-700">
+                        <th key={k}>
                           {k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
                         </th>
                       ))}
@@ -374,7 +372,7 @@ export function ReportsSection({
                   </thead>
                   <tbody>
                     {reportRows.map((row, i) => (
-                      <tr key={i} className="border-t border-gray-100 hover:bg-gray-50">
+                      <tr key={i}>
                         {Object.values(row as Record<string, unknown>).map((v, j) => {
                           const display =
                             v == null
@@ -387,7 +385,7 @@ export function ReportsSection({
                                     : JSON.stringify(v)
                                 : String(v);
                           return (
-                            <td key={j} className="px-4 py-3 text-gray-700">
+                            <td key={j}>
                               {display}
                             </td>
                           );

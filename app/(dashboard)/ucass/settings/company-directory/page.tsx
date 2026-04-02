@@ -229,7 +229,7 @@ function CompanyDirectoryContent() {
         <div className="space-y-6">
 
           {/* ── Greeting ─────────────────────────────────────────────── */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-[16px] border border-gray-200 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-100">
               <h2 className="text-sm font-semibold text-gray-900">{t("greetingTitle")}</h2>
             </div>
@@ -280,7 +280,7 @@ function CompanyDirectoryContent() {
           </div>
 
           {/* ── Team Member Lookup ───────────────────────────────────── */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-[16px] border border-gray-200 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-100">
               <h2 className="text-sm font-semibold text-gray-900">{t("lookupTitle")}</h2>
             </div>

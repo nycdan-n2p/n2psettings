@@ -44,7 +44,7 @@ export function MessageBubble({ message }: { message: Message }) {
         </div>
 
         {/* Bubble */}
-        <div className="max-w-[85%] bg-white border border-[#e8eaed] rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
+        <div className="max-w-[85%] bg-white border border-[#e8eaed] rounded-[20px] rounded-tl-sm px-4 py-3 shadow-sm">
           {message.isTyping ? (
             <TypingDots />
           ) : (
@@ -62,7 +62,7 @@ export function MessageBubble({ message }: { message: Message }) {
   // User bubble — right-aligned
   return (
     <div className="flex justify-end mb-4" role="article" aria-label="Your message">
-      <div className="max-w-[75%] bg-[#1a73e8] text-white rounded-2xl rounded-tr-sm px-4 py-2.5 shadow-sm">
+      <div className="max-w-[75%] bg-[#1a73e8] text-white rounded-[20px] rounded-tr-sm px-4 py-2.5 shadow-sm">
         <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.text}</p>
       </div>
     </div>

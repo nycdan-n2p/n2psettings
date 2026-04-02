@@ -61,7 +61,7 @@ function KpiCard({ label, value, sub, icon: Icon, color }: {
   icon: React.ElementType; color: string;
 }) {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 flex items-start gap-3">
+    <div className="bg-[#F6F6F9] rounded-[20px] p-4 flex items-start gap-3">
       <div className={`w-9 h-9 rounded-lg ${color} flex items-center justify-center shrink-0`}>
         <Icon className="w-5 h-5" />
       </div>
@@ -92,9 +92,9 @@ export function AnalyzeModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-      <div className="bg-[#f8f9fa] rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+      <div className="bg-white rounded-[34px] shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-white rounded-t-xl border-b border-gray-200">
+        <div className="flex items-center justify-between px-6 py-4 bg-white rounded-t-[34px]">
           <div>
             <h2 className="text-lg font-semibold text-gray-900">Call Intelligence</h2>
             <p className="text-sm text-gray-500">{dateLabel} · {kpis.total} calls analyzed</p>
@@ -108,10 +108,10 @@ export function AnalyzeModal({
         </div>
 
         {/* Scrollable body */}
-        <div className="overflow-y-auto flex-1 p-6 space-y-6">
+        <div className="overflow-y-auto flex-1 p-6 space-y-4">
 
           {/* KPI grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <KpiCard label="Total Calls" value={kpis.total}
               sub={`${kpis.inbound} in · ${kpis.outbound} out`}
               icon={Phone} color="bg-blue-100 text-blue-600" />
@@ -127,13 +127,13 @@ export function AnalyzeModal({
           </div>
 
           {/* Stats row */}
-          <div className="grid grid-cols-3 gap-3 text-center">
+          <div className="grid grid-cols-3 gap-2 text-center">
             {[
               { label: "Voicemail", value: `${kpis.voicemailPct}%`, color: "text-yellow-600" },
               { label: "Blocked", value: `${kpis.blockedPct}%`, color: "text-red-500" },
               { label: "Peak Hour", value: `${kpis.peakHour}:00`, color: "text-[#1a73e8]" },
             ].map(({ label, value, color }) => (
-              <div key={label} className="bg-white rounded-lg border border-gray-200 py-3 px-4">
+              <div key={label} className="bg-[#F6F6F9] rounded-[20px] py-3 px-4">
                 <p className="text-xs text-gray-500">{label}</p>
                 <p className={`text-xl font-bold ${color}`}>{value}</p>
               </div>
@@ -141,9 +141,9 @@ export function AnalyzeModal({
           </div>
 
           {/* Two-column: result breakdown + hourly pattern */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Call result breakdown */}
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="bg-[#F6F6F9] rounded-[20px] p-4">
               <h3 className="text-sm font-semibold text-gray-900 mb-3">Result Breakdown</h3>
               <div className="space-y-2">
                 {resultBreakdown.slice(0, 6).map(({ result, count }) => (
@@ -157,7 +157,7 @@ export function AnalyzeModal({
             </div>
 
             {/* Hourly call pattern */}
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="bg-[#F6F6F9] rounded-[20px] p-4">
               <h3 className="text-sm font-semibold text-gray-900 mb-3">Calls by Hour</h3>
               <div className="flex items-end gap-0.5 h-20">
                 {hourlyPattern.map(({ hour, calls }) => (
@@ -179,7 +179,7 @@ export function AnalyzeModal({
 
           {/* Top agents */}
           {topAgents.length > 0 && (
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="bg-[#F6F6F9] rounded-[20px] p-4">
               <h3 className="text-sm font-semibold text-gray-900 mb-3">Top Agents by Talk Time</h3>
               <div className="space-y-2">
                 {topAgents.slice(0, 7).map((agent) => (
@@ -201,7 +201,7 @@ export function AnalyzeModal({
 
           {/* Longest call */}
           {kpis.longestCall && (
-            <div className="bg-white rounded-lg border border-gray-200 p-4 flex items-center gap-3">
+            <div className="bg-[#F6F6F9] rounded-[20px] p-4 flex items-center gap-3">
               <TrendingDown className="w-5 h-5 text-gray-400 shrink-0" />
               <div>
                 <p className="text-xs text-gray-500">Longest Call</p>
@@ -214,7 +214,7 @@ export function AnalyzeModal({
           )}
 
           {/* Claude executive summary */}
-          <div className="bg-white rounded-lg border border-[#1a73e8]/20 p-5">
+          <div className="bg-[#F6F6F9] rounded-[20px] p-5">
             <div className="flex items-center gap-2 mb-3">
               <div className="w-5 h-5 rounded-full bg-[#1a73e8] flex items-center justify-center">
                 <span className="text-white text-xs font-bold">C</span>
@@ -228,7 +228,7 @@ export function AnalyzeModal({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3 bg-white border-t border-gray-200 rounded-b-xl flex justify-end">
+        <div className="px-6 py-3 bg-white rounded-b-[34px] flex justify-end">
           <button
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-gray-700 border border-[#dadce0] rounded-md hover:bg-gray-50 transition-colors"

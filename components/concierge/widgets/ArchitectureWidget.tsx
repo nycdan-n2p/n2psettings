@@ -136,7 +136,7 @@ export function ArchitectureWidget({ onMessages }: { onMessages: (msgs: string[]
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
             <Users className="w-3.5 h-3.5" aria-hidden="true" /> {t("architecture.step2Assign")}
           </p>
-          <div className="rounded-xl border border-[#e8eaed] overflow-hidden max-h-52 overflow-y-auto">
+          <div className="rounded-[16px] border border-[#e8eaed] overflow-hidden max-h-52 overflow-y-auto">
             {users.map((u, i) => (
               <div key={i} className="flex items-center gap-3 px-3 py-2 border-b border-[#f1f3f4] last:border-0 bg-white">
                 <div className="min-w-0 flex-1">
@@ -186,7 +186,7 @@ export function ArchitectureWidget({ onMessages }: { onMessages: (msgs: string[]
             {phoneOptions.map(({ value, labelKey, descKey }) => (
               <button key={value} onClick={() => handlePhoneChoice(value)}
                 aria-pressed={phoneChoice === value}
-                className={`w-full flex items-start gap-3 p-3 rounded-xl border text-left transition-all ${
+                className={`w-full flex items-start gap-3 p-3 rounded-[16px] border text-left transition-all ${
                   phoneChoice === value ? "border-[#1a73e8] bg-[#e8f0fe]" : "border-[#dadce0] bg-white hover:bg-[#f8f9fa]"
                 }`}>
                 <div className={`w-4 h-4 rounded-full border-2 mt-0.5 shrink-0 flex items-center justify-center ${
@@ -221,7 +221,7 @@ export function ArchitectureWidget({ onMessages }: { onMessages: (msgs: string[]
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("architecture.hardphoneDetailsTitle")}</p>
         <p className="text-xs text-gray-500">{t("architecture.hardphoneDescription")}</p>
         <p className="text-xs text-gray-500 italic">{t("architecture.deviceProvisioningNote")}</p>
-        <div className="rounded-xl border border-[#e8eaed] overflow-hidden max-h-52 overflow-y-auto">
+        <div className="rounded-[16px] border border-[#e8eaed] overflow-hidden max-h-52 overflow-y-auto">
           {users.map((u, i) => (
             <div key={i} className="flex items-center gap-2 px-3 py-2 border-b border-[#f1f3f4] last:border-0 bg-white">
               <div className="min-w-0 flex-1">

@@ -41,7 +41,7 @@ function FirstTimeSetupBanner() {
   if (!visible) return null;
 
   return (
-    <div className="flex items-center justify-between gap-2 px-4 py-2 bg-[#e8f0fe] border-b border-[#c5d8fb] shrink-0">
+    <div className="flex items-center justify-between gap-2 px-4 py-2 bg-[rgba(167,167,190,0.10)] rounded-[20px] shrink-0">
       <div className="flex flex-wrap items-center gap-2 text-sm text-[#1a56b0] min-w-0">
         <Sparkles className="w-4 h-4 shrink-0 text-[#1a73e8]" aria-hidden="true" />
         <span className="truncate"><span className="hidden sm:inline">New account? </span>Get set up in minutes.</span>
@@ -58,7 +58,7 @@ function FirstTimeSetupBanner() {
       </div>
       <button
         onClick={dismiss}
-        className="p-1 rounded hover:bg-[#c5d8fb] text-[#1a73e8] transition-colors"
+        className="p-1 rounded hover:bg-[rgba(167,167,190,0.20)] text-[#1a73e8] transition-colors"
         aria-label="Dismiss setup banner"
       >
         <X className="w-4 h-4" />
@@ -89,7 +89,7 @@ export default function DashboardLayout({
 
   if (!mounted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f8f9fa]">
+      <div className="min-h-screen flex items-center justify-center bg-[#F6F6F9]">
         <Loader variant="full" label="Loading..." />
       </div>
     );
@@ -101,7 +101,7 @@ export default function DashboardLayout({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f8f9fa]">
+      <div className="min-h-screen flex items-center justify-center bg-[#F6F6F9]">
         <Loader variant="full" label="Loading..." />
       </div>
     );
@@ -109,7 +109,7 @@ export default function DashboardLayout({
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f8f9fa]">
+      <div className="min-h-screen flex items-center justify-center bg-[#F6F6F9]">
         <div className="text-center">
           <p className="text-red-600 mb-4">{error}</p>
           <button
@@ -127,14 +127,23 @@ export default function DashboardLayout({
     <ConciergeProvider>
       <AssistantProvider>
         <SidebarProvider>
-          <div className="min-h-screen flex flex-col bg-[#f8f9fa]">
+          <div className="h-screen flex flex-col overflow-hidden bg-[#F6F6F9]">
             <TopBar />
-            <FirstTimeSetupBanner />
-            <div className="flex flex-1 overflow-hidden relative">
+            <div className="flex h-[calc(100vh-56px)] overflow-hidden relative bg-[#F6F6F9]">
               <Sidebar />
-              <main className="flex-1 overflow-auto p-4 sm:p-6 min-w-0">
-                <ErrorBoundary>{children}</ErrorBoundary>
-              </main>
+              <div className="flex-1 min-w-0 flex flex-col">
+                <div className="pt-2">
+                  <FirstTimeSetupBanner />
+                </div>
+                <div className="flex flex-1 min-h-0">
+                  <main className="flex-1 overflow-auto bg-white rounded-t-3xl">
+                    <div className="p-4 sm:p-6">
+                      <ErrorBoundary>{children}</ErrorBoundary>
+                    </div>
+                  </main>
+                  <div className="w-3 shrink-0 bg-[#F6F6F9]" aria-hidden="true" />
+                </div>
+              </div>
             </div>
             <AssistantSidePanel />
             <ErrorBoundary context="Concierge">

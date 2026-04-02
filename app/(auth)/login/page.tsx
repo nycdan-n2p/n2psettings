@@ -74,19 +74,19 @@ function LoginPageInner() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f8f9fa]">
-      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-sm border border-[#dadce0]">
+      <div className="w-full max-w-md p-8 bg-white rounded-3xl shadow-sm">
         <div className="mb-6">
           <h1 className="text-2xl font-medium text-gray-900">{t("title")}</h1>
           <p className="text-sm text-gray-500 mt-1">{t("subtitle")}</p>
         </div>
 
-        <div className="flex border border-[#dadce0] rounded-lg p-0.5 mb-6 bg-gray-50">
+        <div className="flex rounded-[16px] p-1 mb-6 bg-gray-100">
           {(["password", "token"] as Mode[]).map((m) => (
             <button
               key={m}
               type="button"
               onClick={() => { setMode(m); setError(""); }}
-              className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-colors ${
+              className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                 mode === m
                   ? "bg-white text-gray-900 shadow-sm"
                   : "text-gray-500 hover:text-gray-700"
@@ -98,59 +98,61 @@ function LoginPageInner() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {mode === "password" ? (
-            <>
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  {t("emailLabel")}
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder={t("emailPlaceholder")}
-                  autoComplete="email"
-                  required
-                  className="w-full px-3 py-2 border border-[#dadce0] rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:border-transparent"
-                />
+          <div className="min-h-[220px]">
+            {mode === "password" ? (
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                    {t("emailLabel")}
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder={t("emailPlaceholder")}
+                    autoComplete="email"
+                    required
+                    className="w-full px-4 py-3 bg-[#f3f4f6] rounded-[16px] text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                    {t("passwordLabel")}
+                  </label>
+                  <input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    required
+                    className="w-full px-4 py-3 bg-[#f3f4f6] rounded-[16px] text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                  />
+                </div>
               </div>
+            ) : (
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                  {t("passwordLabel")}
+                <label htmlFor="token" className="block text-sm font-medium text-gray-700 mb-1">
+                  {t("tokenLabel")}
                 </label>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  autoComplete="current-password"
+                <textarea
+                  id="token"
+                  value={refreshToken}
+                  onChange={(e) => setRefreshToken(e.target.value)}
+                  placeholder={t("tokenPlaceholder")}
+                  rows={5}
                   required
-                  className="w-full px-3 py-2 border border-[#dadce0] rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:border-transparent"
+                  className="w-full px-4 py-3 bg-[#f3f4f6] rounded-[16px] text-sm font-mono focus:outline-none focus:ring-2 focus:ring-black"
                 />
+                <p className="text-xs text-gray-400 mt-1">{t("tokenHint")}</p>
               </div>
-            </>
-          ) : (
-            <div>
-              <label htmlFor="token" className="block text-sm font-medium text-gray-700 mb-1">
-                {t("tokenLabel")}
-              </label>
-              <textarea
-                id="token"
-                value={refreshToken}
-                onChange={(e) => setRefreshToken(e.target.value)}
-                placeholder={t("tokenPlaceholder")}
-                rows={4}
-                required
-                className="w-full px-3 py-2 border border-[#dadce0] rounded-md text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:border-transparent"
-              />
-              <p className="text-xs text-gray-400 mt-1">{t("tokenHint")}</p>
-            </div>
-          )}
+            )}
+          </div>
 
           {error && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+            <p className="text-sm text-red-600 bg-red-50 rounded-[16px] px-3 py-2">
               {error}
             </p>
           )}
@@ -158,7 +160,7 @@ function LoginPageInner() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 px-4 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2 transition-colors"
+            className="w-full py-3 px-4 bg-black text-white rounded-[16px] hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2 transition-colors"
           >
             {loading ? (
               <>

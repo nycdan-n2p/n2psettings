@@ -28,13 +28,13 @@ export function TableToolbar({
           value={searchValue}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={searchPlaceholder}
-          className="w-full pl-9 pr-3 py-2 border border-[#dadce0] rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:border-transparent"
+          className="w-full pl-9 pr-3 py-2 border border-[#dadce0] rounded-[var(--control-radius)] text-sm focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:border-transparent"
         />
       </div>
       {onFilterClick && (
         <button
           onClick={onFilterClick}
-          className="flex items-center gap-2 px-3 py-2 border border-[#dadce0] rounded-md text-sm hover:bg-[#f8f9fa]"
+          className="flex items-center gap-2 px-3 py-2 border border-[#dadce0] rounded-[var(--control-radius)] text-sm hover:bg-[#f8f9fa]"
         >
           <SlidersHorizontal className="w-4 h-4" />
           {filterLabel}

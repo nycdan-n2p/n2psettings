@@ -44,7 +44,7 @@ export default function VoicemailPage() {
         </Link>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
           <h2 className="text-lg font-medium text-gray-900">{t("inbox", { count: totalCount })}</h2>
         </div>

@@ -19,7 +19,7 @@ export function FixItButton({ targetStage, label }: { targetStage: ConciergeStag
 
 export function CardShell({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`mx-4 mb-4 bg-[#f8f9fa] border border-[#e8eaed] rounded-2xl p-5 ${className}`} role="region">
+    <div className={`mx-4 mb-4 bg-[#f8f9fa] border border-[#e8eaed] rounded-[20px] p-5 ${className}`} role="region">
       {children}
     </div>
   );

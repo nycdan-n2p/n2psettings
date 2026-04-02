@@ -488,7 +488,7 @@ export default function WebhooksPage() {
       {isLoading ? (
         <div className="py-12 text-center text-gray-400 text-sm">Loading…</div>
       ) : webhooks.length === 0 ? (
-        <div className="py-16 flex flex-col items-center gap-3 text-center border-2 border-dashed border-[#e8eaed] rounded-xl">
+        <div className="py-16 flex flex-col items-center gap-3 text-center border-2 border-dashed border-[#e8eaed] rounded-[16px]">
           <div className="w-12 h-12 bg-[#e8f0fe] rounded-full flex items-center justify-center">
             <WebhookIcon className="w-6 h-6 text-[#1a73e8]" />
           </div>
@@ -504,7 +504,7 @@ export default function WebhooksPage() {
           </button>
         </div>
       ) : (
-        <div className="divide-y divide-[#e8eaed] border border-[#e8eaed] rounded-xl overflow-hidden">
+        <div className="divide-y divide-[#e8eaed] border border-[#e8eaed] rounded-[16px] overflow-hidden">
           {webhooks.map((wh, i) => (
             <div key={wh.id ?? i} className="flex items-start justify-between px-5 py-4 bg-white hover:bg-[#f8f9fa] transition-colors group">
               <div className="flex items-start gap-3 min-w-0">

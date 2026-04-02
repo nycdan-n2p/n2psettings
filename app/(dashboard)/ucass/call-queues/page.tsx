@@ -154,7 +154,7 @@ function CallQueueAgentsPopover({
             left: pos.left,
             zIndex: 9999,
           }}
-          className="w-64 bg-white rounded-xl shadow-xl border border-[#dadce0] overflow-hidden"
+          className="w-64 bg-white rounded-[16px] shadow-xl border border-[#dadce0] overflow-hidden"
         >
           <div className="flex items-center justify-between px-3 py-2 border-b border-[#f1f3f4] bg-[#f8f9fa]">
             <span className="text-xs font-semibold text-gray-600">

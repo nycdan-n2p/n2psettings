@@ -78,7 +78,7 @@ export default function WelcomePage() {
               <button
                 type="button"
                 onClick={() => open()}
-                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl text-sm font-bold text-white bg-gradient-to-r from-[#1a73e8] via-[#6366f1] to-[#a855f7] shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-[20px] text-sm font-bold text-white bg-gradient-to-r from-[#1a73e8] via-[#6366f1] to-[#a855f7] shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
               >
                 <WelcomeAgentAvatar size={28} />
                 {t("ctaOpen")}

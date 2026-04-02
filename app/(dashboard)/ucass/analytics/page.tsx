@@ -25,6 +25,8 @@ import {
 import { fetchCallHistory } from "@/lib/api/call-history";
 import { DataTable } from "@/components/tables/DataTable";
 import { AnalyzeModal } from "@/components/calls/AnalyzeModal";
+import { SegmentedTabs } from "@/components/ui/SegmentedTabs";
+import { Button } from "@/components/ui/Button";
 import type { CallAnalysis } from "@/app/api/analyze-calls/route";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
@@ -270,52 +272,39 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Controls */}
-      <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-4">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-600">Direction:</span>
-          <div className="flex rounded-lg border border-gray-200 overflow-hidden bg-white">
-            {DIRECTIONS.map((d) => (
-              <button
-                key={d.value}
-                onClick={() => setDirection(d.value)}
-                className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm font-medium transition-colors ${
-                  direction === d.value
-                    ? "bg-indigo-600 text-white"
-                    : "text-gray-600 hover:bg-gray-50"
-                }`}
-              >
-                <d.icon className="w-4 h-4" />
-                {d.label}
-              </button>
-            ))}
+      <div className="flex flex-wrap md:flex-nowrap items-end gap-3 sm:gap-4 mb-4 w-full">
+        <div className="flex flex-wrap items-end gap-3 sm:gap-4">
+          <div className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Direction</span>
+            <SegmentedTabs
+              value={direction}
+              onChange={setDirection}
+              options={DIRECTIONS.map((d) => ({
+                value: d.value,
+                label: d.label,
+              }))}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Range</span>
+            <SegmentedTabs
+              value={preset}
+              onChange={setPreset}
+              options={PRESETS.map((p) => ({ value: p.value, label: p.label }))}
+              equalWidth={false}
+            />
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-600">Range:</span>
-          <div className="flex rounded-lg border border-gray-200 overflow-hidden bg-white">
-            {PRESETS.map((p) => (
-              <button
-                key={p.value}
-                onClick={() => setPreset(p.value)}
-                className={`px-3 sm:px-4 py-2 text-sm font-medium transition-colors ${
-                  preset === p.value
-                    ? "bg-indigo-600 text-white"
-                    : "text-gray-600 hover:bg-gray-50"
-                }`}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <button
+        <div className="ml-auto self-end">
+        <Button
           onClick={handleAnalyze}
           disabled={analyzing || !accountId}
-          className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-[#1a73e8] rounded-lg hover:bg-[#1557b0] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          variant="primary"
+          icon={<BarChart2 className="w-4 h-4" />}
         >
-          <BarChart2 className="w-4 h-4" />
           {analyzing ? "Analyzing…" : "Analyze Calls"}
-        </button>
+        </Button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -329,7 +318,7 @@ export default function AnalyticsPage() {
             {statCards.slice(0, 4).map((s) => (
               <div
                 key={s.label}
-                className={`rounded-xl border border-gray-100 p-4 ${s.bg} transition-shadow hover:shadow-sm`}
+                className={`rounded-[16px] border border-gray-100 p-4 ${s.bg} transition-shadow hover:shadow-sm`}
                 title={"hint" in s ? s.hint : undefined}
               >
                 <div className={`mt-0.5 ${s.color}`}>
@@ -348,7 +337,7 @@ export default function AnalyticsPage() {
             {statCards.slice(4).map((s) => (
               <div
                 key={s.label}
-                className={`rounded-xl border border-gray-100 p-4 ${s.bg} transition-shadow hover:shadow-sm`}
+                className={`rounded-[16px] border border-gray-100 p-4 ${s.bg} transition-shadow hover:shadow-sm`}
               >
                 <div className={`mt-0.5 ${s.color}`}>
                   <s.icon className="w-5 h-5" />
@@ -366,7 +355,7 @@ export default function AnalyticsPage() {
             <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
               Call volume over time
             </h2>
-            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm min-h-[320px]">
+            <div className="bg-white rounded-[16px] border border-gray-200 p-6 shadow-sm min-h-[320px]">
               {chartData.length === 0 ? (
                 <div className="flex items-center justify-center h-64 text-gray-400 text-sm">
                   No call data for this period
@@ -455,7 +444,7 @@ export default function AnalyticsPage() {
             <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
               Activities
             </h2>
-            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <div className="bg-white rounded-[16px] border border-gray-200 p-6 shadow-sm">
               <h3 className="text-sm font-medium text-gray-900 mb-4">Busy times</h3>
               <p className="text-xs text-gray-500 mb-4">
                 Call volume by day of week and hour (darker = more calls)
@@ -526,7 +515,7 @@ export default function AnalyticsPage() {
             <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
               Messaging
             </h2>
-            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <div className="bg-white rounded-[16px] border border-gray-200 p-6 shadow-sm">
               <div className="flex items-center gap-2 text-gray-500 mb-2">
                 <MessageSquare className="w-5 h-5" />
                 <span className="text-sm font-medium text-gray-700">SMS / MMS analytics</span>
@@ -545,7 +534,7 @@ export default function AnalyticsPage() {
             {!stats?.userRows.length ? (
               <p className="text-sm text-gray-500 py-4">No user data for this period.</p>
             ) : (
-              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+              <div className="bg-white rounded-[16px] border border-gray-200 overflow-hidden shadow-sm">
                 <DataTable
                   columns={userColumns}
                   data={stats.userRows}
@@ -562,7 +551,7 @@ export default function AnalyticsPage() {
               <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
                 By Department
               </h2>
-              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+              <div className="bg-white rounded-[16px] border border-gray-200 overflow-hidden shadow-sm">
                 <DataTable
                   columns={deptColumns}
                   data={stats.deptRows}

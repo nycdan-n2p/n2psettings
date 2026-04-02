@@ -19,18 +19,19 @@ interface StatCardProps {
   href?: string;
   icon: React.ComponentType<{ className?: string }>;
   color?: string;
+  compact?: boolean;
 }
 
-function StatCard({ label, value, sub, href, icon: Icon, color = "text-[#1a73e8]" }: StatCardProps) {
+function StatCard({ label, value, sub, href, icon: Icon, color = "text-[#1a73e8]", compact = false }: StatCardProps) {
   const inner = (
-    <div className="bg-white rounded-lg border border-[#dadce0] p-5 flex items-start gap-4 hover:shadow-sm transition-shadow">
+    <div className={`bg-[#F6F6F9] rounded-[20px] p-4 ${compact ? "h-[84px]" : "h-[104px]"} flex items-start gap-2.5 hover:shadow-sm transition-shadow`}>
       <div className={`mt-0.5 ${color}`}>
-        <Icon className="w-6 h-6" />
+        <Icon className="w-4 h-4" />
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm text-gray-500">{label}</p>
-        <p className="text-2xl font-semibold text-gray-900 mt-0.5">{value}</p>
-        {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+      <div className="flex-1 min-w-0 h-full flex flex-col">
+        <p className="text-[13px] text-gray-500">{label}</p>
+        <p className={`font-semibold text-gray-900 mt-0.5 leading-tight ${compact ? "text-[20px]" : "text-[22px]"}`}>{value}</p>
+        {sub && <p className="text-xs text-gray-400 mt-auto leading-tight">{sub}</p>}
       </div>
     </div>
   );
@@ -41,6 +42,32 @@ function StatCard({ label, value, sub, href, icon: Icon, color = "text-[#1a73e8]
     </Link>
   ) : (
     inner
+  );
+}
+
+function PlanCard({
+  label,
+  planName,
+  planFee,
+  nextBilling,
+}: {
+  label: string;
+  planName: string;
+  planFee: string | number;
+  nextBilling?: string | null;
+}) {
+  return (
+    <div className="bg-[#F6F6F9] rounded-[20px] p-4 h-[104px] flex items-start gap-2">
+      <div className="mt-0.5 text-[#1a73e8]">
+        <ListOrdered className="w-4 h-4" />
+      </div>
+      <div className="flex-1 min-w-0 h-full flex flex-col">
+        <p className="text-[13px] text-gray-500">{label}</p>
+        <p className="text-[17px] leading-[1.1] font-semibold text-gray-900 mt-0.5 truncate">{planName}</p>
+        <p className="text-[12px] font-semibold text-gray-900 mt-1">${planFee}/mo</p>
+        {nextBilling && <p className="text-[10px] text-gray-400 mt-auto leading-tight truncate">{nextBilling}</p>}
+      </div>
+    </div>
   );
 }
 
@@ -103,9 +130,6 @@ export default function DashboardPage() {
   });
 
   const plan = plans[0];
-  const planLabel = plan
-    ? `${(plan.planName ?? plan.name ?? "Plan")} — $${plan.planFee ?? "?"}/mo`
-    : "—";
   const nextBilling = plan?.nextBillingDate
     ? new Date(plan.nextBillingDate as string).toLocaleDateString()
     : null;
@@ -130,12 +154,13 @@ export default function DashboardPage() {
         <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
           {t("callActivity")}
         </h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <StatCard
             label={t("totalCalls")}
             value={accountStats?.totalCalls ?? "—"}
             icon={Phone}
             href="/ucass/call-history"
+            compact
           />
           <StatCard
             label={t("answered")}
@@ -143,6 +168,7 @@ export default function DashboardPage() {
             icon={PhoneCall}
             color="text-green-600"
             href="/ucass/call-history"
+            compact
           />
           <StatCard
             label={t("missed")}
@@ -150,6 +176,7 @@ export default function DashboardPage() {
             icon={Phone}
             color="text-red-500"
             href="/ucass/call-history"
+            compact
           />
           <StatCard
             label={t("unreadVoicemails")}
@@ -157,6 +184,7 @@ export default function DashboardPage() {
             icon={Voicemail}
             color="text-orange-500"
             href="/ucass/voicemail"
+            compact
           />
         </div>
       </div>
@@ -166,7 +194,7 @@ export default function DashboardPage() {
         <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
           {t("account")}
         </h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <StatCard
             label={t("teamMembers")}
             value={memberCount ?? "—"}
@@ -174,11 +202,11 @@ export default function DashboardPage() {
             icon={Users}
             href="/ucass/team-members"
           />
-          <StatCard
+          <PlanCard
             label={t("plan")}
-            value={planLabel}
-            sub={nextBilling ? `${t("nextBilling")}: ${nextBilling}` : undefined}
-            icon={ListOrdered}
+            planName={plan?.planName ?? plan?.name ?? "—"}
+            planFee={plan?.planFee ?? "?"}
+            nextBilling={nextBilling ? `${t("nextBilling")}: ${nextBilling}` : null}
           />
           <StatCard
             label={t("phoneNumbers")}
@@ -203,23 +231,23 @@ export default function DashboardPage() {
           <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
             Licenses
           </h2>
-          <div className="bg-white rounded-lg border border-[#dadce0] overflow-x-auto">
-            <table className="w-full text-sm min-w-[280px]">
-              <thead className="bg-[#f8f9fa]">
+          <div className="bg-white rounded-3xl overflow-x-auto">
+            <table className="n2p-table w-full text-sm min-w-[280px]">
+              <thead>
                 <tr>
-                  <th className="px-4 py-3 text-left font-medium text-gray-700">License</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-700">Qty</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-700">Status</th>
+                  <th>License</th>
+                  <th>Qty</th>
+                  <th>Status</th>
                 </tr>
               </thead>
               <tbody>
                 {licenses.map((lic, i) => (
-                  <tr key={i} className="border-t border-[#dadce0]">
-                    <td className="px-4 py-3 text-gray-900">{lic.name ?? lic.licenseCode ?? lic.code ?? "—"}</td>
-                    <td className="px-4 py-3 text-gray-600">
+                  <tr key={i}>
+                    <td>{lic.name ?? lic.licenseCode ?? lic.code ?? "—"}</td>
+                    <td>
                       {lic.unlimited ? "Unlimited" : (lic.quantity ?? "—")}
                     </td>
-                    <td className="px-4 py-3">
+                    <td>
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                         Active
                       </span>

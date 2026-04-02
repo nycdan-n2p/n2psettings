@@ -160,7 +160,7 @@ function MusicGenerator({
   }
 
   return (
-    <div className="bg-white rounded-xl border border-purple-200 p-5 mb-6">
+    <div className="bg-white rounded-[16px] border border-purple-200 p-5 mb-6">
       {/* Header */}
       <div className="flex items-center gap-2 mb-4">
         <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
@@ -242,7 +242,7 @@ function MusicGenerator({
 
           {/* Result preview */}
           {result && (
-            <div className="mb-4 bg-purple-50 border border-purple-200 rounded-xl p-3">
+            <div className="mb-4 bg-purple-50 border border-purple-200 rounded-[16px] p-3">
               <div className="flex items-center gap-3 mb-3">
                 {result.imageUrl && (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -423,7 +423,7 @@ export default function MusicOptionsPage() {
       />
 
       {/* Manual upload */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+      <div className="bg-white rounded-[16px] border border-gray-200 p-5 mb-6">
         <h2 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
           <Upload className="w-4 h-4 text-gray-400" />
           Upload Audio File
@@ -486,7 +486,7 @@ export default function MusicOptionsPage() {
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+        <div className="bg-white rounded-[16px] border border-gray-200 divide-y divide-gray-100">
           {options.map((opt) => (
             <div key={opt.id} className="flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-3">

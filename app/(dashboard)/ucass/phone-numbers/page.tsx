@@ -141,7 +141,7 @@ function AssignmentPicker({
             left: pos.left,
             zIndex: 9999,
           }}
-          className="w-64 bg-white rounded-xl border border-[#dadce0] shadow-lg overflow-hidden"
+          className="w-64 bg-white rounded-[16px] border border-[#dadce0] shadow-lg overflow-hidden"
         >
           {isLoading ? (
             <div className="px-4 py-3 text-xs text-gray-400">Loading…</div>
@@ -300,7 +300,7 @@ function CallerIdModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" role="dialog" aria-modal="true">
-      <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-[20px] w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-start gap-4 px-6 pt-6 pb-4 border-b border-[#e8eaed]">
           <div className="w-14 h-14 rounded-full bg-[#e3f2fd] flex items-center justify-center shrink-0">
@@ -496,7 +496,7 @@ function EditNumberModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" role="dialog" aria-modal="true">
-      <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
+      <div className="bg-white rounded-[20px] w-full max-w-md shadow-2xl">
         {/* Header */}
         <div className="flex items-center gap-4 px-6 pt-6 pb-5">
           <div className="w-14 h-14 rounded-full bg-[#e3f2fd] flex items-center justify-center shrink-0">
@@ -562,7 +562,7 @@ function EditNumberModal({
 
           {/* Results list */}
           {searched && results.length > 0 && (
-            <div className="border border-[#dadce0] rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+            <div className="border border-[#dadce0] rounded-[16px] overflow-hidden max-h-48 overflow-y-auto">
               {results.map((r) => (
                 <button
                   key={r.number}
@@ -693,7 +693,7 @@ export default function PhoneNumbersPage() {
       </div>
 
       {/* Search + table card */}
-      <div className="bg-white rounded-xl border border-[#e8eaed] shadow-sm overflow-hidden">
+      <div className="bg-white rounded-[16px] border border-[#e8eaed] shadow-sm overflow-hidden">
         {/* Search bar */}
         <div className="px-5 py-4 border-b border-[#e8eaed]">
           <div className="relative max-w-xs">

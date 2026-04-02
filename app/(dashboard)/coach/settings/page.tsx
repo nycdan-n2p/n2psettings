@@ -24,7 +24,7 @@ export default function CoachSettingsPage() {
         AI coaching settings are managed in the Coach application.
       </p>
 
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
         <div className="px-6 py-6">
           <a
             href={coachUrl}

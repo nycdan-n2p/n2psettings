@@ -12,12 +12,42 @@
   --card-border: #dadce0;
   --table-header: #f8f9fa;
   --accent: #1a73e8;
+  --control-height: 38px;
+  --control-radius: 12px;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
   font-family: "Google Sans", Roboto, Arial, sans-serif;
+}
+
+/* Global scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 9999px;
+}
+
+html,
+body,
+*,
+*::before,
+*::after {
+  font-family: "Google Sans", Roboto, Arial, sans-serif !important;
 }
 
 @keyframes welcomeFade {
@@ -34,5 +64,257 @@ body {
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+}
+
+@layer components {
+  .n2p-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .n2p-table thead th {
+    padding: 12px 20px !important;
+    text-align: left;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    color: #374151 !important;
+    background: #f8f9fa !important;
+    border: none !important;
+  }
+
+  .n2p-table thead th:first-child {
+    border-top-left-radius: var(--control-radius);
+  border-bottom-left-radius: var(--control-radius);
+  }
+
+  .n2p-table thead th:last-child {
+    border-top-right-radius: var(--control-radius);
+  border-bottom-right-radius: var(--control-radius);
+  }
+
+  .n2p-table tbody td {
+    padding: 12px 20px !important;
+    font-size: 14px !important;
+    color: #111827 !important;
+    border: none !important;
+  }
+
+  .n2p-table tbody tr {
+    border: none !important;
+  }
+
+  .n2p-table tbody tr + tr td {
+    border-top: none !important;
+  }
+
+  .n2p-table tbody tr:hover td {
+    background: #f8f9fa;
+  }
+
+  .n2p-table tbody tr:hover td:first-child {
+    border-top-left-radius: var(--control-radius);
+    border-bottom-left-radius: var(--control-radius);
+  }
+
+  .n2p-table tbody tr:hover td:last-child {
+    border-top-right-radius: var(--control-radius);
+    border-bottom-right-radius: var(--control-radius);
+  }
+}
+
+@layer base {
+  /* Hard-disable all-caps styling across the product */
+  * {
+    text-transform: none !important;
+    letter-spacing: normal !important;
+  }
+
+  /* Remove visual shadows globally (cards, controls, focus effects) */
+  *,
+  *::before,
+  *::after {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  [class*="uppercase"],
+  .uppercase {
+    text-transform: none !important;
+    letter-spacing: normal !important;
+  }
+
+  button:not([class*="border-b-2"]) {
+    height: var(--control-height) !important;
+    border-radius: var(--control-radius) !important;
+  }
+
+  /* Unified control style across product */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not(.topbar-search-input),
+  select {
+    height: var(--control-height) !important;
+    border: none !important;
+    border-radius: 12px !important;
+    background-color: #F6F6F9 !important;
+    box-shadow: none !important;
+    transition: background-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not(.topbar-search-input):hover,
+  select:hover {
+    background-color: #eeeff4 !important;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not(.topbar-search-input):focus,
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not(.topbar-search-input):focus-visible,
+  select:focus,
+  select:focus-visible {
+    outline: none !important;
+    background-color: #ffffff !important;
+    box-shadow: 0 0 0 1.5px #111827 !important;
+  }
+
+  /* Convert blue Tailwind button backgrounds to black globally */
+  button[class*="bg-[#1a73e8]"],
+  button[class*="bg-blue-500"],
+  button[class*="bg-blue-600"],
+  button[class*="bg-blue-700"] {
+    background-color: #000 !important;
+    color: #fff !important;
+  }
+
+  a[class*="bg-[#1a73e8]"],
+  a[class*="bg-blue-500"],
+  a[class*="bg-blue-600"],
+  a[class*="bg-blue-700"] {
+    background-color: #000 !important;
+    color: #fff !important;
+  }
+
+  button[class*="border-[#1a73e8]"],
+  button[class*="border-blue-500"],
+  button[class*="border-blue-600"],
+  button[class*="border-blue-700"] {
+    border-color: #000 !important;
+  }
+
+  a[class*="border-[#1a73e8]"],
+  a[class*="border-blue-500"],
+  a[class*="border-blue-600"],
+  a[class*="border-blue-700"] {
+    border-color: #000 !important;
+  }
+
+  /* Secondary outlined buttons -> filled neutral style */
+  button[class*="border"][class*="text-gray"]:not([class*="border-b-2"]) {
+    border: none !important;
+    background-color: #F6F6F9 !important;
+  }
+
+  button[class*="text-[#1a73e8]"]:not([class*="border-b-2"]):not([class*="bg-white"]) {
+    border: none !important;
+    background-color: #F6F6F9 !important;
+    color: #374151 !important;
+  }
+
+  a[class*="text-[#1a73e8]"][class*="border"]:not([class*="border-b-2"]) {
+    border: none !important;
+    background-color: #F6F6F9 !important;
+    color: #374151 !important;
+  }
+
+  button[class*="border"][class*="text-gray"]:not([class*="border-b-2"]):hover {
+    background-color: #eeeff4 !important;
+  }
+
+  button[class*="hover:bg-[#1557b0]"]:hover,
+  button[class*="hover:bg-blue-600"]:hover,
+  button[class*="hover:bg-blue-700"]:hover,
+  button[class*="hover:bg-blue-800"]:hover {
+    background-color: #111827 !important;
+  }
+
+  a[class*="hover:bg-[#1557b0]"]:hover,
+  a[class*="hover:bg-blue-600"]:hover,
+  a[class*="hover:bg-blue-700"]:hover,
+  a[class*="hover:bg-blue-800"]:hover {
+    background-color: #111827 !important;
+  }
+
+  button[class*="hover:bg-[#e8f0fe]"]:hover,
+  button[class*="hover:bg-[#d2e3fc]"]:hover {
+    background-color: #eeeff4 !important;
+  }
+
+  /* File picker button often styled as blue in utility classes */
+  input[type="file"]::file-selector-button {
+    background-color: #000 !important;
+    color: #fff !important;
+  }
+
+  /* Remove default blue focus ring from buttons */
+  button:focus,
+  button:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Icon-only hover controls: square with button radius */
+  button:has(> svg:only-child):not([class*="px-"]):not([class*="hidden"]),
+  a:has(> svg:only-child):not([class*="px-"]):not([class*="hidden"]) {
+    width: var(--control-height) !important;
+    height: var(--control-height) !important;
+    aspect-ratio: 1 / 1;
+    padding: 0 !important;
+    border-radius: var(--control-radius) !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Keep topbar search integrated in its shell */
+  .topbar-search-shell {
+    height: var(--control-height);
+  }
+
+  .topbar-search-input {
+    height: 100% !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .topbar-search-input:hover,
+  .topbar-search-input:focus,
+  .topbar-search-input:focus-visible {
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+
+  /* DataTable search: draw focus ring inside so it won't be clipped by wrappers */
+  .n2p-table-search-input:focus,
+  .n2p-table-search-input:focus-visible {
+    outline: none !important;
+    background-color: #ffffff !important;
+    box-shadow: inset 0 0 0 1.5px #111827 !important;
+  }
+
+  /* White tiles/cards should not have borders anywhere (except table wrappers) */
+  [class*="bg-white"][class*="border"]:not(:has(table)):not(:has(.n2p-table)) {
+    border: none !important;
+    background-color: #F6F6F9 !important;
+  }
+
+  /* All white rounded container cards/panels should be gray-filled (except table wrappers) */
+  div[class*="bg-white"][class*="rounded"]:not(:has(table)):not(:has(.n2p-table)),
+  section[class*="bg-white"][class*="rounded"]:not(:has(table)):not(:has(.n2p-table)),
+  article[class*="bg-white"][class*="rounded"]:not(:has(table)):not(:has(.n2p-table)),
+  aside[class*="bg-white"][class*="rounded"]:not(:has(table)):not(:has(.n2p-table)) {
+    background-color: #F6F6F9 !important;
   }
 }

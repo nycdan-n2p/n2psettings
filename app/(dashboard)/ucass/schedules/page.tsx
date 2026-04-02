@@ -21,6 +21,7 @@ import { fetchPublicHolidays, type PublicHoliday } from "@/lib/api/holidays";
 import { HOLIDAY_REGIONS, REGION_GROUPS, type HolidayRegion } from "@/data/holiday-regions";
 import { Modal } from "@/components/settings/Modal";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
+import { Button } from "@/components/ui/Button";
 import {
   Plus, Pencil, Trash2, Search, Calendar, Clock,
   ChevronDown, X, Globe, ChevronRight, ChevronLeft,
@@ -198,7 +199,7 @@ function UsedByBadge({ schedule }: { schedule: Schedule }) {
             left: pos.left,
             zIndex: 9999,
           }}
-          className="w-64 bg-white rounded-xl shadow-xl border border-[#dadce0] overflow-hidden"
+          className="w-64 bg-white rounded-[16px] shadow-xl border border-[#dadce0] overflow-hidden"
         >
           <div className="flex items-center justify-between px-3 py-2 border-b border-[#f1f3f4] bg-[#f8f9fa]">
             <span className="text-xs font-semibold text-gray-600">
@@ -1092,18 +1093,20 @@ export default function SchedulesPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button
+          <Button
             onClick={() => setHolidayModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 border border-[#1a73e8] text-[#1a73e8] text-sm font-medium rounded-md hover:bg-[#e8f0fe] transition-colors"
+            variant="secondary"
+            icon={<Globe className="w-4 h-4" />}
           >
-            <Globe className="w-4 h-4" /> Add Holiday Schedule
-          </button>
-          <button
+            Add Holiday Schedule
+          </Button>
+          <Button
             onClick={() => { setEditing(null); setModalOpen(true); }}
-            className="flex items-center gap-2 px-4 py-2 bg-[#1a73e8] text-white text-sm font-medium rounded-md hover:bg-[#1557b0] transition-colors"
+            variant="primary"
+            icon={<Plus className="w-4 h-4" />}
           >
-            <Plus className="w-4 h-4" /> Add Schedule
-          </button>
+            Add Schedule
+          </Button>
         </div>
       </div>
 
@@ -1125,111 +1128,120 @@ export default function SchedulesPage() {
       </div>
 
       {/* Table */}
-      <div className="border border-[#dadce0] rounded-lg overflow-hidden">
-        <div className="grid grid-cols-[2fr_3fr_100px_160px_88px_80px] gap-4 px-5 py-2.5 bg-[#f8f9fa] border-b border-[#dadce0] text-xs font-semibold text-gray-400 uppercase tracking-wide">
-          <span>Name</span>
-          <span>Days / Time</span>
-          <span>Timezone</span>
-          <span>Added By</span>
-          <span>Used By</span>
-          <span />
-        </div>
-
-        {isLoading ? (
-          <div className="py-16 flex justify-center">
-            <Loader variant="inline" label="Loading schedules…" />
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="py-16 flex flex-col items-center gap-3 text-gray-400">
-            <Calendar className="w-10 h-10 text-gray-300" />
-            <p className="text-sm font-medium text-gray-500">
-              {search ? "No schedules match your search" : "No schedules found"}
-            </p>
-          </div>
-        ) : (
-          <div className="divide-y divide-[#f1f3f4]">
-            {filtered.map((s) => {
-              const rules = s.rules ?? [];
-              const creator = s.createdBy;
-              const creatorName = creator?.name ?? "System Admin";
-              const avatarUrl = creator?.avatars?.find((a) => a.size === "120")?.url;
-
-              return (
-                <div
-                  key={s.id}
-                  className="group grid grid-cols-[2fr_3fr_100px_160px_88px_80px] gap-4 items-center px-5 py-3.5 hover:bg-[#f8f9fa] transition-colors"
-                >
-                  {/* Name */}
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-[#e8f0fe] flex items-center justify-center shrink-0">
-                      <Calendar className="w-4 h-4 text-[#1a73e8]" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{s.name}</p>
-                      <TypeBadge type={s.type} />
-                    </div>
+      <div className="rounded-3xl overflow-x-auto bg-white">
+        <table className="n2p-table w-full min-w-[980px]">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Days / Time</th>
+              <th>Timezone</th>
+              <th>Added By</th>
+              <th>Used By</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading ? (
+              <tr>
+                <td colSpan={6}>
+                  <div className="py-16 flex justify-center">
+                    <Loader variant="inline" label="Loading schedules…" />
                   </div>
+                </td>
+              </tr>
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td colSpan={6}>
+                  <div className="py-16 flex flex-col items-center gap-3 text-gray-400">
+                    <Calendar className="w-10 h-10 text-gray-300" />
+                    <p className="text-sm font-medium text-gray-500">
+                      {search ? "No schedules match your search" : "No schedules found"}
+                    </p>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              filtered.map((s) => {
+                const rules = s.rules ?? [];
+                const creator = s.createdBy;
+                const creatorName = creator?.name ?? "System Admin";
+                const avatarUrl = creator?.avatars?.find((a) => a.size === "120")?.url;
 
-                  {/* Days/Time */}
-                  <div className="min-w-0">
-                    {s.type === "24/7" ? (
-                      <span className="flex items-center gap-1.5 text-sm text-gray-500">
-                        <Clock className="w-3.5 h-3.5 text-gray-400" /> All hours, every day
-                      </span>
-                    ) : rules.length === 0 ? (
-                      <span className="text-sm text-gray-400">—</span>
-                    ) : (
-                      <div className="space-y-2">
-                        {rules.slice(0, 2).map((r, i) => {
-                          const summary = formatRuleSummary(r, formatDate);
-                          return (
-                            <div key={i} className="rounded-lg bg-[#f8f9fa] px-3 py-2 border border-[#eef1f4]">
-                              <p className="text-sm font-medium text-gray-800 truncate">{summary.label}</p>
-                              <p className="text-xs text-gray-500 mt-0.5 truncate">{summary.detail}</p>
-                            </div>
-                          );
-                        })}
-                        {rules.length > 2 && (
-                          <p className="text-xs text-gray-400">+{rules.length - 2} more</p>
+                return (
+                  <tr key={s.id} className="group">
+                    <td>
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-[#e8f0fe] flex items-center justify-center shrink-0">
+                          <Calendar className="w-4 h-4 text-[#1a73e8]" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">{s.name}</p>
+                          <TypeBadge type={s.type} />
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="min-w-0">
+                        {s.type === "24/7" ? (
+                          <span className="flex items-center gap-1.5 text-sm text-gray-500">
+                            <Clock className="w-3.5 h-3.5 text-gray-400" /> All hours, every day
+                          </span>
+                        ) : rules.length === 0 ? (
+                          <span className="text-sm text-gray-400">—</span>
+                        ) : (
+                          <div className="space-y-2">
+                            {rules.slice(0, 2).map((r, i) => {
+                              const summary = formatRuleSummary(r, formatDate);
+                              return (
+                                <div key={i} className="rounded-lg bg-[#f8f9fa] px-3 py-2 border border-[#eef1f4]">
+                                  <p className="text-sm font-medium text-gray-800 truncate">{summary.label}</p>
+                                  <p className="text-xs text-gray-500 mt-0.5 truncate">{summary.detail}</p>
+                                </div>
+                              );
+                            })}
+                            {rules.length > 2 && (
+                              <p className="text-xs text-gray-400">+{rules.length - 2} more</p>
+                            )}
+                          </div>
                         )}
                       </div>
-                    )}
-                  </div>
-
-                  {/* Timezone */}
-                  <span className="text-sm text-gray-600 font-mono">{s.timezone ?? "—"}</span>
-
-                  {/* Added By */}
-                  <div className="flex items-center gap-2 min-w-0">
-                    <CreatorAvatar name={creatorName} avatarUrl={avatarUrl} />
-                    <span className="text-sm text-gray-700 truncate">{creatorName}</span>
-                  </div>
-
-                  {/* Used By */}
-                  <UsedByBadge schedule={s} />
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
-                    <button
-                      onClick={() => { setEditing(s); setModalOpen(true); }}
-                      className="p-1.5 rounded-md text-gray-400 hover:text-[#1a73e8] hover:bg-[#e8f0fe] transition-colors"
-                      title="Edit"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => setDeleteTarget(s)}
-                      className="p-1.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                    </td>
+                    <td>
+                      <span className="text-sm text-gray-600 font-mono">{s.timezone ?? "—"}</span>
+                    </td>
+                    <td>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <CreatorAvatar name={creatorName} avatarUrl={avatarUrl} />
+                        <span className="text-sm text-gray-700 truncate">{creatorName}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <UsedByBadge schedule={s} />
+                    </td>
+                    <td>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
+                        <button
+                          onClick={() => { setEditing(s); setModalOpen(true); }}
+                          className="p-1.5 rounded-md text-gray-400 hover:text-[#1a73e8] hover:bg-[#e8f0fe] transition-colors"
+                          title="Edit"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setDeleteTarget(s)}
+                          className="p-1.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
       </div>
 
       <ScheduleModal

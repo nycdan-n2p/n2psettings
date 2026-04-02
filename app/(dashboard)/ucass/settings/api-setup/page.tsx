@@ -121,7 +121,7 @@ export default function ApiSetupPage() {
 
       {/* One-time key reveal banner */}
       {justCreated && (
-        <div className="mb-6 bg-green-50 border border-green-300 rounded-xl p-5">
+        <div className="mb-6 bg-green-50 border border-green-300 rounded-[16px] p-5">
           <div className="flex items-start gap-3 mb-3">
             <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
             <div>
@@ -153,7 +153,7 @@ export default function ApiSetupPage() {
       )}
 
       {/* Create new key */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+      <div className="bg-white rounded-[16px] border border-gray-200 p-5 mb-6">
         <h2 className="text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
           <Plus className="w-4 h-4 text-gray-400" />
           Create New API Key
@@ -234,7 +234,7 @@ export default function ApiSetupPage() {
       ) : keys.length === 0 ? (
         <p className="text-sm text-gray-400 py-4">No API keys yet. Create one above.</p>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+        <div className="bg-white rounded-[16px] border border-gray-200 divide-y divide-gray-100">
           {keys.map((k) => (
             <div key={k.id} className="flex items-start gap-4 px-5 py-4">
               <Key className="w-4 h-4 text-gray-300 shrink-0 mt-0.5" />
@@ -272,7 +272,7 @@ export default function ApiSetupPage() {
       {/* Delete confirmation */}
       {deleteTarget && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6">
+          <div className="bg-white rounded-[16px] shadow-xl max-w-sm w-full p-6">
             <div className="flex items-start gap-3 mb-4">
               <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
               <div>

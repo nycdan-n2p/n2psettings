@@ -22,7 +22,7 @@ function TrustCard({
   return (
     <div
       id={id}
-      className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-6"
+      className="bg-white rounded-3xl shadow-sm p-6 mb-6"
     >
       <h2 className="text-lg font-medium text-gray-900 mb-2">{title}</h2>
       {description && (

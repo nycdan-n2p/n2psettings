@@ -67,7 +67,7 @@ function FeatureUpsellPage({ info }: { info: FeatureMarketingInfo }) {
   return (
     <div className="max-w-2xl">
       {/* Hero card */}
-      <div className={`rounded-2xl border border-gray-200 overflow-hidden mb-6`}>
+      <div className={`rounded-[20px] border border-gray-200 overflow-hidden mb-6`}>
         {/* Gradient header strip */}
         <div
           className="h-2 w-full"
@@ -76,7 +76,7 @@ function FeatureUpsellPage({ info }: { info: FeatureMarketingInfo }) {
 
         <div className={`${BG[color]} px-8 py-8`}>
           <div className="flex items-start gap-5">
-            <div className={`w-14 h-14 rounded-2xl ${ICON_BG[color]} flex items-center justify-center shrink-0`}>
+            <div className={`w-14 h-14 rounded-[20px] ${ICON_BG[color]} flex items-center justify-center shrink-0`}>
               <Icon className={`w-7 h-7 ${ICON_TEXT[color]}`} />
             </div>
             <div className="flex-1 min-w-0">
@@ -94,7 +94,7 @@ function FeatureUpsellPage({ info }: { info: FeatureMarketingInfo }) {
       </div>
 
       {/* Description + benefits */}
-      <div className="bg-white rounded-2xl border border-gray-200 px-8 py-7 mb-6">
+      <div className="bg-white rounded-[20px] border border-gray-200 px-8 py-7 mb-6">
         <p className="text-sm text-gray-600 leading-relaxed mb-6">{info.description}</p>
 
         <h2 className="text-sm font-semibold text-gray-800 mb-4">What&apos;s included:</h2>
@@ -109,7 +109,7 @@ function FeatureUpsellPage({ info }: { info: FeatureMarketingInfo }) {
       </div>
 
       {/* Plan + CTA */}
-      <div className="bg-white rounded-2xl border border-gray-200 px-8 py-6">
+      <div className="bg-white rounded-[20px] border border-gray-200 px-8 py-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <p className="text-xs text-gray-500 mb-0.5">Available as</p>

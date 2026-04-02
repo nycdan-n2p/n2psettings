@@ -29,7 +29,7 @@ export default function CoachProductPage() {
         {t("coachSubtitle")}
       </p>
 
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
           <h2 className="text-lg font-medium text-gray-900">Coach Settings</h2>
         </div>

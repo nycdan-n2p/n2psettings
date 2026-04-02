@@ -21,9 +21,9 @@ export default function OnboardingPage() {
         <p className="text-gray-500 text-sm leading-relaxed">{t("subtitle")}</p>
       </div>
 
-      <div className="bg-white border border-[#dadce0] rounded-2xl p-6 mb-4 shadow-sm">
+      <div className="bg-white border border-[#dadce0] rounded-[20px] p-6 mb-4 shadow-sm">
         <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-xl bg-[#1a73e8] flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-[16px] bg-[#1a73e8] flex items-center justify-center shrink-0">
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div className="flex-1">
@@ -48,9 +48,9 @@ export default function OnboardingPage() {
         </div>
       </div>
 
-      <div className="bg-[#f8f9fa] border border-[#e8eaed] rounded-2xl p-5">
+      <div className="bg-[#f8f9fa] border border-[#e8eaed] rounded-[20px] p-5">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-white border border-[#e8eaed] flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-[16px] bg-white border border-[#e8eaed] flex items-center justify-center shrink-0">
             <MessageCircle className="w-4 h-4 text-gray-600" />
           </div>
           <div className="flex-1">

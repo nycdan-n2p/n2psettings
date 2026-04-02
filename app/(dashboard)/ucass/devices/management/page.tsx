@@ -5,6 +5,7 @@ import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useApp } from "@/contexts/AppContext";
 import { Loader } from "@/components/ui/Loader";
+import { SegmentedTabs } from "@/components/ui/SegmentedTabs";
 import {
   fetchDeviceTemplates,
   type DeviceTemplate,
@@ -308,31 +309,26 @@ export default function DeviceManagementPage() {
       </div>
 
       {/* ── Tabs ─────────────────────────────────────────────────────────── */}
-      <div className="flex gap-1 border-b border-[#dadce0] mb-4">
-        {(["company", "personal"] as const).map((tab) => {
-          const count = tab === "company" ? companyTemplates.length : personalTemplates.length;
-          const label = tab === "company" ? t("tabCompany") : t("tabPersonal");
-          return (
-            <button
-              key={tab}
-              onClick={() => handleTabChange(tab)}
-              className={`px-4 py-2.5 text-sm font-medium transition-colors relative ${
-                activeTab === tab
-                  ? "text-[#1a73e8] border-b-2 border-[#1a73e8] -mb-px"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-[#f1f3f4] rounded-t-md"
-              }`}
-            >
-              {label}
-              <span className={`ml-2 text-xs rounded-full px-1.5 py-0.5 ${
-                activeTab === tab
-                  ? "bg-[#e8f0fe] text-[#1a73e8]"
-                  : "bg-[#f1f3f4] text-gray-500"
-              }`}>
-                {isLoading ? "…" : count}
-              </span>
-            </button>
-          );
-        })}
+      <div className="mb-4">
+        <SegmentedTabs
+          value={activeTab}
+          onChange={handleTabChange}
+          options={(["company", "personal"] as const).map((tab) => {
+            const count = tab === "company" ? companyTemplates.length : personalTemplates.length;
+            const label = tab === "company" ? t("tabCompany") : t("tabPersonal");
+            return {
+              value: tab,
+              label: (
+                <span className="inline-flex items-center gap-2">
+                  {label}
+                  <span className="text-xs rounded-full px-1.5 py-0.5 bg-[rgba(167,167,190,0.2)] text-gray-700">
+                    {isLoading ? "…" : count}
+                  </span>
+                </span>
+              ),
+            };
+          })}
+        />
       </div>
 
       {isLoading ? (

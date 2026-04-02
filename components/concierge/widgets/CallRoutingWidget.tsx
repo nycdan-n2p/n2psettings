@@ -321,7 +321,7 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
             {routingOptions.map(({ value, labelKey, descKey }) => (
               <button key={value} onClick={() => handleRoutingChoice(value)}
                 role="radio" aria-checked={routingChoice === value}
-                className={`w-full flex items-start gap-3 p-3 rounded-xl border text-left transition-all ${
+                className={`w-full flex items-start gap-3 p-3 rounded-[16px] border text-left transition-all ${
                   routingChoice === value ? "border-[#1a73e8] bg-[#e8f0fe]" : "border-[#dadce0] bg-white hover:bg-[#f8f9fa]"
                 }`}>
                 <div className={`w-4 h-4 rounded-full border-2 mt-0.5 shrink-0 flex items-center justify-center ${
@@ -343,13 +343,13 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
             </p>
           )}
           {routingChoice === "call_queues" && eligible === false && !checking && (
-            <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800" role="alert">
+            <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-[16px] text-xs text-amber-800" role="alert">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
               <p>{t("routing.licenseNotEligible")}</p>
             </div>
           )}
           {routingChoice === "call_queues" && eligible === true && !checking && (
-            <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-xl text-xs text-green-800" role="status">
+            <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-[16px] text-xs text-green-800" role="status">
               <ShieldCheck className="w-4 h-4 shrink-0" aria-hidden="true" />
               <p>{t("routing.licenseOk")}</p>
             </div>
@@ -381,7 +381,7 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
               {tiered && (
                 <div className="space-y-2">
                   {tiers.map((tier, ti) => (
-                    <div key={ti} className="p-3 bg-white border border-[#e8eaed] rounded-xl space-y-2">
+                    <div key={ti} className="p-3 bg-white border border-[#e8eaed] rounded-[16px] space-y-2">
                       <div className="flex items-center justify-between">
                         <p className="text-xs font-semibold text-gray-600">{t("routing.tier", { n: ti + 1 })}</p>
                         {tiers.length > 1 && (
@@ -456,7 +456,7 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
               ]).map(({ value, label }) => (
                 <button key={value} onClick={() => setScheduleType(value)}
                   aria-pressed={scheduleType === value}
-                  className={`w-full flex items-start gap-3 p-3 rounded-xl border text-left transition-all ${
+                  className={`w-full flex items-start gap-3 p-3 rounded-[16px] border text-left transition-all ${
                     scheduleType === value ? "border-[#1a73e8] bg-[#e8f0fe]" : "border-[#dadce0] bg-white hover:bg-[#f8f9fa]"
                   }`}>
                   <div className={`w-4 h-4 rounded-full border-2 mt-0.5 shrink-0 flex items-center justify-center ${
@@ -469,7 +469,7 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
               ))}
             </div>
             {scheduleType === "custom" && (
-              <div className="mt-3 p-3 bg-white border border-[#e8eaed] rounded-xl space-y-2">
+              <div className="mt-3 p-3 bg-white border border-[#e8eaed] rounded-[16px] space-y-2">
                 <div className="flex gap-1 flex-wrap">
                   {(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]).map((day, i) => (
                     <button key={day} onClick={() => setCustomDays((d) => d.includes(i) ? d.filter((x) => x !== i) : [...d, i].sort())}
@@ -523,7 +523,7 @@ export function CallRoutingWidget({ onMessages }: { onMessages: (msgs: string[])
           {afterOptions.map(({ value, labelKey }) => (
             <button key={value} onClick={() => setAfterAction(value)}
               role="radio" aria-checked={afterAction === value}
-              className={`w-full flex items-start gap-3 p-3 rounded-xl border text-left transition-all ${
+              className={`w-full flex items-start gap-3 p-3 rounded-[16px] border text-left transition-all ${
                 afterAction === value ? "border-[#1a73e8] bg-[#e8f0fe]" : "border-[#dadce0] bg-white hover:bg-[#f8f9fa]"
               }`}>
               <div className={`w-4 h-4 rounded-full border-2 mt-0.5 shrink-0 flex items-center justify-center ${
