@@ -61,12 +61,17 @@ async function exchangeRefreshToken(refreshToken: string): Promise<string | null
 }
 
 // ─── CORS headers (required for Claude connector UI) ──────────────────────────
+const BASE_URL = "https://n2psettings.vercel.app";
+
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
   "Access-Control-Allow-Headers":
     "Content-Type, Authorization, X-Account-Id, X-Sip-Client-Id, Mcp-Session-Id",
 };
+
+// WWW-Authenticate header tells OAuth clients where to find auth server metadata
+const WWW_AUTH = `Bearer realm="${BASE_URL}", resource_metadata="${BASE_URL}/.well-known/oauth-protected-resource"`;
 
 export async function OPTIONS() {
   return new Response(null, { status: 204, headers: CORS_HEADERS });
@@ -96,7 +101,7 @@ async function handleMCP(request: NextRequest): Promise<Response> {
     if (!exchanged) {
       return NextResponse.json(
         { error: "Failed to exchange refresh token. It may be expired or revoked." },
-        { status: 401, headers: CORS_HEADERS }
+        { status: 401, headers: { ...CORS_HEADERS, "WWW-Authenticate": WWW_AUTH } }
       );
     }
     token = exchanged;
@@ -104,8 +109,8 @@ async function handleMCP(request: NextRequest): Promise<Response> {
 
   if (!token) {
     return NextResponse.json(
-      { error: "Missing auth. Pass ?refreshToken= (recommended) or ?token= or Authorization: Bearer header." },
-      { status: 401, headers: CORS_HEADERS }
+      { error: "Unauthorized" },
+      { status: 401, headers: { ...CORS_HEADERS, "WWW-Authenticate": WWW_AUTH } }
     );
   }
 

@@ -1,0 +1,5 @@
+{
+  "resource": "https://n2psettings.vercel.app/api/mcp",
+  "authorization_servers": ["https://n2psettings.vercel.app"],
+  "bearer_methods_supported": ["header", "query"]
+}
