@@ -1,0 +1,706 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "Google Sans";
+  src:
+    local("Google Sans"),
+    local("GoogleSans-Regular"),
+    local("Google Sans Text"),
+    local("Product Sans");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Google Sans";
+  src:
+    local("Google Sans Medium"),
+    local("GoogleSans-Medium"),
+    local("Google Sans Text Medium"),
+    local("Product Sans Medium");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Google Sans";
+  src:
+    local("Google Sans Bold"),
+    local("GoogleSans-Bold"),
+    local("Google Sans Text Bold"),
+    local("Product Sans Bold");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --background: #f8f9fa;
+  --foreground: #202124;
+  --top-bar-bg: #1a73e8;
+  --top-bar-text: #fff;
+  --sidebar-bg: #fff;
+  --sidebar-hover: #e8eaed;
+  --card-border: #dadce0;
+  --table-header: #f8f9fa;
+  --accent: #1a73e8;
+  --control-height: 38px;
+  --control-radius: 12px;
+  --panel-surface: #F9F9FB;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-google-sans), "Google Sans", "Product Sans", "Segoe UI", "Helvetica Neue", sans-serif;
+}
+
+/* Global scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 9999px;
+}
+
+html,
+body,
+*,
+*::before,
+*::after {
+  font-family: var(--font-google-sans), "Google Sans", "Product Sans", "Segoe UI", "Helvetica Neue", sans-serif !important;
+}
+
+@keyframes welcomeFade {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer components {
+  .n2p-table {
+    width: max-content;
+    min-width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .n2p-table thead th {
+    padding: 12px 20px !important;
+    text-align: left;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    color: #374151 !important;
+    background: #f8f9fa !important;
+    border: none !important;
+    white-space: nowrap !important;
+  }
+
+  .n2p-table thead th:first-child {
+    border-top-left-radius: var(--control-radius);
+  border-bottom-left-radius: var(--control-radius);
+  }
+
+  .n2p-table thead th:last-child {
+    border-top-right-radius: var(--control-radius);
+  border-bottom-right-radius: var(--control-radius);
+  }
+
+  .n2p-table tbody td {
+    padding: 12px 20px !important;
+    font-size: 14px !important;
+    color: #111827 !important;
+    border: none !important;
+    white-space: nowrap !important;
+  }
+
+  .n2p-table tbody tr {
+    border: none !important;
+  }
+
+  .n2p-table tbody tr + tr td {
+    border-top: none !important;
+  }
+
+  .n2p-table tbody tr:hover td {
+    background: #f8f9fa;
+  }
+
+  .n2p-table tbody tr:hover td:first-child {
+    border-top-left-radius: var(--control-radius);
+    border-bottom-left-radius: var(--control-radius);
+  }
+
+  .n2p-table tbody tr:hover td:last-child {
+    border-top-right-radius: var(--control-radius);
+    border-bottom-right-radius: var(--control-radius);
+  }
+}
+
+@layer base {
+  /* Keep modal surfaces truly white despite global card recolor rules */
+  .modal-surface {
+    background-color: #ffffff !important;
+  }
+
+  /* Hard-disable all-caps styling across the product */
+  * {
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    font-style: normal !important;
+  }
+
+  /* Remove visual shadows globally (cards, controls, focus effects) */
+  *,
+  *::before,
+  *::after {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  [class*="uppercase"],
+  .uppercase {
+    text-transform: none !important;
+    letter-spacing: normal !important;
+  }
+
+  /* Secondary helper text: use 14px instead of 12px globally */
+  .text-xs.text-gray-400,
+  .text-xs.text-gray-500,
+  .text-xs.text-gray-600,
+  p.text-xs,
+  span.text-xs {
+    font-size: 14px !important;
+    line-height: 20px !important;
+  }
+
+  /* Keep selected sidebar labels at original 14px */
+  .n2p-sidebar .text-sm.font-medium {
+    font-size: 14px !important;
+    line-height: 20px !important;
+  }
+
+  .n2p-sidebar .text-xs.text-gray-400,
+  .n2p-sidebar .text-xs.text-gray-500,
+  .n2p-sidebar .text-xs.text-gray-600 {
+    font-size: 12px !important;
+    line-height: 16px !important;
+  }
+
+  button:not([class*="border-b-2"]):not([role="switch"]):not([aria-checked]) {
+    height: var(--control-height) !important;
+    border-radius: var(--control-radius) !important;
+  }
+
+  /* All switch controls must be 24px high */
+  button[role="switch"] {
+    height: 24px !important;
+    min-height: 24px !important;
+    max-height: 24px !important;
+  }
+
+  /* Unified control style across product */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not(.topbar-search-input),
+  select {
+    height: var(--control-height) !important;
+    border: none !important;
+    border-radius: 12px !important;
+    background-color: #F9F9FB !important;
+    box-shadow: none !important;
+    transition: background-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
+  }
+
+  select {
+    padding-right: 3.25rem !important;
+    background-position: right 12px center !important;
+  }
+
+  textarea {
+    border: none !important;
+    border-radius: 12px !important;
+    background-color: #F9F9FB !important;
+    box-shadow: none !important;
+    transition: background-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
+  }
+
+  /* Optional: white controls only inside explicit white-control zones */
+  .n2p-white-controls input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not(.topbar-search-input),
+  .n2p-white-controls select,
+  .n2p-white-controls textarea {
+    background-color: #ffffff !important;
+  }
+
+  /* Native audio controls aligned with input geometry */
+  audio.n2p-audio-player {
+    height: var(--control-height) !important;
+    border-radius: var(--control-radius) !important;
+    overflow: hidden;
+    display: block;
+  }
+
+  audio.n2p-audio-player::-webkit-media-controls-enclosure,
+  audio.n2p-audio-player::-webkit-media-controls-panel {
+    height: var(--control-height) !important;
+    border-radius: var(--control-radius) !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Lighten the unplayed timeline appearance */
+  audio.n2p-audio-player::-webkit-media-controls-timeline {
+    filter: brightness(1.5) !important;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not(.topbar-search-input):hover,
+  select:hover,
+  textarea:hover {
+    background-color: #eeeff4 !important;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not(.topbar-search-input):focus,
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not(.topbar-search-input):focus-visible,
+  select:focus,
+  select:focus-visible,
+  textarea:focus,
+  textarea:focus-visible {
+    outline: none !important;
+    background-color: #ffffff !important;
+    /* Draw ring inside to avoid clipping in scroll/overflow containers */
+    box-shadow: inset 0 0 0 1.5px #111827 !important;
+  }
+
+  /* Unified checkbox style */
+  input[type="checkbox"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px !important;
+    height: 20px !important;
+    border-radius: 8px !important;
+    border: 2px solid #c6c8d8 !important;
+    background-color: #f9f9fb !important;
+    display: inline-grid;
+    place-content: center;
+    vertical-align: middle;
+    cursor: pointer;
+    transition: background-color 160ms ease, border-color 160ms ease, opacity 160ms ease;
+  }
+
+  input[type="checkbox"]::before {
+    content: "";
+    width: 8px;
+    height: 5px;
+    border-left: 2.5px solid #f3f4f6;
+    border-bottom: 2.5px solid #f3f4f6;
+    transform: rotate(-45deg) scale(0);
+    transform-origin: center;
+    transition: transform 140ms ease;
+    margin-top: -0.12rem;
+  }
+
+  input[type="checkbox"]:checked {
+    background-color: #11131a !important;
+    border-color: #11131a !important;
+  }
+
+  input[type="checkbox"]:checked::before {
+    transform: rotate(-45deg) scale(1);
+  }
+
+  input[type="checkbox"]:indeterminate {
+    background-color: #11131a !important;
+    border-color: #11131a !important;
+  }
+
+  input[type="checkbox"]:indeterminate::before {
+    width: 8px;
+    height: 0;
+    border-left: 0;
+    border-bottom: 2.5px solid #f3f4f6;
+    transform: scale(1);
+    margin-top: 0;
+  }
+
+  input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+    background-color: #ededf3 !important;
+    border-color: #e3e5ee !important;
+    opacity: 1;
+  }
+
+  input[type="checkbox"]:disabled::before {
+    border-left-color: #f7f8fb;
+    border-bottom-color: #f7f8fb;
+  }
+
+  /* Unified radio style */
+  input[type="radio"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px !important;
+    height: 20px !important;
+    border-radius: 9999px !important;
+    border: 2px solid #bfc2d4 !important;
+    background-color: #f9f9fb !important;
+    display: inline-grid;
+    place-content: center;
+    vertical-align: middle;
+    cursor: pointer;
+    transition: background-color 160ms ease, border-color 160ms ease, opacity 160ms ease;
+  }
+
+  input[type="radio"]::before {
+    content: "";
+    width: 10px;
+    height: 10px;
+    border-radius: 9999px;
+    background-color: #2b2e3a;
+    transform: scale(0);
+    transition: transform 140ms ease;
+  }
+
+  input[type="radio"]:checked {
+    border-color: #2b2e3a !important;
+    background-color: #ffffff !important;
+  }
+
+  input[type="radio"]:checked::before {
+    transform: scale(1);
+  }
+
+  input[type="radio"]:disabled {
+    cursor: not-allowed;
+    border-color: #e3e5ee !important;
+    background-color: #f1f2f7 !important;
+    opacity: 1;
+  }
+
+  input[type="radio"]:disabled::before {
+    background-color: #b4b7c9;
+  }
+
+  input[type="radio"]:disabled:not(:checked)::before {
+    transform: scale(0);
+  }
+
+  /* Convert blue Tailwind button backgrounds to black globally */
+  button[class*="bg-[#1a73e8]"],
+  button[class*="bg-blue-500"],
+  button[class*="bg-blue-600"],
+  button[class*="bg-blue-700"] {
+    background-color: #000 !important;
+    color: #fff !important;
+  }
+
+  a[class*="bg-[#1a73e8]"],
+  a[class*="bg-blue-500"],
+  a[class*="bg-blue-600"],
+  a[class*="bg-blue-700"] {
+    background-color: #000 !important;
+    color: #fff !important;
+  }
+
+  button[class*="border-[#1a73e8]"],
+  button[class*="border-blue-500"],
+  button[class*="border-blue-600"],
+  button[class*="border-blue-700"] {
+    border-color: #000 !important;
+  }
+
+  a[class*="border-[#1a73e8]"],
+  a[class*="border-blue-500"],
+  a[class*="border-blue-600"],
+  a[class*="border-blue-700"] {
+    border-color: #000 !important;
+  }
+
+  /* Secondary outlined buttons -> filled neutral style */
+  button[class*="border"][class*="text-gray"]:not([class*="border-b-2"]) {
+    border: none !important;
+    background-color: #F9F9FB !important;
+  }
+
+  button[class*="text-[#1a73e8]"]:not([class*="border-b-2"]):not([class*="bg-white"]) {
+    border: none !important;
+    background-color: #F9F9FB !important;
+    color: #374151 !important;
+  }
+
+  a[class*="text-[#1a73e8]"][class*="border"]:not([class*="border-b-2"]) {
+    border: none !important;
+    background-color: #F9F9FB !important;
+    color: #374151 !important;
+  }
+
+  button[class*="border"][class*="text-gray"]:not([class*="border-b-2"]):hover {
+    background-color: #eeeff4 !important;
+  }
+
+  button[class*="hover:bg-[#1557b0]"]:hover,
+  button[class*="hover:bg-blue-600"]:hover,
+  button[class*="hover:bg-blue-700"]:hover,
+  button[class*="hover:bg-blue-800"]:hover {
+    background-color: #111827 !important;
+  }
+
+  a[class*="hover:bg-[#1557b0]"]:hover,
+  a[class*="hover:bg-blue-600"]:hover,
+  a[class*="hover:bg-blue-700"]:hover,
+  a[class*="hover:bg-blue-800"]:hover {
+    background-color: #111827 !important;
+  }
+
+  button[class*="hover:bg-[#e8f0fe]"]:hover,
+  button[class*="hover:bg-[#d2e3fc]"]:hover {
+    background-color: #eeeff4 !important;
+  }
+
+  /* File picker button often styled as blue in utility classes */
+  input[type="file"]::file-selector-button {
+    background-color: #000 !important;
+    color: #fff !important;
+  }
+
+  /* Remove default blue focus ring from buttons */
+  button:focus,
+  button:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Icon-only hover controls: square with button radius */
+  button:has(> svg:only-child):not([class*="px-"]):not([class*="gap-"]):not([class*="hidden"]),
+  a:has(> svg:only-child):not([class*="px-"]):not([class*="gap-"]):not([class*="hidden"]) {
+    width: var(--control-height) !important;
+    height: var(--control-height) !important;
+    aspect-ratio: 1 / 1;
+    padding: 0 !important;
+    border-radius: var(--control-radius) !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Keep topbar search integrated in its shell */
+  .topbar-search-shell {
+    height: var(--control-height);
+  }
+
+  .topbar-search-input {
+    height: 100% !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .topbar-search-input:hover,
+  .topbar-search-input:focus,
+  .topbar-search-input:focus-visible {
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+
+  /* DataTable search: draw focus ring inside so it won't be clipped by wrappers */
+  .n2p-table-search-input:focus,
+  .n2p-table-search-input:focus-visible {
+    outline: none !important;
+    background-color: #ffffff !important;
+    box-shadow: inset 0 0 0 1.5px #111827 !important;
+  }
+
+  /* White tiles/cards should not have borders anywhere (except table wrappers) */
+  [class*="bg-white"][class*="border"]:not(.modal-surface):not(.modal-header):not(.modal-body):not(:has(table)):not(:has(.n2p-table)) {
+    border: none !important;
+    background-color: var(--panel-surface) !important;
+  }
+
+  /* Remove outlines for all rounded content panels (not tables/modals) */
+  div[class*="rounded"][class*="border"]:not(.modal-surface):not(.modal-header):not(.modal-body):not(:has(table)):not(:has(.n2p-table)),
+  section[class*="rounded"][class*="border"]:not(.modal-surface):not(.modal-header):not(.modal-body):not(:has(table)):not(:has(.n2p-table)),
+  article[class*="rounded"][class*="border"]:not(.modal-surface):not(.modal-header):not(.modal-body):not(:has(table)):not(:has(.n2p-table)),
+  aside[class*="rounded"][class*="border"]:not(.modal-surface):not(.modal-header):not(.modal-body):not(:has(table)):not(:has(.n2p-table)) {
+    border: none !important;
+  }
+
+  /* All white rounded container cards/panels should be gray-filled (except table wrappers) */
+  div[class*="bg-white"][class*="rounded"]:not(.modal-surface):not(.modal-header):not(.modal-body):not(:has(table)):not(:has(.n2p-table)),
+  section[class*="bg-white"][class*="rounded"]:not(.modal-surface):not(.modal-header):not(.modal-body):not(:has(table)):not(:has(.n2p-table)),
+  article[class*="bg-white"][class*="rounded"]:not(.modal-surface):not(.modal-header):not(.modal-body):not(:has(table)):not(:has(.n2p-table)),
+  aside[class*="bg-white"][class*="rounded"]:not(.modal-surface):not(.modal-header):not(.modal-body):not(:has(table)):not(:has(.n2p-table)) {
+    background-color: var(--panel-surface) !important;
+  }
+
+  /* Make panel headers match card fill color */
+  div[class*="bg-white"][class*="rounded"]:not(.modal-surface) [class*="bg-gray-50"],
+  section[class*="bg-white"][class*="rounded"]:not(.modal-surface) [class*="bg-gray-50"],
+  article[class*="bg-white"][class*="rounded"]:not(.modal-surface) [class*="bg-gray-50"],
+  aside[class*="bg-white"][class*="rounded"]:not(.modal-surface) [class*="bg-gray-50"] {
+    background-color: var(--panel-surface) !important;
+  }
+
+  /* Remove divider lines inside non-table cards/panels */
+  div[class*="bg-white"][class*="rounded"]:not(.modal-surface):not(:has(table)):not(:has(.n2p-table)) [class*="border-b"],
+  section[class*="bg-white"][class*="rounded"]:not(.modal-surface):not(:has(table)):not(:has(.n2p-table)) [class*="border-b"],
+  article[class*="bg-white"][class*="rounded"]:not(.modal-surface):not(:has(table)):not(:has(.n2p-table)) [class*="border-b"],
+  aside[class*="bg-white"][class*="rounded"]:not(.modal-surface):not(:has(table)):not(:has(.n2p-table)) [class*="border-b"] {
+    border-bottom-width: 0 !important;
+  }
+  div[class*="bg-white"][class*="rounded"]:not(.modal-surface):not(:has(table)):not(:has(.n2p-table)) [class*="border-t"],
+  section[class*="bg-white"][class*="rounded"]:not(.modal-surface):not(:has(table)):not(:has(.n2p-table)) [class*="border-t"],
+  article[class*="bg-white"][class*="rounded"]:not(.modal-surface):not(:has(table)):not(:has(.n2p-table)) [class*="border-t"],
+  aside[class*="bg-white"][class*="rounded"]:not(.modal-surface):not(:has(table)):not(:has(.n2p-table)) [class*="border-t"] {
+    border-top-width: 0 !important;
+  }
+  div[class*="bg-white"][class*="rounded"]:not(.modal-surface):not(:has(table)):not(:has(.n2p-table)) [class*="divide-y"] > :not([hidden]) ~ :not([hidden]),
+  section[class*="bg-white"][class*="rounded"]:not(.modal-surface):not(:has(table)):not(:has(.n2p-table)) [class*="divide-y"] > :not([hidden]) ~ :not([hidden]),
+  article[class*="bg-white"][class*="rounded"]:not(.modal-surface):not(:has(table)):not(:has(.n2p-table)) [class*="divide-y"] > :not([hidden]) ~ :not([hidden]),
+  aside[class*="bg-white"][class*="rounded"]:not(.modal-surface):not(:has(table)):not(:has(.n2p-table)) [class*="divide-y"] > :not([hidden]) ~ :not([hidden]) {
+    border-top-width: 0 !important;
+  }
+
+  /* Add clean separators between stacked page blocks */
+  main > div > div + div,
+  main > section + section,
+  main > article + article {
+    border-top: 1px solid #e5e7eb !important;
+    margin-top: 20px !important;
+    padding-top: 20px !important;
+  }
+
+  /* Also handle common wrapped layouts: blocks inside first container */
+  main > div > section + section,
+  main > div > article + article,
+  main > div > div + section,
+  main > div > section + div {
+    border-top: 1px solid #e5e7eb !important;
+    margin-top: 20px !important;
+    padding-top: 20px !important;
+  }
+
+  /* Apply dividers for common vertical stacks (Tailwind space-y containers) */
+  main > div > div[class*="space-y-"] > * + * {
+    border-top: 1px solid #e5e7eb !important;
+    margin-top: 20px !important;
+    padding-top: 20px !important;
+  }
+
+  /* Reusable explicit stack with separators */
+  .n2p-block-stack > * + * {
+    border-top: 1px solid #e5e7eb !important;
+    margin-top: 20px !important;
+    padding-top: 20px !important;
+  }
+
+  /* Fixed bottom action bar for page-level save blocks */
+  .n2p-page-actions {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    background-color: #ffffff !important;
+    border-top: 1px solid #e5e7eb;
+    padding: 20px 24px;
+  }
+
+  /* Preserve true white rounded cards for selected pages */
+  .n2p-keep-white {
+    background-color: #ffffff !important;
+    border-radius: 24px !important;
+    overflow: hidden;
+  }
+
+  /* Modal shell must stay pure white */
+  .modal-surface,
+  div.modal-surface[class*="bg-white"][class*="rounded"] {
+    background-color: #ffffff !important;
+    min-width: 700px !important;
+  }
+
+  @media (max-width: 740px) {
+    .modal-surface,
+    div.modal-surface[class*="bg-white"][class*="rounded"] {
+      min-width: calc(100vw - 2rem) !important;
+    }
+  }
+
+  /* Modal headers should always be white */
+  .modal-header,
+  .modal-header[class*="rounded"],
+  .modal-surface .modal-header {
+    background-color: #ffffff !important;
+    border-bottom: none !important;
+  }
+
+  /* Modal bodies should always be white */
+  .modal-body,
+  .modal-surface .modal-body,
+  .modal-surface > .modal-body {
+    background-color: #ffffff !important;
+  }
+
+  /* Remove top/bottom divider lines inside all modals */
+  .modal-surface [class*="border-b"] {
+    border-bottom-width: 0 !important;
+  }
+  .modal-surface [class*="border-t"] {
+    border-top-width: 0 !important;
+  }
+
+  /* Porting wizard action footer must stay pure white */
+  .n2p-porting-footer,
+  .modal-surface .n2p-porting-footer,
+  .modal-surface .n2p-page-actions {
+    background-color: #ffffff !important;
+    background-image: none !important;
+  }
+
+  /* Holiday modal footer must always be pure white */
+  .n2p-holiday-footer,
+  .modal-surface .n2p-holiday-footer {
+    background-color: #ffffff !important;
+    background-image: none !important;
+  }
+
+  /* Any bottom action bar inside modal must be pure white */
+  .modal-surface [class*="sticky"][class*="bottom-0"],
+  .modal-surface [class*="absolute"][class*="bottom-0"][class*="left-0"][class*="right-0"] {
+    background-color: #ffffff !important;
+    background-image: none !important;
+  }
+
+  /* Virtual assistant page save footer must always stay white */
+  .n2p-va-save-footer {
+    background-color: #ffffff !important;
+    background-image: none !important;
+  }
+}

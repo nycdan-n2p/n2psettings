@@ -1,0 +1,441 @@
+import Anthropic from "@anthropic-ai/sdk";
+import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit, getClientKey } from "@/lib/server/rate-limit";
+
+// ── Tool definitions ──────────────────────────────────────────────────────────
+
+const TOOLS: Anthropic.Tool[] = [
+  {
+    name: "advance_stage",
+    description:
+      "Move the onboarding flow to the next stage. Call this when you have collected everything needed for the current stage and are ready to proceed. Include a brief reason so the UI can acknowledge it.",
+    input_schema: {
+      type: "object",
+      properties: {
+        reason: {
+          type: "string",
+          description: "One-sentence explanation of why we are advancing (shown to user as confirmation).",
+        },
+      },
+      required: ["reason"],
+    },
+  },
+  {
+    name: "update_config",
+        description:
+            "Persist data collected in conversation to the onboarding config object. Call this whenever the user provides a name, website, confirms timezone, provides users, departments, etc. Patch only the fields that changed.",
+    input_schema: {
+      type: "object",
+      properties: {
+        patch: {
+          type: "object",
+          description:
+            "Partial OnboardingData object. Top-level keys: name, companyName, websiteUrl, scraped (location, timezone, hours, phones, address — address is E911/service location), holidays, portingQueue ({ skipped, numberIntent: port|new|skipped, numbers[], newNumberAreaCode, newNumberQuantity, newNumberOnePerTeamMember, provider fields, contact }), users (array of { firstName, lastName, email?, extension?, department? }), departments (string[]), assignmentsDone (boolean — set true after user-dept assignments are done), routingType (ring_groups|call_queues), licensingVerified, hasHardphones, phoneType (softphone|hardphone|both), welcomeMenu ({ enabled, greetingType: tts|upload|none, greetingText, menuOptions: [{ key, destinationType, destinationName }], allowExtensionDialing, playWaitMessage, allowBargingThrough, configured? }), routingConfig ({ groupName, scheduleType: 24_7|business_hours|custom, customSchedule?: { name, weekDays, start, end }, tiers: [{ userEmails, rings }], ringStrategy: ring_all|round_robin|longest_idle|linear|fewest_calls, maxWaitTime, maxCapacity }), afterHours ({ action: voicemail|greeting|forward, forwardNumber?, greetingText? }), cdrAnalysis (set analyzed/skipped/approvedRecommendation flags).",
+        },
+      },
+      required: ["patch"],
+    },
+  },
+  {
+    name: "research_website",
+    description:
+      "Analyze a company website URL and extract: city/location, timezone, business hours, phone numbers, and best-effort street address. Call this as soon as you have the website URL. The address must be confirmed with the user next stage (E911 — sites may list multiple locations).",
+    input_schema: {
+      type: "object",
+      properties: {
+        url: { type: "string", description: "Full URL of the company website." },
+      },
+      required: ["url"],
+    },
+  },
+  {
+    name: "check_licensing",
+    description:
+      "Verify whether the account has the license required for a given feature. Use when the user selects 'Call Queues' to confirm eligibility before advancing.",
+    input_schema: {
+      type: "object",
+      properties: {
+        feature: {
+          type: "string",
+          enum: ["call_queues", "ring_groups"],
+          description: "Feature to check.",
+        },
+      },
+      required: ["feature"],
+    },
+  },
+  {
+    name: "apply_configuration",
+    description:
+      "Submit the complete onboarding payload to apply all configuration: create users, departments, schedules, ring groups/call queues, and porting request. Call ONLY after the user explicitly confirms the final blueprint.",
+    input_schema: {
+      type: "object",
+      properties: {
+        confirm: {
+          type: "boolean",
+          description: "Must be true to proceed.",
+        },
+      },
+      required: ["confirm"],
+    },
+  },
+  {
+    name: "get_account_summary",
+    description: "Get the current account overview: total DIDs, available numbers, and max user seats.",
+    input_schema: { type: "object", properties: {}, required: [] },
+  },
+  {
+    name: "get_next_extension",
+    description: "Get the next available extension number for a new user.",
+    input_schema: { type: "object", properties: {}, required: [] },
+  },
+  {
+    name: "create_schedule",
+    description: "Create a business-hours schedule from the scraped or confirmed hours.",
+    input_schema: {
+      type: "object",
+      properties: {
+        name: { type: "string" },
+        timezone: { type: "string" },
+        rules: { type: "array", items: { type: "object" } },
+      },
+      required: ["name"],
+    },
+  },
+  {
+    name: "build_call_flow",
+    description: "Build the full call routing flow (schedule + ring group or call queue).",
+    input_schema: {
+      type: "object",
+      properties: {
+        mainNumber: { type: "string" },
+        workHours: { type: "object" },
+        afterHours: { type: "object" },
+        noAnswer: { type: "object" },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "search_support",
+    description: "Search net2phone support articles for product questions.",
+    input_schema: {
+      type: "object",
+      properties: {
+        query: { type: "string" },
+      },
+      required: ["query"],
+    },
+  },
+];
+
+// ── Dynamic system prompt ─────────────────────────────────────────────────────
+
+const LOCALE_LANG: Record<string, string> = {
+  en: "English",
+  es: "Spanish",
+  "fr-CA": "French (Canadian)",
+  "pt-BR": "Portuguese (Brazilian)",
+};
+
+function buildSystemPrompt(
+  stage: string,
+  config: Record<string, unknown>,
+  locale = "en"
+): string {
+  const stageGuide: Record<string, string> = {
+    welcome_scrape: `You are at the WELCOME stage. Your goal: learn the admin's name and company website URL.
+- Greet warmly and introduce yourself briefly.
+- Ask for their name AND company website in the same message.
+- The user may type "Name · URL" or just a URL — extract the URL from whatever they send.
+- As SOON as you have the URL, call research_website(url) immediately. Do NOT ask about timezone, location, or hours — scrape them.
+- If config already has scraped data (scraped.timezone or scraped.phones populated), skip scraping — just call advance_stage.
+- After research_website returns, call update_config({ name, websiteUrl, companyName, scraped: {location,timezone,hours,phones,address} }), then call advance_stage.
+- Note for next stage: scraped.address (if any) is a best guess — the user must confirm the physical service address for E911; many sites list multiple locations.`,
+
+    verification_holidays: `You are at the VERIFY & HOLIDAYS stage. You have already scraped the website.
+- IMPORTANT: If config.name is already set, do NOT ask for the name again. You already have it.
+- Proactively present what you found in a markdown table: **physical address (E911)** — config.scraped.address (stress that websites often have multiple addresses; they must confirm the correct service location), location, timezone, hours, phones.
+- Frame it as "Here's what I found for [company] — does everything look right?" The widget lets them edit address, location, timezone, and hours before continuing.
+- Allow the user to correct any field inline. Call update_config({ scraped: { ... } }) with any corrections including address.
+- Then ask: "Should I load standard US public holidays into your schedule?"
+- WAIT for explicit confirmation or decline (yes/no/sure/skip). Do NOT advance until the user replies.
+- Once they reply: call update_config({ holidays: <loaded holidays or []> }), then call advance_stage.
+- CRITICAL: Do NOT call advance_stage until you have received a clear yes or no about holidays.`,
+
+    cdr_analysis: `You are at the CDR ANALYSIS stage. The widget handles everything — do NOT ask the user to paste data in chat.
+
+- Introduce the stage warmly: "Do you happen to have a CDR (Call Detail Record) from your previous phone provider? Even 2-3 days of call history lets me analyze your team, numbers, and patterns to suggest the ideal setup."
+- The widget shows 3 sub-steps: ask → upload → review. You just set context in chat.
+- IMPORTANT: If you receive a message starting with "[cdr-skipped]": acknowledge it naturally (e.g. "No problem! We'll continue and you can always import a CDR later."), then call advance_stage immediately. Do NOT ask again.
+- If you receive a message starting with "[cdr-approved] <summary>": read out the summary naturally in 1-2 sentences, say what was pre-populated (agents/users, routing type, welcome menu), then call advance_stage immediately.
+- If you receive a message starting with "[cdr-manual]": acknowledge (e.g. "Got it — I've kept the CDR insights and we'll use them as a reference while you fill in the details."), then call advance_stage immediately.
+- Do NOT call update_config for any of these prefixed messages — the widget already saved everything.
+- Do NOT call advance_stage before receiving one of the above prefixed messages.`,
+
+    porting: `You are at the PORTING stage.
+- Briefly introduce: "Choose whether to port existing numbers, request new numbers (area code / quantity), or skip for now — the widget below handles it."
+- Three paths: (1) Port existing numbers — 3-step flow + API submit. (2) Need new numbers — collects area code and quantity or one-per-team-member. (3) Skip for now — optional notes for onboarding.
+- If the user message starts with "[porting-done]": they completed port submission; widget saved portingQueue. Do NOT call update_config — acknowledge and call advance_stage.
+- If the message starts with "[porting-new-numbers]": they chose new number procurement; widget saved numberIntent "new" and fields. Do NOT call update_config — acknowledge and call advance_stage.
+- If the message mentions skipping porting / "Please call advance_stage" after skip: widget already saved numberIntent "skipped" and optional notes. Do NOT call update_config — acknowledge and call advance_stage.
+- If the user says skip only in chat without widget completing: call update_config({ portingQueue: { ...config.portingQueue, skipped: true, numberIntent: "skipped" } }), then advance_stage.
+- Do NOT ask for provider details in chat — the widget collects those for the port path.`,
+
+    user_ingestion: `You are at the USER INGESTION stage. Team members are REQUIRED — at least one.
+- Introduce the step: users can type names/emails in chat OR use the form widget below. Mention that **extensions** (if known) speed up onboarding and CDR matching — the widget has an extension column; if they type users in chat, ask whether they know extension numbers.
+- If the user types a name/email pair, call update_config({ users: [...existing, newUser] }) immediately (include extension if they provide it).
+- IMPORTANT: If you receive a message starting with "[form]", the widget has ALREADY saved the complete data to config (including firstName, lastName, email for every user). Do NOT call update_config — the data is already persisted. Just acknowledge and call advance_stage immediately. Do NOT ask for details again.
+- Do NOT call advance_stage until config.users.length >= 1. The system blocks advance with 0 users.
+- When the user says they're done (or after processing a [form] message) AND there is at least one user, call advance_stage.`,
+
+    architecture_hardware: `You are at the ARCHITECTURE stage (comes after porting). The config already contains the users list — refer to it in the "Data collected so far" section below.
+
+The user interacts with a WIDGET that walks through each sub-step one at a time: departments → user assignments → phone type → hardphone details (if applicable). Device provisioning (linekeys, softkeys, speed dials, directory) can be configured after setup in Settings → Devices.
+
+IMPORTANT: If you receive a message starting with "[arch]", the WIDGET has ALREADY saved the data to config. Do NOT call update_config — the data is already persisted. Just acknowledge what was configured and wait for the next widget sub-step.
+
+The widget covers these steps sequentially:
+Step A — Departments: Widget asks for department names.
+Step B — User assignments: Widget lets user assign each team member to a department (only shown if there are users AND departments).
+Step C — Phone type: Widget asks softphone / hardphone / both.
+Step D — Hardphone details: Widget asks for model + MAC address per user (only if hardphone or both).
+
+When you receive an "[arch]" message that says "Architecture complete", call advance_stage.
+Do NOT ask about departments, phones, or assignments yourself — the widget handles it. Just acknowledge each sub-step warmly and briefly.
+Do NOT call advance_stage until you receive a message indicating architecture is complete.`,
+
+    licensing: `You are at the CALL ROUTING stage. Walk through 3 sequential sub-steps. Ask ONE question at a time, wait for the answer, save with update_config, then move to the next sub-step.
+
+IMPORTANT: If you receive a message starting with "[routing]", the call routing WIDGET has ALREADY saved all data to config. Do NOT call update_config — the data is already persisted. Just acknowledge what was configured and move to the next sub-step. If all 3 sub-steps are done (welcome menu + routing type + after-hours), call advance_stage.
+
+**Sub-step 1 — Welcome Menu (auto-attendant):**
+The widget handles this sub-step and collects:
+- Whether to enable a welcome menu
+- Greeting type: "tts" (text-to-speech — we generate audio), "upload" (custom file uploaded later), or "none"
+- Greeting text (for TTS)
+- DTMF menu options (key + destination type + destination name)
+- Business features:
+  • Allow Extension Dialing — callers can dial an extension directly during the greeting
+  • Play "Please wait while we connect your call" — hold message before connecting
+  • Allow Barging Through — callers can interrupt the greeting by pressing a key early
+All of these are configured in the widget. When you receive a [routing] message about the welcome menu, just acknowledge the settings and move to sub-step 2.
+
+**Sub-step 2 — Ring Group vs Call Queue + config + schedule:**
+The widget handles this sub-step and collects:
+- Routing type: Ring Groups (included, rings all/tiered) vs Call Queues (needs license, queue strategies)
+- Group/queue name
+- Ring group: ring-all or tiered escalation with per-tier ring count and member selection
+- Call queue: ring strategy, max wait time, max capacity
+- **Schedule (Time Blocks)**: Every ring group/queue is tied to a schedule. Options:
+  • 24/7 — always active (system default, no schedule needed)
+  • Business hours — uses the hours scraped from their website
+  • Custom — user picks specific days and start/end times
+  The schedule determines WHEN the ring group/queue is active. If not 24/7, an after-hours flow handles calls outside those hours.
+When you receive a [routing] message about routing config, just acknowledge the settings (including the schedule choice) and move to sub-step 3.
+
+**Sub-step 3 — After-hours behavior:**
+- Ask: "What should happen when someone calls outside business hours? Options: a) Go to voicemail (most common), b) Play a custom greeting, c) Forward to a mobile number."
+- If voicemail: save update_config({ afterHours: { action: "voicemail" } })
+- If greeting: ask for the greeting text, then save update_config({ afterHours: { action: "greeting", greetingText: "..." } })
+- If forward: ask for the number, then save update_config({ afterHours: { action: "forward", forwardNumber: "+1..." } })
+
+After ALL 3 sub-steps are answered and saved, call advance_stage. Do NOT call advance_stage until all 3 are complete.`,
+
+    final_blueprint: `You are at the FINAL BLUEPRINT stage.
+BEFORE presenting the blueprint, check the config for completeness:
+- If config.users.length === 0: warn the user and ask if they want to go back to add users first.
+- If config.scraped.timezone is empty: note it will default to UTC.
+- If config.scraped.address is empty or unclear: flag as an onboarding blocker — E911 / physical service address must be confirmed before go-live.
+- If no user has extension filled: note as a common gap (not always blocking) — reduces back-and-forth.
+- Phone plan: if portingQueue.numberIntent is "port", confirm which numbers are ported; if "new", restate area code / quantity or one-per-member; if "skipped" or missing, flag as TBD for new vs ported DIDs.
+- If config.departments.length === 0: note that no departments will be created.
+- If config.routingType is missing: ask which routing type to use before proceeding.
+
+If everything looks reasonable:
+- Present a concise markdown summary table of what will be created.
+- Ask: "Ready for me to build this out?"
+- When they confirm, call apply_configuration({ confirm: true }).
+- After apply_configuration returns:
+  - The UI already showed a live build log — do NOT repeat all the individual steps.
+  - If result.success is true: congratulate them briefly. Mention okCount items created and warnCount warnings if any.
+  - If result.success is false: explain the error (result.error) clearly and suggest they check their account connection.
+  - Then call advance_stage.
+- If anything looks wrong BEFORE confirming, help them navigate back to fix it.`,
+
+    done: `Onboarding is complete. Congratulate the user warmly.
+- Give a short summary of what was built.
+- Transition message: "I'm now switching to Sidekick mode where you can ask me anything about your account."`,
+  };
+
+  const currentGuide = stageGuide[stage] ?? "Continue guiding the user through the onboarding flow.";
+
+  const lang = LOCALE_LANG[locale] ?? "English";
+
+  return `You are the **net2phone Setup Concierge** — an AI assistant that guides account administrators through a complete CCaaS configuration. You are conversational, concise, and proactive.
+
+## Language
+Respond ONLY in **${lang}**. All messages, tables, confirmations, and errors must be in ${lang}.
+
+## Your mission
+Walk the admin through 8 stages of onboarding in order:
+1. **welcome_scrape** — Collect name + website, scrape it
+2. **cdr_analysis** — Optional CDR upload for intelligent config suggestions
+3. **user_ingestion** — Add team members (REQUIRED: at least one). Before porting so numbers can be associated.
+4. **verification_holidays** — Scheduling/hours/timezone: verify scraped data, offer holidays
+5. **licensing** (Call Routing) — Welcome menu, Ring Groups vs Call Queues, after-hours behavior
+6. **porting** — Choose which numbers to port (users exist for association)
+7. **architecture_hardware** — Departments, user mapping, desk phones, device provisioning
+8. **final_blueprint** — Review full blueprint and build
+
+## Current stage: ${stage}
+${currentGuide}
+
+## Data collected so far
+\`\`\`json
+${JSON.stringify(config, null, 2)}
+\`\`\`
+
+## Communication rules
+- Be brief. 2–4 sentences max per response unless showing a data table.
+- Use markdown tables to display collected data summaries — never prose lists.
+- Be **proactive**: when you already have a data point (timezone, location, etc.), STATE it and ask for confirmation, never ask open-endedly.
+- If the user corrects something, acknowledge it warmly: "Got it, I've updated that."
+- Only discuss topics related to net2phone onboarding and CCaaS configuration. Politely redirect off-topic questions.
+- Never re-ask for data already present in the "Data collected so far" section.
+- After every tool call, acknowledge the result naturally in your response.
+- End each message with a clear next step or question.`;
+}
+
+// ── SSE helper ────────────────────────────────────────────────────────────────
+
+function sseResponse(readable: ReadableStream) {
+  return new Response(readable, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
+  });
+}
+
+function sseErrorResponse(message: string) {
+  const encoder = new TextEncoder();
+  const readable = new ReadableStream({
+    start(controller) {
+      controller.enqueue(
+        encoder.encode(`data: ${JSON.stringify({ type: "error", error: message })}\n\n`)
+      );
+      controller.close();
+    },
+  });
+  return sseResponse(readable);
+}
+
+// ── Route ─────────────────────────────────────────────────────────────────────
+
+// Allow up to 5 minutes on Vercel Pro/Enterprise; Hobby tier cap is 60s.
+// SSE streaming keeps the connection alive for the full duration of the AI turn.
+export const maxDuration = 300;
+
+const MAX_MESSAGES = 200;
+const MAX_BODY_BYTES = 2_000_000; // 2 MB
+
+export async function POST(req: NextRequest) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    return sseErrorResponse("ANTHROPIC_API_KEY is not configured. Add it to .env.local.");
+  }
+
+  // Require authentication — this route calls a paid AI API.
+  const auth = req.headers.get("Authorization");
+  if (!auth?.startsWith("Bearer ")) {
+    return sseErrorResponse("Unauthorized");
+  }
+
+  // Rate limit: 30 requests per minute per client IP.
+  const rl = checkRateLimit(getClientKey(req), "concierge-agent", 30, 60);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait before sending another message." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+    );
+  }
+
+  // Reject oversized bodies before parsing.
+  const contentLength = req.headers.get("content-length");
+  if (contentLength && parseInt(contentLength, 10) > MAX_BODY_BYTES) {
+    return sseErrorResponse("Request body too large.");
+  }
+
+  let body: {
+    messages: Anthropic.MessageParam[];
+    stage: string;
+    config: Record<string, unknown>;
+    locale?: string;
+  };
+
+  try {
+    body = await req.json();
+  } catch {
+    return sseErrorResponse("Invalid JSON body.");
+  }
+
+  // Validate messages array to prevent prompt injection via oversized history.
+  if (!Array.isArray(body.messages)) {
+    return sseErrorResponse("messages must be an array.");
+  }
+  if (body.messages.length > MAX_MESSAGES) {
+    return sseErrorResponse(`Too many messages (max ${MAX_MESSAGES}).`);
+  }
+
+  const client = new Anthropic({ apiKey });
+
+  try {
+    const stream = client.messages.stream({
+      model: "claude-sonnet-4-6",
+      max_tokens: 8192,
+      system: buildSystemPrompt(body.stage ?? "welcome_scrape", body.config ?? {}, body.locale ?? "en"),
+      tools: TOOLS,
+      messages: body.messages,
+    });
+
+    const encoder = new TextEncoder();
+    const readable = new ReadableStream({
+      async start(controller) {
+        stream.on("text", (text) => {
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ type: "text_delta", text })}\n\n`)
+          );
+        });
+
+        try {
+          const msg = await stream.finalMessage();
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({
+                type: "message_complete",
+                stop_reason: msg.stop_reason,
+                content: msg.content,
+              })}\n\n`
+            )
+          );
+        } catch (err) {
+          const errMsg = err instanceof Error ? err.message : "Stream error";
+          console.error("[concierge-agent] stream error:", errMsg);
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ type: "error", error: errMsg })}\n\n`)
+          );
+        }
+
+        controller.close();
+      },
+    });
+
+    return sseResponse(readable);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Anthropic API error";
+    console.error("[concierge-agent]", msg);
+    return sseErrorResponse(msg);
+  }
+}
