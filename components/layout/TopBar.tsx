@@ -24,6 +24,7 @@ import { useSidebar } from "@/contexts/SidebarContext";
 import { useLocaleContext } from "@/contexts/LocaleContext";
 import { clearTokens } from "@/lib/auth";
 import { INTEGRATIONS } from "@/lib/config/integrations";
+import type { Locale } from "@/i18n/config";
 
 export function TopBar() {
   const t = useTranslations("topbar");
@@ -187,7 +188,10 @@ export function TopBar() {
               <p className="text-xs font-medium text-gray-500">Language</p>
               <select
                 value={locale}
-                onChange={(e) => setLocale(e.target.value)}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if ((locales as readonly string[]).includes(v)) setLocale(v as Locale);
+                }}
                 className="w-full rounded-[12px] border border-[#e5e7eb] bg-white px-2.5 py-1.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#111827]/15"
                 aria-label="Select language"
               >
