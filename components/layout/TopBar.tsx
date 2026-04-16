@@ -132,7 +132,14 @@ export function TopBar() {
             <ChevronDown className="w-4 h-4" />
           </button>
           {userMenuOpen && (
-          <div className="absolute right-0 top-full mt-2 w-[300px] max-w-[calc(100vw-20px)] rounded-[18px] border border-[rgba(167,167,190,0.08)] bg-[#f3f4f6] p-2 shadow-[0_12px_28px_rgba(17,24,39,0.16)] text-gray-900 z-50">
+          <>
+            {/* Mobile backdrop */}
+            <div
+              className="fixed inset-0 bg-black/20 z-40 md:hidden"
+              onClick={() => setUserMenuOpen(false)}
+              aria-hidden="true"
+            />
+          <div className="fixed inset-x-0 bottom-0 top-14 z-50 overflow-y-auto bg-[#f3f4f6] p-3 text-gray-900 md:absolute md:inset-auto md:right-0 md:top-full md:bottom-auto md:mt-2 md:w-[300px] md:max-w-[calc(100vw-20px)] md:rounded-[18px] md:border md:border-[rgba(167,167,190,0.08)] md:p-2 md:shadow-[0_12px_28px_rgba(17,24,39,0.16)]">
             <div className="rounded-[16px] border border-white bg-[#ffffff] p-2">
               <div className="flex items-center justify-between gap-2 pb-2">
                 <div className="min-w-0 flex items-center gap-2">
@@ -249,6 +256,7 @@ export function TopBar() {
               </a>
             </div>
           </div>
+          </>
           )}
         </div>
       </div>
