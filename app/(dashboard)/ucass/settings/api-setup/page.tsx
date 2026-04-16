@@ -1,5 +1,6 @@
 "use client";
 import { useTranslations } from "next-intl";
+import { RoleGuard } from "@/components/layout/RoleGuard";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -55,7 +56,7 @@ async function deleteApiKey(keyId: number): Promise<void> {
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export default function ApiSetupPage() {
+function ApiSetupContent() {
   const t = useTranslations("apiSetupPage");
   const { bootstrap } = useApp();
   const accountId = bootstrap?.account?.accountId ?? 0;
@@ -303,4 +304,8 @@ export default function ApiSetupPage() {
       )}
     </div>
   );
+}
+
+export default function ApiSetupPage() {
+  return <RoleGuard minRole="Admin"><ApiSetupContent /></RoleGuard>;
 }

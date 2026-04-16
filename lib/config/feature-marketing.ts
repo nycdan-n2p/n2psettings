@@ -7,6 +7,7 @@ import {
   Globe,
   Users,
   Sparkles,
+  ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
 
@@ -178,6 +179,23 @@ export const FEATURE_MARKETING: Record<string, FeatureMarketingInfo> = {
     planLabel: "AI Add-on",
     icon: Sparkles,
     color: "purple",
+  },
+
+  RolesAndPermissions: {
+    title: "Roles & Permissions",
+    tagline: "Control who can see and do what across your entire account.",
+    description:
+      "Roles & Permissions gives you a centralized way to define access levels for every user — from Super Admins who control everything, to scoped Managers who only see their queue or department. Build custom roles, set granular view/edit permissions per feature, and assign users with optional scope restrictions.",
+    benefits: [
+      "Built-in system roles: Super Admin, Admin, Manager, and User",
+      "Create custom roles with granular view and edit permissions per feature",
+      "Scope roles to specific call queues, ring groups, or departments",
+      "View-only mode enforced across the entire platform for restricted roles",
+      "Assign multiple users to a role with individual scope overrides",
+    ],
+    planLabel: "Included with net2phone",
+    icon: ShieldCheck,
+    color: "blue",
   },
 };
 

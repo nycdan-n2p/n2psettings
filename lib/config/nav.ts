@@ -1,4 +1,5 @@
 import type { ProductId } from "./products";
+import type { SystemRole } from "@/lib/api/roles";
 import {
   LayoutDashboard,
   Phone,
@@ -28,6 +29,7 @@ import {
   Music,
   KeyRound,
   PhoneOff,
+  ShieldCheck,
 } from "lucide-react";
 
 interface NavItem {
@@ -35,6 +37,8 @@ interface NavItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   feature?: string;
+  /** Minimum role required to see this nav item. Omit = visible to all. */
+  minRole?: SystemRole;
   /** If set, clicking opens the assistant side panel instead of navigating */
   action?: "openAssistant";
 }
@@ -101,8 +105,8 @@ function ucassNav(base: string): NavGroup[] {
     {
       label: "Compliance",
       items: [
-        { href: `${base}/settings/911-contacts`, label: "Emergency Settings", icon: AlertTriangle },
-        { href: `${base}/settings/trust-center`, label: "Trust Center", icon: Shield },
+        { href: `${base}/settings/911-contacts`, label: "Emergency Settings", icon: AlertTriangle, minRole: "Admin" as SystemRole },
+        { href: `${base}/settings/trust-center`, label: "Trust Center", icon: Shield, minRole: "Admin" as SystemRole },
       ],
     },
     {
@@ -110,9 +114,10 @@ function ucassNav(base: string): NavGroup[] {
       items: [
         { href: `${base}/settings/voicemail`, label: "Voicemail Settings", icon: Settings },
         { href: `${base}/settings/music-options`, label: "Music Options", icon: Music },
-        { href: `${base}/settings/licenses`, label: "Licenses", icon: FileBarChart },
-        { href: `${base}/settings/number-porting`, label: "Number Porting", icon: Truck },
-        { href: `${base}/settings/bulk-operations`, label: "Bulk Operations", icon: Package },
+        { href: `${base}/settings/licenses`, label: "Licenses", icon: FileBarChart, minRole: "Admin" as SystemRole },
+        { href: `${base}/settings/number-porting`, label: "Number Porting", icon: Truck, minRole: "Admin" as SystemRole },
+        { href: `${base}/settings/bulk-operations`, label: "Bulk Operations", icon: Package, minRole: "Admin" as SystemRole },
+        { href: `${base}/settings/roles`, label: "Roles & Permissions", icon: ShieldCheck, minRole: "Admin" as SystemRole, feature: "RolesAndPermissions" },
       ],
     },
   ];

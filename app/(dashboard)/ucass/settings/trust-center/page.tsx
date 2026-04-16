@@ -2,6 +2,7 @@
 import { useTranslations } from "next-intl";
 
 import { ExternalLink, Hand } from "lucide-react";
+import { RoleGuard } from "@/components/layout/RoleGuard";
 import Link from "next/link";
 import { getButtonClasses } from "@/components/ui/Button";
 import { TenDlcSection } from "@/components/trust-center/TenDlcSection";
@@ -34,7 +35,7 @@ function TrustCard({
   );
 }
 
-export default function TrustCenterPage() {
+function TrustCenterContent() {
   const t = useTranslations("trustCenterPage");
   return (
     <div>
@@ -82,4 +83,8 @@ export default function TrustCenterPage() {
       </TrustCard>
     </div>
   );
+}
+
+export default function TrustCenterPage() {
+  return <RoleGuard minRole="Admin"><TrustCenterContent /></RoleGuard>;
 }

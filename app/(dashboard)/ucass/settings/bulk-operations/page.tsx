@@ -1,5 +1,6 @@
 "use client";
 import { useTranslations } from "next-intl";
+import { RoleGuard } from "@/components/layout/RoleGuard";
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -8,7 +9,7 @@ import { qk } from "@/lib/query-keys";
 import { fetchBulkLoad } from "@/lib/api/bulk-load";
 import { SettingsGroup } from "@/components/settings/SettingsGroup";
 
-export default function BulkOperationsPage() {
+function BulkOperationsContent() {
   const t = useTranslations("bulkOperationsPage");
   const { bootstrap } = useApp();
   const accountId = bootstrap?.account?.accountId ?? 0;
@@ -149,4 +150,8 @@ export default function BulkOperationsPage() {
       )}
     </div>
   );
+}
+
+export default function BulkOperationsPage() {
+  return <RoleGuard minRole="Admin"><BulkOperationsContent /></RoleGuard>;
 }

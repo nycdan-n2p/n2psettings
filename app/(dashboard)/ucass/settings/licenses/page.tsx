@@ -1,8 +1,9 @@
 "use client";
 import { useTranslations } from "next-intl";
 import { useApp } from "@/contexts/AppContext";
+import { RoleGuard } from "@/components/layout/RoleGuard";
 
-export default function LicensesPage() {
+function LicensesContent() {
   const t = useTranslations("licensesPage");
   const { bootstrap } = useApp();
   const licenses = bootstrap?.licenses ?? [];
@@ -46,4 +47,8 @@ export default function LicensesPage() {
       <p className="text-xs text-gray-400 mt-4">{t("contactNote")}</p>
     </div>
   );
+}
+
+export default function LicensesPage() {
+  return <RoleGuard minRole="Admin"><LicensesContent /></RoleGuard>;
 }

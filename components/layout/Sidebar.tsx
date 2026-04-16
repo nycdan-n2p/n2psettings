@@ -11,6 +11,7 @@ import { useSidebar } from "@/contexts/SidebarContext";
 import { useState, useEffect, useRef } from "react";
 import { getNavForProduct } from "@/lib/config/nav";
 import { getProductFromPath, PRODUCTS } from "@/lib/config/products";
+import { useCurrentUserRole, hasMinRole } from "@/lib/hooks/useCurrentUserRole";
 
 const PRODUCT_ICON_SRC: Record<string, string> = {
   ucass: "/sidebar-icons/unite.svg",
@@ -75,6 +76,7 @@ interface NavItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   feature?: string;
+  minRole?: import("@/lib/api/roles").SystemRole;
   action?: "openAssistant";
 }
 
@@ -89,10 +91,13 @@ function NavGroupSection({ group }: { group: NavGroup }) {
   const { open: openAssistant } = useAssistant();
   const t = useTranslations("nav");
   const tAny = t as unknown as (key: string) => string;
+  const currentRole = useCurrentUserRole();
 
-  // All items are shown; locked ones get a visual indicator and still navigate
-  // to their page (which renders the FeatureGate upsell content).
-  const visibleItems = group.items;
+  // Hide items whose minRole exceeds the current user's role.
+  // Feature-locked items are still shown (FeatureGate handles the upsell).
+  const visibleItems = group.items.filter(
+    (item) => !item.minRole || hasMinRole(currentRole, item.minRole)
+  );
 
   if (visibleItems.length === 0) return null;
 
