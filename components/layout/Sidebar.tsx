@@ -373,7 +373,7 @@ export function Sidebar() {
       {/* Sidebar: drawer on mobile, static on desktop */}
       <aside
         className={`
-          n2p-sidebar ${isCompactDesktop ? "w-16" : "w-64"} h-full shrink-0 bg-[#F9F9FB] overflow-y-auto
+          n2p-sidebar ${isCompactDesktop ? "w-16" : "w-full lg:w-64"} h-full shrink-0 bg-[#F9F9FB] overflow-y-auto
           ${isCompactDesktop ? "fixed md:static" : "fixed lg:static"} inset-y-0 left-0 top-14 ${isCompactDesktop ? "md:top-0" : "lg:top-0"} z-50 lg:z-auto
           transform transition-transform duration-200 ease-out
           ${

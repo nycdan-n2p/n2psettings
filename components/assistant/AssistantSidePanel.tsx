@@ -17,16 +17,16 @@ export function AssistantSidePanel() {
 
   return (
     <>
-      {/* Backdrop for mobile / click-outside */}
+      {/* Backdrop for desktop click-outside */}
       <div
-        className="fixed inset-0 bg-black/20 z-40 md:hidden"
+        className="fixed inset-0 bg-black/20 z-40 hidden md:block"
         onClick={close}
         aria-hidden="true"
       />
 
-      {/* Side panel */}
+      {/* Side panel — full screen on mobile, capped drawer on md+ */}
       <div
-        className="fixed top-0 right-0 h-full w-full max-w-md bg-white z-50 flex flex-col border-l border-[#e5e7eb] shadow-[-18px_0_32px_rgba(15,23,42,0.16)]"
+        className="fixed top-0 right-0 h-full w-full md:max-w-md bg-white z-50 flex flex-col border-l border-[#e5e7eb] shadow-[-18px_0_32px_rgba(15,23,42,0.16)]"
         role="dialog"
         aria-label="N2P Sidekick"
       >
