@@ -21,7 +21,195 @@ import { Modal } from "@/components/settings/Modal";
 import { TextInput } from "@/components/settings/TextInput";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import { EditTeamMemberModal } from "@/components/team-members/EditTeamMemberModal";
-import { Pencil, Trash2, Download, Music2, ChevronDown, X, UserPlus } from "lucide-react";
+import { Pencil, Trash2, Download, Music2, ChevronDown, X, UserPlus, ChevronRight } from "lucide-react";
+
+// ─── Product role categories (matches Add New User mockup) ───────────────────
+
+const ROLE_CATEGORIES = [
+  {
+    id: "ucass",
+    label: "Hosted PBX Roles",
+    color: "bg-blue-100 text-blue-700",
+    roles: [
+      { id: 1, label: "Admin", color: "bg-blue-100 text-blue-700" },
+      { id: 2, label: "Supervisor", color: "bg-indigo-100 text-indigo-700" },
+      { id: 3, label: "User", color: "bg-slate-100 text-slate-600" },
+    ],
+  },
+  {
+    id: "agent",
+    label: "AI Agent Roles",
+    color: "bg-orange-100 text-orange-700",
+    roles: [
+      { id: 10, label: "AI Agent Admin", color: "bg-orange-100 text-orange-700" },
+      { id: 11, label: "AI Agent", color: "bg-amber-100 text-amber-700" },
+    ],
+  },
+  {
+    id: "huddle",
+    label: "Huddle Roles",
+    color: "bg-teal-100 text-teal-700",
+    roles: [
+      { id: 20, label: "Huddle Admin", color: "bg-teal-100 text-teal-700" },
+      { id: 21, label: "Huddle User", color: "bg-cyan-100 text-cyan-700" },
+    ],
+  },
+  {
+    id: "coach",
+    label: "Coach Roles",
+    color: "bg-green-100 text-green-700",
+    roles: [
+      { id: 30, label: "Coach Admin", color: "bg-green-100 text-green-700" },
+      { id: 31, label: "Coach Supervisor", color: "bg-emerald-100 text-emerald-700" },
+    ],
+  },
+  {
+    id: "ucontact",
+    label: "uContact Roles",
+    color: "bg-purple-100 text-purple-700",
+    roles: [
+      { id: 40, label: "uContact Admin", color: "bg-purple-100 text-purple-700" },
+      { id: 41, label: "uContact Agent", color: "bg-violet-100 text-violet-700" },
+    ],
+  },
+  {
+    id: "sip",
+    label: "SIP-Trunk Roles",
+    color: "bg-gray-100 text-gray-600",
+    roles: [
+      { id: 50, label: "SIP Admin", color: "bg-gray-100 text-gray-600" },
+      { id: 51, label: "SIP User", color: "bg-gray-50 text-gray-500" },
+    ],
+  },
+];
+
+const ALL_ROLES = ROLE_CATEGORIES.flatMap((c) => c.roles) as { id: number; label: string; color: string }[];
+
+function getRoleStyle(roleStr: string): string {
+  const lower = roleStr.toLowerCase();
+  if (lower.includes("admin") && !lower.includes("ai")) return "bg-blue-100 text-blue-700";
+  if (lower.includes("supervisor") || lower.includes("super")) return "bg-indigo-100 text-indigo-700";
+  if (lower.includes("ai") || lower.includes("agent")) return "bg-orange-100 text-orange-700";
+  if (lower.includes("huddle")) return "bg-teal-100 text-teal-700";
+  if (lower.includes("coach")) return "bg-green-100 text-green-700";
+  if (lower.includes("ucontact") || lower.includes("contact")) return "bg-purple-100 text-purple-700";
+  if (lower.includes("sip")) return "bg-gray-100 text-gray-600";
+  return "bg-slate-100 text-slate-600";
+}
+
+// ─── Nested role picker ───────────────────────────────────────────────────────
+
+function RolePicker({
+  value,
+  onChange,
+}: {
+  value: number | undefined;
+  onChange: (id: number | undefined, label: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [hovered, setHovered] = useState<string | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [open]);
+
+  const selectedRole = ALL_ROLES.find((r) => r.id === value);
+  const hoveredCategory = ROLE_CATEGORIES.find((c) => c.id === hovered);
+
+  return (
+    <div className="mb-4 relative" ref={ref}>
+      <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between px-3 py-2 border border-[#dadce0] rounded-md text-sm bg-white hover:border-gray-400 transition-colors"
+      >
+        {selectedRole ? (
+          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${selectedRole.color}`}>
+            {selectedRole.label}
+          </span>
+        ) : (
+          <span className="text-gray-400">Select a role…</span>
+        )}
+        <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full mt-1 z-50 w-full rounded-[14px] border border-[#e5e7eb] bg-white shadow-xl overflow-hidden flex">
+          {/* Category list */}
+          <div className="w-1/2 border-r border-[#f3f4f6]">
+            <div className="px-3 py-2 border-b border-[#f3f4f6] bg-[#f9f9fb]">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Product</p>
+            </div>
+            {ROLE_CATEGORIES.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onMouseEnter={() => setHovered(cat.id)}
+                onClick={() => setHovered(cat.id)}
+                className={`w-full flex items-center justify-between px-3 py-2.5 text-sm text-left transition-colors ${
+                  hovered === cat.id ? "bg-[#f0f4ff] text-gray-900" : "hover:bg-[#f9f9fb] text-gray-700"
+                }`}
+              >
+                <span>{cat.label}</span>
+                <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
+              </button>
+            ))}
+          </div>
+
+          {/* Sub-roles */}
+          <div className="w-1/2">
+            {hoveredCategory ? (
+              <>
+                <div className="px-3 py-2 border-b border-[#f3f4f6] bg-[#f9f9fb]">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Role</p>
+                </div>
+                {hoveredCategory.roles.map((role) => (
+                  <button
+                    key={role.id}
+                    type="button"
+                    onClick={() => {
+                      onChange(role.id, role.label);
+                      setOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left hover:bg-[#f0f4ff] transition-colors ${
+                      value === role.id ? "bg-[#e8f0fe]" : ""
+                    }`}
+                  >
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${role.color}`}>
+                      {role.label}
+                    </span>
+                  </button>
+                ))}
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-full text-xs text-gray-400 py-8">
+                Hover a product
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Role tag(s) for table column ────────────────────────────────────────────
+
+function RoleTags({ role }: { role: string }) {
+  if (!role) return <span className="text-gray-400 text-sm">—</span>;
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getRoleStyle(role)}`}>
+      {role}
+    </span>
+  );
+}
 
 const DISMISS_KEY = "team-members-license-upsell-dismissed";
 
@@ -143,7 +331,7 @@ function DepartmentDropdown({ departmentsStr }: { departmentsStr?: string | null
   );
 }
 
-const EMPTY_FORM: CreateUserPayload = { firstName: "", lastName: "", email: "", extension: "", roleId: undefined, deptId: undefined, password: "" };
+const EMPTY_FORM: CreateUserPayload & { roleLabel?: string } = { firstName: "", lastName: "", email: "", extension: "", roleId: undefined, deptId: undefined, password: "", roleLabel: undefined };
 
 export default function TeamMembersPage() {
   const { bootstrap } = useApp();
@@ -156,7 +344,7 @@ export default function TeamMembersPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<TeamMember | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<TeamMember | null>(null);
-  const [form, setForm] = useState<CreateUserPayload>({ ...EMPTY_FORM });
+  const [form, setForm] = useState<CreateUserPayload & { roleLabel?: string }>({ ...EMPTY_FORM });
   const [licenseBannerDismissed, setLicenseBannerDismissed] = useState(() => {
     if (typeof window === "undefined") return false;
     return localStorage.getItem(DISMISS_KEY) === "1";
@@ -262,6 +450,11 @@ export default function TeamMembersPage() {
       ),
     },
     {
+      id: "role",
+      header: "Role",
+      cell: ({ row }) => <RoleTags role={row.original.role} />,
+    },
+    {
       id: "actions",
       header: "",
       cell: ({ row }) => (
@@ -320,6 +513,10 @@ export default function TeamMembersPage() {
           <TextInput label={t("labelEmail")} value={form.email} onChange={(v) => setForm((f) => ({ ...f, email: v }))} type="email" placeholder={t("placeholderEmail")} required />
           <TextInput label={t("labelExtension")} value={form.extension} onChange={(v) => setForm((f) => ({ ...f, extension: v }))} placeholder={t("placeholderExt")} required />
           <TextInput label={t("labelPassword")} value={form.password ?? ""} onChange={(v) => setForm((f) => ({ ...f, password: v }))} type="password" placeholder={t("placeholderPassword")} />
+          <RolePicker
+            value={form.roleId}
+            onChange={(id, label) => setForm((f) => ({ ...f, roleId: id, roleLabel: label }))}
+          />
           {departments.length > 0 && (
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">{tc("department")}</label>

@@ -155,4 +155,12 @@ export const qk = {
     account: (accountId: number, preset: string)        => ["analytics", accountId, "account", preset] as const,
     users:   (accountId: number, preset: string)        => ["analytics", accountId, "users-summary", preset] as const,
   },
+
+  // Roles & Permissions (mock API — swap keys when real endpoint lands)
+  roles: {
+    all:         ()           => ["roles"]                    as const,
+    list:        ()           => ["roles", "list"]            as const,
+    detail:      (id: string) => ["roles", "detail", id]      as const,
+    assignments: (id: string) => ["roles", "assignments", id] as const,
+  },
 };
