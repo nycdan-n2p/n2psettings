@@ -8,6 +8,10 @@
  *   Pass the net2phone Bearer token in the Authorization header:
  *     Authorization: Bearer <your-n2p-jwt-token>
  *
+ *   MCP OAuth clients (e.g. Claude connector): unauthenticated requests receive 401 with
+ *   WWW-Authenticate pointing at /.well-known/oauth-protected-resource; that JSON links to
+ *   /.well-known/oauth-authorization-server so the client can run the OAuth flow.
+ *
  * Optional headers:
  *   X-Account-Id:    Override the default UCaaS account ID
  *   X-Sip-Client-Id: Override the default SIP trunk account ID
