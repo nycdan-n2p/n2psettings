@@ -1,7 +1,15 @@
 import type { Metadata, Viewport } from "next";
+import { Google_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { IntlProvider } from "@/components/providers/IntlProvider";
+
+const googleSans = Google_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
+  variable: "--font-google-sans",
+  display: "swap",
+});
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -28,7 +36,7 @@ export default function RootLayout({
     // lang defaults to "en" on the server; IntlProvider updates it client-side
     // once it reads the NEXT_LOCALE cookie.
     <html lang="en">
-      <body className="antialiased">
+      <body className={`${googleSans.variable} ${googleSans.className} antialiased`}>
         <IntlProvider>
           <Providers>{children}</Providers>
         </IntlProvider>

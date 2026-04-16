@@ -31,12 +31,12 @@ export default function HuddleProductPage() {
       </p>
 
       <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <div className="px-6 py-4 bg-white">
           <h2 className="text-lg font-medium text-gray-900">Huddle Settings</h2>
         </div>
         <div className="px-6 py-6">
           <p className="text-sm text-gray-600 mb-4">
-            Huddle video settings are managed in the Huddle application.
+            Huddle settings are managed in the Huddle application.
           </p>
           <Button
             variant="primary"

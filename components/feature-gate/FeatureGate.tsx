@@ -15,7 +15,7 @@ const BG: Record<FeatureMarketingInfo["color"], string> = {
   purple: "bg-purple-50",
   green:  "bg-emerald-50",
   orange: "bg-orange-50",
-  teal:   "bg-teal-50",
+  teal:   "bg-gradient-to-br from-blue-50 to-rose-50",
   rose:   "bg-rose-50",
 };
 const ICON_BG: Record<FeatureMarketingInfo["color"], string> = {
@@ -23,7 +23,7 @@ const ICON_BG: Record<FeatureMarketingInfo["color"], string> = {
   purple: "bg-purple-100",
   green:  "bg-emerald-100",
   orange: "bg-orange-100",
-  teal:   "bg-teal-100",
+  teal:   "bg-gradient-to-br from-blue-100 to-rose-100",
   rose:   "bg-rose-100",
 };
 const ICON_TEXT: Record<FeatureMarketingInfo["color"], string> = {
@@ -31,7 +31,7 @@ const ICON_TEXT: Record<FeatureMarketingInfo["color"], string> = {
   purple: "text-purple-600",
   green:  "text-emerald-600",
   orange: "text-orange-600",
-  teal:   "text-teal-600",
+  teal:   "text-blue-600",
   rose:   "text-rose-600",
 };
 const BADGE_BG: Record<FeatureMarketingInfo["color"], string> = {
@@ -39,7 +39,7 @@ const BADGE_BG: Record<FeatureMarketingInfo["color"], string> = {
   purple: "bg-purple-100 text-purple-700",
   green:  "bg-emerald-100 text-emerald-700",
   orange: "bg-orange-100 text-orange-700",
-  teal:   "bg-teal-100 text-teal-700",
+  teal:   "bg-gradient-to-r from-blue-100 to-rose-100 text-rose-700",
   rose:   "bg-rose-100 text-rose-700",
 };
 const BTN: Record<FeatureMarketingInfo["color"], string> = {
@@ -47,7 +47,7 @@ const BTN: Record<FeatureMarketingInfo["color"], string> = {
   purple: "bg-purple-600 hover:bg-purple-700",
   green:  "bg-emerald-600 hover:bg-emerald-700",
   orange: "bg-orange-600 hover:bg-orange-700",
-  teal:   "bg-teal-600 hover:bg-teal-700",
+  teal:   "bg-gradient-to-r from-blue-600 to-rose-500 hover:from-blue-700 hover:to-rose-600",
   rose:   "bg-rose-600 hover:bg-rose-700",
 };
 const CHECK_TEXT: Record<FeatureMarketingInfo["color"], string> = {
@@ -55,7 +55,7 @@ const CHECK_TEXT: Record<FeatureMarketingInfo["color"], string> = {
   purple: "text-purple-500",
   green:  "text-emerald-500",
   orange: "text-orange-500",
-  teal:   "text-teal-500",
+  teal:   "text-rose-500",
   rose:   "text-rose-500",
 };
 

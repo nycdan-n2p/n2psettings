@@ -26,7 +26,7 @@ export function AssistantSidePanel() {
 
       {/* Side panel */}
       <div
-        className="fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-50 flex flex-col border-l border-gray-200"
+        className="fixed top-0 right-0 h-full w-full max-w-md bg-white z-50 flex flex-col border-l border-[#e5e7eb] shadow-[-18px_0_32px_rgba(15,23,42,0.16)]"
         role="dialog"
         aria-label="N2P Sidekick"
       >

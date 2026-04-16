@@ -73,7 +73,7 @@ export function DataTable<TData>({
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
             placeholder={searchPlaceholder}
-            className="n2p-table-search-input w-full max-w-sm px-3 py-2 bg-[#F6F6F9] rounded-[12px] text-sm focus:outline-none"
+            className="n2p-table-search-input w-full max-w-sm px-3 py-2 bg-[#F9F9FB] rounded-[12px] text-sm focus:outline-none"
           />
         </div>
       )}
@@ -161,7 +161,7 @@ export function DataTable<TData>({
                 <button
                   onClick={() => table.previousPage()}
                   disabled={!table.getCanPreviousPage()}
-                  className="p-2 rounded-[12px] bg-[#F6F6F9] hover:bg-[#eeeff4] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-2 rounded-[12px] bg-[#F9F9FB] hover:bg-[#eeeff4] disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-label="Previous page"
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -169,7 +169,7 @@ export function DataTable<TData>({
                 <button
                   onClick={() => table.nextPage()}
                   disabled={!table.getCanNextPage()}
-                  className="p-2 rounded-[12px] bg-[#F6F6F9] hover:bg-[#eeeff4] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-2 rounded-[12px] bg-[#F9F9FB] hover:bg-[#eeeff4] disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-label="Next page"
                 >
                   <ChevronRight className="w-4 h-4" />

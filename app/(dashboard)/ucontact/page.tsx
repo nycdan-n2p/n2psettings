@@ -16,7 +16,7 @@ export default function UcontactProductPage() {
       </p>
 
       <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <div className="px-6 py-4 bg-white">
           <h2 className="text-lg font-medium text-gray-900">uContact Settings</h2>
         </div>
         <div className="px-6 py-6">

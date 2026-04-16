@@ -153,7 +153,7 @@ export default function ApiSetupPage() {
       )}
 
       {/* Create new key */}
-      <div className="bg-white rounded-[16px] border border-gray-200 p-5 mb-6">
+      <div className="rounded-[16px] p-5 mb-6">
         <h2 className="text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
           <Plus className="w-4 h-4 text-gray-400" />
           Create New API Key
@@ -173,14 +173,14 @@ export default function ApiSetupPage() {
         {!scopesLoading && scopes.length > 0 && (
           <div className="mb-4">
             <label className="block text-xs font-medium text-gray-600 mb-2">Permission scopes</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {scopes.map((scope) => (
                 <label
                   key={scope.name}
-                  className={`flex items-start gap-2.5 px-3 py-2 border rounded-lg cursor-pointer transition-colors ${
+                  className={`flex items-start gap-2.5 px-3 py-2 rounded-[16px] cursor-pointer transition-colors ${
                     selectedScopes.includes(scope.name)
-                      ? "border-[#1a73e8] bg-[#f0f6ff]"
-                      : "border-[#dadce0] hover:border-gray-300"
+                      ? "bg-[#eceef4]"
+                      : "bg-[#F9F9FB] hover:bg-[#f1f3f8]"
                   }`}
                 >
                   <input

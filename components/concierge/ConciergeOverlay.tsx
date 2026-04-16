@@ -165,7 +165,7 @@ export function ConciergeOverlay() {
             max-h-[min(90vh,880px)] pointer-events-auto overflow-hidden
             transition-all duration-700 ease-in-out motion-reduce:duration-0
             ${isWelcomePage
-              ? "shadow-[0_24px_80px_-12px_rgba(15,23,42,0.2)] ring-1 ring-white/80 bg-gradient-to-b from-white via-white to-[#f8fafc]"
+              ? "shadow-[0_24px_80px_-12px_rgba(15,23,42,0.2)] ring-1 ring-white/80 bg-white"
               : "shadow-2xl"
             }
             ${isTransitioning
@@ -183,7 +183,7 @@ export function ConciergeOverlay() {
             <div
               className={`flex items-center justify-between px-5 py-3.5 ${
                 isWelcomePage
-                  ? "border-b border-violet-100/80 bg-gradient-to-r from-[#f0f9ff] via-white to-[#faf5ff]"
+                  ? "border-b border-[#e8eaed] bg-white"
                   : "border-b border-[#e8eaed] bg-white"
               }`}
             >
@@ -332,7 +332,7 @@ export function ConciergeOverlay() {
             <div
               className={`px-5 py-4 border-t rounded-b-2xl shrink-0 ${
                 isWelcomePage
-                  ? "border-violet-100 bg-gradient-to-r from-[#f0f9ff] to-[#faf5ff]"
+                  ? "border-[#e8eaed] bg-white"
                   : "border-[#e8eaed] bg-[#f8f9fa]"
               }`}
             >

@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApp } from "@/contexts/AppContext";
 import { qk } from "@/lib/query-keys";
 import { Loader } from "@/components/ui/Loader";
+import { getButtonClasses } from "@/components/ui/Button";
 import {
   fetchDevices,
   fetchDeviceExtensions,
@@ -142,7 +143,7 @@ function OrdersTab({ accountId }: { accountId: number }) {
       ) : (
         <>
           {/* Column headers */}
-          <div className="grid grid-cols-[160px_1fr_1fr_140px_140px_120px] gap-4 px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wide border-b border-[#f1f3f4]">
+          <div className="grid grid-cols-[160px_1fr_1fr_140px_140px_120px] gap-4 px-4 py-2 text-xs font-semibold text-gray-400 border-b border-[#f1f3f4]">
             <span>{t("colOrderId")}</span>
             <span>{t("colContact")}</span>
             <span>{t("colShipTo")}</span>
@@ -206,7 +207,7 @@ function OrdersTab({ accountId }: { accountId: number }) {
                     <div className="bg-[#f8f9fa] border-t border-[#f1f3f4] px-6 py-4 grid grid-cols-3 gap-6">
                       {/* Shipping address */}
                       <div>
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1">
+                        <p className="text-xs font-semibold text-gray-400 mb-2 flex items-center gap-1">
                           <MapPin className="w-3.5 h-3.5" /> Shipping Address
                         </p>
                         <p className="text-sm text-gray-700">{addr.recipient}</p>
@@ -218,7 +219,7 @@ function OrdersTab({ accountId }: { accountId: number }) {
 
                       {/* Contact */}
                       <div>
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1">
+                        <p className="text-xs font-semibold text-gray-400 mb-2 flex items-center gap-1">
                           <User className="w-3.5 h-3.5" /> Contact
                         </p>
                         <p className="text-sm text-gray-700">{contactName}</p>
@@ -228,7 +229,7 @@ function OrdersTab({ accountId }: { accountId: number }) {
 
                       {/* Tracking */}
                       <div>
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1">
+                        <p className="text-xs font-semibold text-gray-400 mb-2 flex items-center gap-1">
                           <Truck className="w-3.5 h-3.5" /> Tracking
                         </p>
                         {order.trackingList?.length ? (
@@ -479,12 +480,12 @@ export default function DevicesPage() {
 
             {/* Column headers */}
             <div className="grid grid-cols-[180px_1fr_200px_120px_180px_160px_auto] items-center gap-4 px-5 py-2.5 border-b border-gray-100 bg-gray-50/60">
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Device Type</span>
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">MAC Address</span>
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Assigned To</span>
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Order ID</span>
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">SIP Information</span>
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Last Sync</span>
+              <span className="text-xs font-semibold text-gray-400">Device type</span>
+              <span className="text-xs font-semibold text-gray-400">Mac address</span>
+              <span className="text-xs font-semibold text-gray-400">Assigned to</span>
+              <span className="text-xs font-semibold text-gray-400">Order id</span>
+              <span className="text-xs font-semibold text-gray-400">Sip information</span>
+              <span className="text-xs font-semibold text-gray-400">Last sync</span>
               <span className="w-20" />
             </div>
 
@@ -641,7 +642,7 @@ export default function DevicesPage() {
             <p className="text-sm text-red-600 mb-3">{(addMutation.error as Error)?.message ?? t("failedToAdd")}</p>
           )}
           <div className="flex justify-end gap-2 mt-5">
-            <button type="button" onClick={() => setAddOpen(false)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancel</button>
+            <button type="button" onClick={() => setAddOpen(false)} className={getButtonClasses({ variant: "secondary", size: "md" })}>Cancel</button>
             <button type="submit" disabled={addMutation.isPending}
               className="px-4 py-2 text-sm font-medium text-white bg-[#1a73e8] rounded-md hover:bg-[#1557b0] disabled:opacity-50">
               {addMutation.isPending ? t("adding") : t("addDevice")}

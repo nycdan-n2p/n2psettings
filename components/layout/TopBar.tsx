@@ -14,6 +14,7 @@ import {
   HelpCircle,
   Sparkles,
   Menu,
+  X,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useApp } from "@/contexts/AppContext";
@@ -57,11 +58,11 @@ export function TopBar() {
   const unreadCount = bootstrap?.unreadVoicemailCount ?? 0;
 
   return (
-    <header className="h-14 flex items-center justify-between px-3 sm:px-4 text-gray-800 shrink-0 gap-2 bg-[#F6F6F9]">
+    <header className="h-14 flex items-center justify-between px-3 sm:px-4 text-gray-800 shrink-0 gap-2 bg-[#F9F9FB]">
       <div className="flex items-center gap-2 sm:gap-6 min-w-0">
         <button
           onClick={toggleMobile}
-          className="hidden"
+          className="inline-flex md:hidden p-2 rounded-[var(--control-radius)] hover:bg-[#e5e7eb] transition-colors"
           aria-label="Open menu"
         >
           <Menu className="w-5 h-5" />
@@ -130,18 +131,36 @@ export function TopBar() {
             <ChevronDown className="w-4 h-4" />
           </button>
           {userMenuOpen && (
-          <div className="absolute right-0 top-full mt-1 py-1 w-56 bg-white rounded-md shadow-lg text-gray-900 z-50">
-            <div className="px-3 py-2 border-b border-gray-100">
-              <p className="text-sm font-medium truncate">{userName}</p>
-              <p className="text-xs text-gray-500 truncate">
-                {bootstrap?.user?.email}
-              </p>
+          <div className="absolute right-0 top-full mt-2 w-[300px] max-w-[calc(100vw-20px)] rounded-[18px] border border-[rgba(167,167,190,0.08)] bg-[#f3f4f6] p-2 shadow-[0_12px_28px_rgba(17,24,39,0.16)] text-gray-900 z-50">
+            <div className="rounded-[16px] border border-white bg-[#ffffff] p-2">
+              <div className="flex items-center justify-between gap-2 pb-2">
+                <div className="min-w-0 flex items-center gap-2">
+                  <div className="w-9 h-9 rounded-full overflow-hidden bg-[#e5e7eb] flex items-center justify-center shrink-0">
+                    <User className="w-4 h-4 text-gray-600" />
+                  </div>
+                  <p className="text-sm font-semibold leading-tight truncate">{userName}</p>
+                </div>
+                <button
+                  onClick={() => setUserMenuOpen(false)}
+                  className="p-1 rounded-full text-gray-900 hover:bg-[#f3f4f6] transition-colors"
+                  aria-label="Close menu"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <button
+                onClick={handleLogout}
+                className="w-full h-[40px] rounded-[12px] border border-[#e5e7eb] bg-white hover:bg-[#f8fafc] transition-colors px-2.5 flex items-center gap-2 text-sm font-medium text-left"
+              >
+                <LogOut className="w-3.5 h-3.5 shrink-0" />
+                {t("logOut")}
+              </button>
             </div>
-            <div className="border-b border-gray-100">
-              <p className="px-3 pt-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">
-                {te("appsIntegrations")}
-              </p>
-              <div className="grid grid-cols-3 gap-1 px-2 pb-2">
+
+            <div className="mt-2 rounded-[16px] border border-white bg-[#ffffff] px-2.5 py-2">
+              <p className="text-xs font-medium text-gray-500">{te("appsIntegrations")}</p>
+              <div className="mt-2 grid grid-cols-4 gap-x-1.5 gap-y-1.5">
                 {INTEGRATIONS.map((integration) => {
                   const Logo = integration.Logo;
                   return (
@@ -150,12 +169,12 @@ export function TopBar() {
                       href={integration.href}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex flex-col items-center gap-1.5 p-2 rounded-md hover:bg-gray-50 transition-colors"
+                      className="flex flex-col items-center gap-1 rounded-lg p-1 hover:bg-gray-50 transition-colors"
                     >
-                      <span className="w-8 h-8 flex items-center justify-center [&>svg]:w-8 [&>svg]:h-8 shrink-0">
+                      <span className="w-9 h-9 flex items-center justify-center [&>svg]:w-9 [&>svg]:h-9 shrink-0">
                         <Logo />
                       </span>
-                      <span className="text-xs font-medium text-gray-700 truncate w-full text-center">
+                      <span className="w-full text-center text-[10px] leading-tight text-gray-900 whitespace-nowrap truncate">
                         {integration.name}
                       </span>
                     </a>
@@ -163,40 +182,35 @@ export function TopBar() {
                 })}
               </div>
             </div>
-            <div className="border-b border-gray-100 px-3 py-2">
-              <p className="px-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">
-                Language
-              </p>
-              <div className="space-y-1">
+
+            <div className="mt-2 rounded-[16px] border border-white bg-[#ffffff] px-2.5 py-2 space-y-1.5">
+              <p className="text-xs font-medium text-gray-500">Language</p>
+              <select
+                value={locale}
+                onChange={(e) => setLocale(e.target.value)}
+                className="w-full rounded-[12px] border border-[#e5e7eb] bg-white px-2.5 py-1.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#111827]/15"
+                aria-label="Select language"
+              >
                 {locales.map((l) => (
-                  <button
-                    key={l}
-                    onClick={() => setLocale(l)}
-                    className={`w-full text-left text-sm -mx-2 px-2 py-1.5 rounded transition-colors ${
-                      l === locale
-                        ? "bg-gray-100 text-gray-900 font-medium"
-                        : "text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
+                  <option key={l} value={l}>
                     {localeNames[l]}
-                  </button>
+                  </option>
                 ))}
-              </div>
+              </select>
             </div>
-            <div className="border-b border-gray-100 px-3 py-2 space-y-1">
-              <p className="px-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">
-                {te("help")}
-              </p>
+
+            <div className="mt-2 rounded-[16px] border border-white bg-[#ffffff] px-2.5 py-2 space-y-0.5">
+              <p className="text-xs font-medium text-gray-500">{te("help")}</p>
               <button
                 onClick={() => { openConcierge(); (document.activeElement as HTMLElement)?.blur(); }}
-                className="w-full flex items-center gap-2 text-sm text-gray-700 hover:bg-gray-50 -mx-2 px-2 py-1.5 rounded text-left"
+                className="w-full flex items-center gap-2 text-sm text-gray-700 hover:bg-gray-50 px-2 py-1.5 rounded text-left"
               >
                 <Sparkles className="w-4 h-4 shrink-0 text-[#5b21b6]" />
                 {te("setupWizard")}
               </button>
               <button
                 onClick={() => { openAssistant(); (document.activeElement as HTMLElement)?.blur(); }}
-                className="w-full flex items-center gap-2 text-sm text-gray-700 hover:bg-gray-50 -mx-2 px-2 py-1.5 rounded text-left"
+                className="w-full flex items-center gap-2 text-sm text-gray-700 hover:bg-gray-50 px-2 py-1.5 rounded text-left"
               >
                 <Bot className="w-4 h-4 shrink-0" />
                 {t("assistantTitle")}
@@ -205,18 +219,19 @@ export function TopBar() {
                 href="https://support.net2phone.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 text-sm text-gray-700 hover:bg-gray-50 -mx-2 px-2 py-1.5 rounded"
+                className="flex items-center gap-2 text-sm text-gray-700 hover:bg-gray-50 px-2 py-1.5 rounded"
               >
                 <HelpCircle className="w-4 h-4 shrink-0" />
                 {t("helpSupport")}
               </a>
             </div>
-            <div className="border-b border-gray-100 px-3 py-2 space-y-1">
+
+            <div className="mt-2 rounded-[16px] border border-white bg-[#ffffff] px-2.5 py-2 space-y-0.5">
               <a
                 href="https://www.net2phone.com/terms-of-service"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block text-sm text-gray-700 hover:bg-gray-50 -mx-2 px-2 py-1 rounded"
+                className="block text-sm text-gray-700 hover:bg-gray-50 px-2 py-1.5 rounded"
               >
                 {te("termsOfService")}
               </a>
@@ -224,18 +239,11 @@ export function TopBar() {
                 href="https://www.net2phone.com/privacy-policy"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block text-sm text-gray-700 hover:bg-gray-50 -mx-2 px-2 py-1 rounded"
+                className="block text-sm text-gray-700 hover:bg-gray-50 px-2 py-1.5 rounded"
               >
                 {te("privacyPolicy")}
               </a>
             </div>
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100"
-            >
-              <LogOut className="w-4 h-4" />
-              {t("logOut")}
-            </button>
           </div>
           )}
         </div>

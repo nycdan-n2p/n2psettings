@@ -74,10 +74,19 @@ function LoginPageInner() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f8f9fa]">
-      <div className="w-full max-w-md p-8 bg-white rounded-3xl shadow-sm">
+      <div
+        className="login-popup-card w-full max-w-md p-8 shadow-sm"
+        style={{ backgroundColor: "#ffffff", borderRadius: "24px" }}
+      >
         <div className="mb-6">
-          <h1 className="text-2xl font-medium text-gray-900">{t("title")}</h1>
-          <p className="text-sm text-gray-500 mt-1">{t("subtitle")}</p>
+          <div className="flex items-center gap-3">
+            <img
+              src="/net2phone-icon.png"
+              alt="net2phone logo"
+              className="h-8 w-8 rounded-[8px]"
+            />
+            <h1 className="text-2xl font-medium text-gray-900">{t("title")}</h1>
+          </div>
         </div>
 
         <div className="flex rounded-[16px] p-1 mb-6 bg-gray-100">
@@ -144,7 +153,7 @@ function LoginPageInner() {
                   placeholder={t("tokenPlaceholder")}
                   rows={5}
                   required
-                  className="w-full px-4 py-3 bg-[#f3f4f6] rounded-[16px] text-sm font-mono focus:outline-none focus:ring-2 focus:ring-black"
+                  className="w-full px-4 py-3 bg-[#f3f4f6] rounded-[16px] text-sm font-mono resize-none focus:outline-none focus:ring-2 focus:ring-black"
                 />
                 <p className="text-xs text-gray-400 mt-1">{t("tokenHint")}</p>
               </div>

@@ -168,7 +168,7 @@ function SIPTrunkingContent() {
               <EmptyRow message={t("noTrunks")} />
             ) : (
               <div className="overflow-x-auto">
-                <table className="n2p-table min-w-full text-sm">
+                <table className="n2p-table w-full text-sm">
                   <thead>
                     <tr>
                       <th>Name</th>
@@ -204,7 +204,7 @@ function SIPTrunkingContent() {
               <EmptyRow message={t("noAddresses")} />
             ) : (
               <div className="overflow-x-auto">
-                <table className="n2p-table min-w-full text-sm">
+                <table className="n2p-table w-full text-sm">
                   <thead>
                     <tr>
                       <th>Address</th>
@@ -230,7 +230,7 @@ function SIPTrunkingContent() {
               <EmptyRow message={t("noPhoneNumbers")} />
             ) : (
               <div className="overflow-x-auto">
-                <table className="n2p-table min-w-full text-sm">
+                <table className="n2p-table w-full text-sm">
                   <thead>
                     <tr>
                       <th>Number</th>

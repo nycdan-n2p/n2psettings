@@ -30,6 +30,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Modal } from "@/components/settings/Modal";
 import { TextInput } from "@/components/settings/TextInput";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
+import { Toggle } from "@/components/settings/Toggle";
 import { Pencil, Trash2, Phone, ChevronDown, Plus, X, GripVertical, Play } from "lucide-react";
 
 // ── Avatar helpers (for DepartmentMembersPopover) ─────────────────────────────
@@ -185,23 +186,6 @@ function formatPhoneDisplay(num: string): string {
     return `(${area}) ${mid}-${last}`;
   }
   return num;
-}
-
-// ── Toggle ────────────────────────────────────────────────────────────────────
-function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none ${
-        checked ? "bg-[#1a73e8]" : "bg-gray-300"
-      }`}
-    >
-      <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${checked ? "translate-x-6" : "translate-x-1"}`} />
-    </button>
-  );
 }
 
 // ── Call Options Tab ─────────────────────────────────────────────────────────────

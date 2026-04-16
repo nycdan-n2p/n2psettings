@@ -129,7 +129,7 @@ export default function SIPTieLinesPage() {
   };
 
   const columns: ColumnDef<TieLine>[] = [
-    { accessorKey: "tieLineId", header: "ID" },
+    { accessorKey: "tieLineId", header: "Id" },
     {
       accessorKey: "enabled",
       header: t("colEnabled"),
@@ -174,16 +174,18 @@ export default function SIPTieLinesPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-medium text-gray-900 mb-6">
-        SIP Tie-Lines
-      </h1>
-      <p className="text-gray-600 mb-6">
-        Manage SIP tie-line configurations.
-      </p>
-      <div className="mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-medium text-gray-900">
+            SIP Tie-Lines
+          </h1>
+          <p className="text-gray-600 mt-2">
+            Manage SIP tie-line configurations.
+          </p>
+        </div>
         <button
           onClick={openAddModal}
-          className="px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium"
+          className="sm:ml-auto px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium"
         >
           Add tie-line
         </button>

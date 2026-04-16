@@ -90,7 +90,7 @@
       "aiAgent": "Agente IA",
       "huddle": "Huddle",
       "coach": "Coach",
-      "ucontact": "Ucontact"
+      "ucontact": "uContact"
     },
     "items": {
       "dashboard": "Painel",
@@ -1354,14 +1354,14 @@
     "agentDesc": "O Agente IA é gerenciado em um aplicativo separado.",
     "agentLink": "Abrir Agente IA →",
     "huddleTitle": "Huddle",
-    "huddleSubtitle": "Configurações de videoconferência e colaboração.",
-    "huddleDesc": "As configurações de vídeo do Huddle são gerenciadas no aplicativo Huddle.",
+    "huddleSubtitle": "Configurações de colaboração do Huddle.",
+    "huddleDesc": "As configurações do Huddle são gerenciadas no aplicativo Huddle.",
     "huddleLink": "Abrir Huddle →",
     "coachTitle": "Coach",
     "coachSubtitle": "Configurações de coaching IA e análises.",
     "coachDesc": "As configurações do Coach IA são gerenciadas no aplicativo Coach.",
     "coachLink": "Abrir Coach →",
-    "ucontactTitle": "Configurações do Ucontact",
+    "ucontactTitle": "Configurações do uContact",
     "ucontactSubtitle": "Configurações do centro de contato e gestão de mão de obra.",
     "ucontactDesc": "As configurações do centro de contato estarão disponíveis aqui.",
     "comingSoon": "Em breve.",

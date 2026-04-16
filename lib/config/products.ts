@@ -26,8 +26,8 @@ export interface Product {
 export const PRODUCTS: Product[] = [
   {
     id: "ucass",
-    name: "UCaaS",
-    shortName: "Unite",
+    name: "net2phone",
+    shortName: "net2phone",
     description: "Unified communications — calls, voicemail, routing, devices",
     icon: Phone,
     basePath: "/ucass",
@@ -44,8 +44,8 @@ export const PRODUCTS: Product[] = [
   {
     id: "huddle",
     name: "Huddle",
-    shortName: "Video",
-    description: "Video conferencing and collaboration",
+    shortName: "Huddle",
+    description: "Huddle meetings and collaboration",
     icon: Video,
     basePath: "/huddle",
     envUrlKey: "N2P_HUDDLE_URL",
@@ -61,8 +61,8 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: "ucontact",
-    name: "Ucontact",
-    shortName: "Ucontact",
+    name: "uContact",
+    shortName: "uContact",
     description: "Contact center and workforce management",
     icon: Headphones,
     basePath: "/ucontact",

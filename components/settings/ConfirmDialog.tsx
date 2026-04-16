@@ -24,14 +24,14 @@ export function ConfirmDialog({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
         className="absolute inset-0 bg-black/50"
         onClick={onClose}
         aria-hidden
       />
       <div
-        className="relative z-10 w-full max-w-sm bg-white rounded-[34px] shadow-xl mx-4 p-6"
+        className="relative z-10 w-full max-w-[600px] bg-white rounded-[24px] shadow-xl p-6"
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="confirm-title"

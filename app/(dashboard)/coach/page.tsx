@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { loadEnv } from "@/lib/env";
 import { ProductHeader } from "@/components/layout/ProductHeader";
+import { getButtonClasses } from "@/components/ui/Button";
 
 const DEFAULT_COACH_URL = "https://coachai.net2phone.com";
 
@@ -30,7 +31,7 @@ export default function CoachProductPage() {
       </p>
 
       <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <div className="px-6 py-4 bg-white">
           <h2 className="text-lg font-medium text-gray-900">Coach Settings</h2>
         </div>
         <div className="px-6 py-6">
@@ -41,7 +42,7 @@ export default function CoachProductPage() {
             href={coachUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium"
+            className={getButtonClasses({ variant: "primary", size: "md" })}
           >
             Open Coach →
           </a>

@@ -115,6 +115,7 @@ function CallBlockingContent() {
         <Button
           onClick={openAddModal}
           variant="primary"
+          className="sm:ml-auto"
         >
           Add number
         </Button>

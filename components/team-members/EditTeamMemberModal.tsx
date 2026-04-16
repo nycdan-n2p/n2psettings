@@ -116,7 +116,7 @@ export function EditTeamMemberModal({
   const headerContent = (
     <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-[#dadce0] bg-white min-w-0">
       <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
-        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#f1f3f4] flex items-center justify-center overflow-hidden">
+        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-white border border-[#e5e7eb] flex items-center justify-center overflow-hidden">
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- external avatar URL
             <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
@@ -135,7 +135,7 @@ export function EditTeamMemberModal({
       </div>
       <button
         onClick={onClose}
-        className="p-2 rounded-full hover:bg-[#f1f3f4] text-gray-500 transition-colors shrink-0"
+        className="p-2 rounded-full hover:bg-white text-gray-500 transition-colors shrink-0"
         aria-label="Close"
       >
         <X className="w-5 h-5" />
@@ -153,19 +153,23 @@ export function EditTeamMemberModal({
     >
       <div className="flex flex-col min-h-[320px]">
         {/* Tabs - scrollable when needed, visible scrollbar */}
-        <div className="flex overflow-x-auto overflow-y-hidden border-b border-[#dadce0] bg-[#f8f9fa] -mx-6 px-6 min-w-0">
+        <div
+          className="flex overflow-x-auto overflow-y-hidden border-b border-[#dadce0] bg-white -mx-6 px-6 min-w-0"
+          style={{ backgroundColor: "#ffffff" }}
+        >
           <div className="flex min-w-max">
             {TABS.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 onClick={() => setActiveTab(id)}
+                style={{ backgroundColor: "#ffffff" }}
                 className={`
                   flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap
                   border-b-2 -mb-px transition-colors shrink-0
                   ${
                     activeTab === id
                       ? "border-[#1a73e8] text-[#1a73e8] bg-white"
-                      : "border-transparent text-gray-600 hover:text-gray-900 hover:bg-[#f1f3f4]"
+                      : "border-transparent text-gray-600 hover:text-gray-900 hover:bg-white"
                   }
                 `}
               >
@@ -177,7 +181,7 @@ export function EditTeamMemberModal({
         </div>
 
         {/* Tab content */}
-        <div className="py-6 min-h-[280px] bg-[#fafafa] overflow-hidden">
+        <div className="py-6 min-h-[280px] bg-white overflow-hidden">
           {isLoading ? (
             <div className="flex justify-center py-12">
               <Loader variant="inline" label="Loading..." />
@@ -271,7 +275,7 @@ function ProfileTab({
   return (
     <div className="border border-[#dadce0] rounded-lg bg-white overflow-hidden">
       <div className="px-6 py-4 space-y-6">
-        <div className="border border-dashed border-[#dadce0] rounded-lg p-6 bg-[#fafafa]">
+        <div className="border border-dashed border-[#dadce0] rounded-lg p-6 bg-white">
           <p className="text-sm text-gray-600">Drag and drop your avatar here, or browse to upload.</p>
           <p className="text-xs text-gray-500 mt-1">Supported: .png, .jpg, .jpeg · Max size: 4 MB</p>
         </div>
@@ -461,15 +465,15 @@ function CompanyTab({
       </div>
       <div className="px-6 py-4">
         <p className="text-xs font-medium text-gray-500 mb-2">Role</p>
-        <div className="flex gap-0.5 p-0.5 bg-[#f1f3f4] rounded-lg w-fit">
+        <div className="flex gap-0.5 p-0.5 bg-white border border-[#e5e7eb] rounded-lg w-fit">
           {(["User", "Admin"] as const).map((r) => (
             <button
               key={r}
               type="button"
               onClick={() => onUpdate({ roleId: r === "Admin" ? 2 : 1 })}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 (r === "Admin" && isAdmin) || (r === "User" && !isAdmin)
-                  ? "bg-white text-[#1a73e8] shadow-sm"
+                  ? "bg-white text-[#1a73e8]"
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
@@ -481,6 +485,7 @@ function CompanyTab({
       <SettingsRow
         label="Company Directory"
         description="When on, callers can reach you by name in the directory."
+        controlLeading
       >
         <Toggle
           checked={compDirEnabled}
@@ -581,6 +586,7 @@ function CallOptionsTab({
       <SettingsRow
         label="Ring group calls"
         description="Allow this user to receive ring group calls."
+        controlLeading
       >
         <Toggle
           checked={ringGroupEnabled}
@@ -641,7 +647,7 @@ function DevicesTab({
             {devices.map((d) => (
               <div
                 key={d.macId}
-                className="flex items-center justify-between gap-4 rounded-lg border border-[#dadce0] p-3 bg-[#fafafa] min-w-0"
+                className="flex items-center justify-between gap-4 rounded-lg border border-[#dadce0] p-3 bg-white min-w-0"
               >
                 <span className="text-sm text-gray-900 truncate min-w-0">
                   {d.deviceType?.name ?? d.displayName ?? d.macId}
@@ -700,12 +706,14 @@ function VoicemailTab({
       <SettingsRow
         label="Voicemail"
         description="When off, callers cannot leave voicemail if you miss their call."
+        controlLeading
       >
         <Toggle checked={enabled} onChange={(v) => onUpdate({ voicemailEnabled: v })} />
       </SettingsRow>
       <SettingsRow
         label="Voicemail-to-Email"
         description="Email me when I get a new voicemail."
+        controlLeading
       >
         <Toggle
           checked={emailNotify}
@@ -717,7 +725,7 @@ function VoicemailTab({
         />
       </SettingsRow>
       {emailNotify && (
-        <div className="px-6 py-4 space-y-3 bg-[#fafafa]">
+        <div className="px-6 py-4 space-y-3 bg-white">
           <p className="text-xs font-medium text-gray-500">Email options</p>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -808,7 +816,7 @@ function HoldMusicTab({
           Choose Default to use standard hold music, or Custom to upload your own.
         </p>
         <div className="space-y-2">
-          <label className="flex items-center gap-3 p-3 rounded-lg border border-[#dadce0] cursor-pointer hover:bg-[#f8f9fa]">
+          <label className="flex items-center gap-3 p-3 rounded-lg border border-[#dadce0] cursor-pointer hover:bg-white">
             <input
               type="radio"
               name="holdMusic"
@@ -818,7 +826,7 @@ function HoldMusicTab({
             />
             <span className="text-sm text-gray-900">Default Music on Hold</span>
           </label>
-          <label className="flex items-center gap-3 p-3 rounded-lg border border-[#dadce0] cursor-pointer hover:bg-[#f8f9fa]">
+          <label className="flex items-center gap-3 p-3 rounded-lg border border-[#dadce0] cursor-pointer hover:bg-white">
             <input
               type="radio"
               name="holdMusic"

@@ -12,9 +12,11 @@ interface ModalProps {
   size?: "md" | "lg" | "xl" | "2xl";
   /** Custom header content; when provided, replaces default title + close */
   headerContent?: React.ReactNode;
+  /** Optional extra classes for modal body wrapper */
+  bodyClassName?: string;
 }
 
-export function Modal({ isOpen, onClose, title, children, size = "md", headerContent }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, size = "md", headerContent, bodyClassName = "" }: ModalProps) {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -32,30 +34,30 @@ export function Modal({ isOpen, onClose, title, children, size = "md", headerCon
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-4">
       <div
         className="absolute inset-0 bg-black/50"
         onClick={onClose}
         aria-hidden
       />
       <div
-        className={`relative z-10 w-full bg-white mx-4 max-h-[90vh] overflow-hidden flex flex-col ${
+        className={`modal-surface relative z-10 w-full bg-white mx-4 h-[calc(100vh-1rem)] overflow-hidden flex flex-col ${
           size === "2xl"
-            ? "max-w-4xl rounded-[34px] shadow-2xl"
+            ? "max-w-4xl rounded-t-[24px] rounded-b-none shadow-2xl"
             : size === "xl"
-              ? "max-w-2xl rounded-[34px] shadow-2xl"
+              ? "max-w-2xl rounded-t-[24px] rounded-b-none shadow-2xl"
               : size === "lg"
-                ? "max-w-[560px] rounded-[34px] shadow-2xl"
-                : "max-w-md rounded-[34px] shadow-xl"
+                ? "max-w-[560px] rounded-t-[24px] rounded-b-none shadow-2xl"
+                : "max-w-md rounded-t-[24px] rounded-b-none shadow-xl"
         }`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
       >
         {headerContent ? (
-          <div className="border-b border-gray-200">{headerContent}</div>
+          <div className="modal-header bg-white" style={{ backgroundColor: "#ffffff" }}>{headerContent}</div>
         ) : (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <div className="modal-header bg-white flex items-center justify-between px-6 py-4" style={{ backgroundColor: "#ffffff" }}>
             <h2 id="modal-title" className="text-lg font-medium text-gray-900">
               {title}
             </h2>
@@ -68,7 +70,7 @@ export function Modal({ isOpen, onClose, title, children, size = "md", headerCon
             </button>
           </div>
         )}
-        <div className="px-6 py-4 overflow-auto flex-1">{children}</div>
+        <div className={`modal-body bg-white px-6 py-4 overflow-auto flex-1 ${bodyClassName}`}>{children}</div>
       </div>
     </div>
   );

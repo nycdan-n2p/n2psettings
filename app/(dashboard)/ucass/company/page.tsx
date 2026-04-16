@@ -23,11 +23,11 @@ export default function CompanyPage() {
       <h1 className="text-2xl font-medium text-gray-900 mb-6">{t("title")}</h1>
       <p className="text-gray-600 mb-6">{t("subtitle")}</p>
 
-      <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+      <div className="bg-[#F9F9FB] rounded-3xl overflow-hidden">
+        <div className="px-6 py-4 bg-[#F9F9FB]">
           <h2 className="text-lg font-medium text-gray-900">{t("accountOverview")}</h2>
         </div>
-        <dl className="divide-y divide-gray-200">
+        <dl>
           <div className="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
             <dt className="text-sm font-medium text-gray-500">{t("fieldCompany")}</dt>
             <dd className="mt-1 text-sm text-gray-900 sm:col-span-2">{account.company || "—"}</dd>

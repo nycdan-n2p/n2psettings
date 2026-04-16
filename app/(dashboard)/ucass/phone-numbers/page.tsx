@@ -6,6 +6,7 @@ import { Phone, Search, ChevronRight, X, Radio, Pencil, Trash2, Plus } from "luc
 import { useApp } from "@/contexts/AppContext";
 import { qk } from "@/lib/query-keys";
 import { Loader } from "@/components/ui/Loader";
+import { SegmentedTabs } from "@/components/ui/SegmentedTabs";
 import {
   fetchPhoneNumbers,
   fetchPhoneNumberStats,
@@ -141,14 +142,14 @@ function AssignmentPicker({
             left: pos.left,
             zIndex: 9999,
           }}
-          className="w-64 bg-white rounded-[16px] border border-[#dadce0] shadow-lg overflow-hidden"
+          className="n2p-keep-white w-64 bg-white rounded-[16px] border border-[#e5e7eb] shadow-[0_16px_40px_rgba(107,114,128,0.34)] overflow-hidden"
         >
           {isLoading ? (
             <div className="px-4 py-3 text-xs text-gray-400">Loading…</div>
           ) : (
-            <div className="flex">
+            <div className="flex bg-white">
               {/* Main menu */}
-              <div className="flex-1">
+              <div className="flex-1 bg-white">
                 {/* Currently assigned item if any */}
                 {currentType && phoneNumber.routesTo && (
                   <button
@@ -176,7 +177,7 @@ function AssignmentPicker({
                       onMouseEnter={() => hasItems ? setSubmenu(dt) : undefined}
                       onClick={() => hasItems ? setSubmenu(dt === submenu ? null : dt) : undefined}
                       disabled={!hasItems}
-                      className={`w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-gray-50 text-sm transition-colors ${!hasItems ? "opacity-40 cursor-not-allowed" : ""} ${submenu === dt ? "bg-blue-50" : ""}`}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-gray-50 text-sm transition-colors ${!hasItems ? "opacity-40 cursor-not-allowed" : ""}`}
                     >
                       <span className={`w-6 h-6 rounded-full ${DEST_COLORS[dt]} flex items-center justify-center text-white text-[10px] font-bold shrink-0`}>
                         {DEST_LABELS[dt][0]}
@@ -199,12 +200,12 @@ function AssignmentPicker({
 
               {/* Submenu */}
               {submenu && (
-                <div className="w-52 border-l border-[#f1f3f4] max-h-64 overflow-y-auto">
+                <div className="w-52 bg-white border-l border-[#f1f3f4] max-h-64 overflow-y-auto">
                   {(targets?.[submenu === "user" ? "users" : submenu === "department" ? "departments" : submenu === "ringGroup" ? "ringGroups" : submenu === "welcomeMenu" ? "welcomeMenus" : submenu === "specialExtension" ? "specialExtensions" : "callQueues"] ?? []).map((item) => (
                     <button
                       key={item.id}
                       onClick={() => select(item)}
-                      className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-blue-50 text-sm text-left transition-colors"
+                      className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-gray-50 text-sm text-left transition-colors"
                     >
                       <span className={`w-6 h-6 rounded-full ${DEST_COLORS[submenu]} flex items-center justify-center text-white text-[10px] font-bold shrink-0`}>
                         {initials(item.name)}
@@ -299,10 +300,11 @@ function CallerIdModal({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" role="dialog" aria-modal="true">
-      <div className="bg-white rounded-[20px] w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-4" role="dialog" aria-modal="true">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden />
+      <div className="modal-surface relative z-10 w-full max-w-2xl mx-4 h-[calc(100vh-1rem)] bg-white rounded-t-[24px] rounded-b-none shadow-2xl overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-start gap-4 px-6 pt-6 pb-4 border-b border-[#e8eaed]">
+        <div className="modal-header flex items-start gap-4 px-6 pt-6 pb-4 border-b border-[#e8eaed]">
           <div className="w-14 h-14 rounded-full bg-[#e3f2fd] flex items-center justify-center shrink-0">
             <Phone className="w-7 h-7 text-[#1565c0]" fill="currentColor" />
           </div>
@@ -318,9 +320,9 @@ function CallerIdModal({
         </div>
 
         {isLoading ? (
-          <div className="flex justify-center py-12"><Loader variant="inline" label="Loading caller ID settings…" /></div>
+          <div className="flex-1 overflow-y-auto flex justify-center py-12"><Loader variant="inline" label="Loading caller ID settings…" /></div>
         ) : (
-          <div className="px-6 py-5 space-y-6">
+          <div className="modal-body flex-1 overflow-y-auto px-6 py-5 space-y-6">
             {/* Incoming caller ID name */}
             <CallerIdSection
               title="Incoming caller ID name"
@@ -409,15 +411,13 @@ function CallerIdSection({
       <h3 className="text-lg font-semibold text-[#202124] mb-3">{title}</h3>
       <div className="space-y-2.5">
         {modes.map((m) => (
-          <label key={m.value} className="flex items-center gap-3 cursor-pointer group">
-            <div
-              onClick={() => onChange(m.value, value)}
-              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                selectedMode === m.value ? "border-[#1a73e8]" : "border-[#9aa0a6] group-hover:border-[#5f6368]"
-              }`}
-            >
-              {selectedMode === m.value && <div className="w-2.5 h-2.5 rounded-full bg-[#1a73e8]" />}
-            </div>
+          <label key={m.value} className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="radio"
+              name={`caller-id-mode-${title.replace(/\s+/g, "-").toLowerCase()}`}
+              checked={selectedMode === m.value}
+              onChange={() => onChange(m.value, value)}
+            />
             <div className="flex items-baseline gap-2">
               <span className="text-sm font-medium text-[#202124]">{m.label}</span>
               <span className="text-sm text-gray-500">{m.desc}</span>
@@ -495,10 +495,11 @@ function EditNumberModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" role="dialog" aria-modal="true">
-      <div className="bg-white rounded-[20px] w-full max-w-md shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-4" role="dialog" aria-modal="true">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden />
+      <div className="modal-surface relative z-10 w-full max-w-2xl mx-4 h-[calc(100vh-1rem)] bg-white rounded-t-[24px] rounded-b-none shadow-2xl overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center gap-4 px-6 pt-6 pb-5">
+        <div className="modal-header flex items-center gap-4 px-6 pt-6 pb-5">
           <div className="w-14 h-14 rounded-full bg-[#e3f2fd] flex items-center justify-center shrink-0">
             <Phone className="w-7 h-7 text-[#1565c0]" fill="currentColor" />
           </div>
@@ -508,27 +509,27 @@ function EditNumberModal({
           </button>
         </div>
 
-        <div className="px-6 pb-6 space-y-5">
+        <div className="modal-body flex-1 overflow-y-auto px-6 py-5 space-y-5">
           {/* Change to label */}
           <div>
             <p className="text-sm text-gray-500 mb-2">Change to</p>
 
             {/* Number type toggle */}
-            <div className="flex rounded-full border border-[#dadce0] p-0.5 mb-3 w-fit">
-              {(["local", "tollFree"] as const).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => { setNumberType(t); setSearched(false); setResults([]); setSelected(null); }}
-                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                    numberType === t
-                      ? "bg-[#1a73e8] text-white shadow-sm"
-                      : "text-gray-600 hover:text-gray-900"
-                  }`}
-                >
-                  {t === "local" ? "Local" : "Toll Free"}
-                </button>
-              ))}
-            </div>
+            <SegmentedTabs
+              value={numberType}
+              onChange={(value) => {
+                setNumberType(value);
+                setSearched(false);
+                setResults([]);
+                setSelected(null);
+              }}
+              options={[
+                { value: "local", label: "Local" },
+                { value: "tollFree", label: "Toll Free" },
+              ]}
+              className="mb-3"
+              equalWidth={false}
+            />
 
             {/* Area code search */}
             <div className="flex gap-2">
@@ -591,7 +592,7 @@ function EditNumberModal({
         </div>
 
         {/* Footer */}
-        <div className="flex gap-3 px-6 pb-6 justify-start">
+        <div className="flex gap-3 px-6 py-4 justify-start border-t border-[#e8eaed]">
           <button
             onClick={() => swapMutation.mutate()}
             disabled={!selected || swapMutation.isPending}
@@ -601,13 +602,13 @@ function EditNumberModal({
                 : "bg-gray-200 text-gray-400 cursor-not-allowed"
             }`}
           >
-            {swapMutation.isPending ? "CHANGING…" : "CHANGE"}
+            {swapMutation.isPending ? "Changing…" : "Change"}
           </button>
           <button
             onClick={onClose}
             className="px-6 py-2.5 text-sm font-bold text-gray-600 hover:text-gray-900 transition-colors"
           >
-            CANCEL
+            Cancel
           </button>
         </div>
       </div>
@@ -674,7 +675,7 @@ export default function PhoneNumbersPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#202124] uppercase tracking-wide">Phone Numbers</h1>
+          <h1 className="text-2xl font-bold text-[#202124]">Phone Numbers</h1>
           {stats && (
             <p className="text-sm text-gray-500 mt-1">
               {stats.phoneNumbersInUse} of {stats.maxPhoneNumbers} numbers in use
@@ -683,7 +684,7 @@ export default function PhoneNumbersPage() {
         </div>
         <button className="relative flex items-center gap-2 px-5 py-2.5 bg-[#1a73e8] text-white text-sm font-semibold rounded-full hover:bg-[#1557b0] transition-colors shadow-sm">
           <Plus className="w-4 h-4" />
-          ADD PHONE NUMBER
+          Add phone number
           {stats && stats.unUsedPhones > 0 && (
             <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
               {stats.unUsedPhones}
@@ -693,7 +694,7 @@ export default function PhoneNumbersPage() {
       </div>
 
       {/* Search + table card */}
-      <div className="bg-white rounded-[16px] border border-[#e8eaed] shadow-sm overflow-hidden">
+      <div className="n2p-keep-white bg-white rounded-[16px] shadow-sm overflow-hidden" style={{ backgroundColor: "#ffffff" }}>
         {/* Search bar */}
         <div className="px-5 py-4 border-b border-[#e8eaed]">
           <div className="relative max-w-xs">
@@ -703,20 +704,11 @@ export default function PhoneNumbersPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search"
-              className="w-full pl-9 pr-3 py-2 text-sm border border-[#dadce0] rounded-full bg-[#f1f3f4] focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:bg-white transition-colors"
+              className="w-full pl-9 pr-3 py-2 text-sm border border-[#dadce0] rounded-full bg-white focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:bg-white transition-colors"
             />
           </div>
         </div>
 
-        {/* Column headers */}
-        <div className="grid grid-cols-[1fr_260px_auto_auto] items-center px-5 py-2.5 bg-gray-50 border-b border-[#e8eaed]">
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Number</p>
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Assignment</p>
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider px-4">Caller ID</p>
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</p>
-        </div>
-
-        {/* Rows */}
         {isLoading ? (
           <div className="flex justify-center py-16">
             <Loader variant="inline" label="Loading phone numbers…" />
@@ -726,17 +718,29 @@ export default function PhoneNumbersPage() {
             {search ? "No numbers match your search." : "No phone numbers found."}
           </div>
         ) : (
-          <div className="divide-y divide-[#f1f3f4]">
-              {filtered.map((num) => (
-                <PhoneNumberRow
-                  key={num.number}
-                  phoneNumber={num}
-                  accountId={accountId}
-                  onAssign={(dest) => handleAssign(num, dest)}
-                  onCallerIdClick={() => setCallerIdTarget(num)}
-                  onEditClick={() => setEditTarget(num)}
-                />
-            ))}
+          <div className="overflow-x-auto">
+            <table className="n2p-table w-full text-sm">
+              <thead>
+                <tr>
+                  <th>Number</th>
+                  <th>Assignment</th>
+                  <th>Caller ID</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((num) => (
+                  <PhoneNumberRow
+                    key={num.number}
+                    phoneNumber={num}
+                    accountId={accountId}
+                    onAssign={(dest) => handleAssign(num, dest)}
+                    onCallerIdClick={() => setCallerIdTarget(num)}
+                    onEditClick={() => setEditTarget(num)}
+                  />
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
@@ -779,36 +783,39 @@ function PhoneNumberRow({
   const formatted = formatPhoneNumber(num);
 
   return (
-    <div className="grid grid-cols-[1fr_260px_auto_auto] items-center px-5 py-3.5 hover:bg-gray-50/80 transition-colors group">
+    <tr>
       {/* Number */}
-      <div className="flex items-center gap-3">
+      <td>
+        <div className="flex items-center gap-3">
         <div className="w-8 h-8 rounded-full bg-[#e3f2fd] flex items-center justify-center shrink-0">
           <Phone className="w-4 h-4 text-[#1565c0]" fill="currentColor" />
         </div>
         <span className="text-sm font-medium text-[#202124]">{formatted}</span>
-      </div>
+        </div>
+      </td>
 
       {/* Assignment dropdown */}
-      <div>
+      <td>
         <AssignmentPicker
           phoneNumber={phoneNumber}
           accountId={accountId}
           onSave={onAssign}
         />
-      </div>
+      </td>
 
       {/* Set incoming caller ID */}
-      <div className="px-4">
+      <td>
         <button
           onClick={onCallerIdClick}
           className="flex items-center gap-1.5 text-sm text-[#1a73e8] hover:underline font-medium whitespace-nowrap"
         >
           Set incoming caller ID
         </button>
-      </div>
+      </td>
 
       {/* Action buttons */}
-      <div className="flex items-center gap-1.5">
+      <td>
+        <div className="flex items-center gap-1.5">
         <button
           onClick={onCallerIdClick}
           className="w-8 h-8 rounded-full border border-[#dadce0] flex items-center justify-center text-gray-400 hover:text-[#1a73e8] hover:border-[#1a73e8] transition-colors"
@@ -829,7 +836,8 @@ function PhoneNumberRow({
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
-      </div>
-    </div>
+        </div>
+      </td>
+    </tr>
   );
 }

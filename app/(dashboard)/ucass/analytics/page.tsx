@@ -175,87 +175,75 @@ export default function AnalyticsPage() {
       label: "Messages",
       value: "—",
       icon: MessageSquare,
-      color: "text-violet-600",
-      bg: "bg-violet-50",
+      color: "text-gray-500",
       hint: "Messaging data not yet available",
     },
     {
       label: "Calls",
       value: stats?.totalCalls ?? "—",
       icon: Phone,
-      color: "text-slate-600",
-      bg: "bg-slate-50",
+      color: "text-gray-500",
     },
     {
       label: "Unique conversations",
       value: "—",
       icon: Users,
-      color: "text-indigo-600",
-      bg: "bg-indigo-50",
+      color: "text-gray-500",
       hint: "Messaging data not yet available",
     },
     {
       label: "Time on calls",
       value: formatTimeOnCalls(totalDurationSec),
       icon: Clock,
-      color: "text-amber-600",
-      bg: "bg-amber-50",
+      color: "text-gray-500",
     },
     {
       label: "Total Calls",
       value: stats?.totalCalls ?? "—",
       icon: Phone,
-      color: "text-slate-600",
-      bg: "bg-slate-50",
+      color: "text-gray-500",
     },
     {
       label: "Answered",
       value: stats?.answeredCalls ?? "—",
       icon: PhoneCall,
-      color: "text-emerald-600",
-      bg: "bg-emerald-50",
+      color: "text-gray-500",
     },
     {
       label: "Missed",
       value: stats?.missedCalls ?? "—",
       icon: PhoneOff,
-      color: "text-rose-600",
-      bg: "bg-rose-50",
+      color: "text-gray-500",
     },
     {
       label: "Answer Rate",
       value: stats ? `${stats.answerRatePct}%` : "—",
       icon: TrendingUp,
-      color: "text-blue-600",
-      bg: "bg-blue-50",
+      color: "text-gray-500",
     },
     {
       label: "Avg Duration",
       value: formatDuration(stats?.avgDurationSec),
       icon: Clock,
-      color: "text-amber-600",
-      bg: "bg-amber-50",
+      color: "text-gray-500",
     },
     {
       label: "Voicemails",
       value: stats?.voicemailCalls ?? "—",
       icon: Voicemail,
-      color: "text-orange-600",
-      bg: "bg-orange-50",
+      color: "text-gray-500",
     },
     {
       label: "Recordings",
       value: stats?.recordingCount ?? "—",
       icon: Mic,
-      color: "text-violet-600",
-      bg: "bg-violet-50",
+      color: "text-gray-500",
     },
     {
       label: "Peak Hour",
       value: stats?.peakHour != null ? `${stats.peakHour}:00` : "—",
       icon: Clock,
-      color: "text-cyan-600",
-      bg: "bg-cyan-50",
+      color: "text-gray-500",
     },
   ];
 
@@ -275,7 +263,7 @@ export default function AnalyticsPage() {
       <div className="flex flex-wrap md:flex-nowrap items-end gap-3 sm:gap-4 mb-4 w-full">
         <div className="flex flex-wrap items-end gap-3 sm:gap-4">
           <div className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Direction</span>
+            <span className="text-sm font-medium text-gray-500">Direction</span>
             <SegmentedTabs
               value={direction}
               onChange={setDirection}
@@ -314,15 +302,15 @@ export default function AnalyticsPage() {
       ) : (
         <>
           {/* Overview metrics */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
             {statCards.slice(0, 4).map((s) => (
               <div
                 key={s.label}
-                className={`rounded-[16px] border border-gray-100 p-4 ${s.bg} transition-shadow hover:shadow-sm`}
+                className="rounded-[20px] bg-[#F9F9FB] p-4 h-[104px]"
                 title={"hint" in s ? s.hint : undefined}
               >
                 <div className={`mt-0.5 ${s.color}`}>
-                  <s.icon className="w-5 h-5" />
+                  <s.icon className="w-4 h-4" />
                 </div>
                 <p className="text-xs font-medium text-gray-500 mt-2">{s.label}</p>
                 <p className="text-xl font-semibold text-gray-900 mt-0.5">
@@ -333,14 +321,14 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Call stats grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 mb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
             {statCards.slice(4).map((s) => (
               <div
                 key={s.label}
-                className={`rounded-[16px] border border-gray-100 p-4 ${s.bg} transition-shadow hover:shadow-sm`}
+                className="rounded-[20px] bg-[#F9F9FB] p-4 h-[104px]"
               >
                 <div className={`mt-0.5 ${s.color}`}>
-                  <s.icon className="w-5 h-5" />
+                  <s.icon className="w-4 h-4" />
                 </div>
                 <p className="text-xs font-medium text-gray-500 mt-2">{s.label}</p>
                 <p className="text-xl font-semibold text-gray-900 mt-0.5">

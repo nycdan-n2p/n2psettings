@@ -83,10 +83,12 @@ export default function VoicemailSettingsPage() {
           title={t("sectionTitle")}
           subtitle={t("sectionSubtitle")}
           defaultExpanded
+          headerClassName="py-[10px]"
         >
           <SettingsRow
             label={t("labelEmailNotify")}
             description={t("descEmailNotify")}
+            controlLeading
           >
             <Toggle
               checked={settings?.emailNotify ?? false}
@@ -97,6 +99,7 @@ export default function VoicemailSettingsPage() {
           <SettingsRow
             label={t("labelIncludeVm")}
             description={t("descIncludeVm")}
+            controlLeading
           >
             <Toggle
               checked={settings?.emailIncludeVoicemail ?? false}
@@ -107,6 +110,7 @@ export default function VoicemailSettingsPage() {
           <SettingsRow
             label={t("labelTranscribe")}
             description={t("descTranscribe")}
+            controlLeading
           >
             <Toggle
               checked={settings?.emailTranscribe ?? false}
@@ -117,6 +121,7 @@ export default function VoicemailSettingsPage() {
           <SettingsRow
             label={t("labelCallerDetails")}
             description={t("descCallerDetails")}
+            controlLeading
           >
             <Toggle
               checked={settings?.emailIncludeCallerDetails ?? false}

@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApp } from "@/contexts/AppContext";
 import { qk } from "@/lib/query-keys";
 import { Loader } from "@/components/ui/Loader";
+import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import {
   Trash2, Upload, Music, Sparkles, Play, Pause,
@@ -160,21 +161,22 @@ function MusicGenerator({
   }
 
   return (
-    <div className="bg-white rounded-[16px] border border-purple-200 p-5 mb-6">
+    <div className="rounded-[16px] mb-6">
       {/* Header */}
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-2 pb-4">
         <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
           <Sparkles className="w-4 h-4 text-purple-600" />
         </div>
-        <div>
+        <div className="flex items-baseline gap-2">
           <h2 className="text-sm font-semibold text-gray-900">Generate AI Music</h2>
           <p className="text-xs text-gray-400">Powered by ElevenLabs · ~15 seconds</p>
         </div>
       </div>
 
+      <div className="divide-y divide-[#e5e7eb]">
       {/* Success state */}
       {done && (
-        <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-4 py-3 mb-2">
+        <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-4 py-3 mt-4">
           <div className="flex items-center gap-2 text-sm text-green-800">
             <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
             Music uploaded to library successfully!
@@ -190,8 +192,9 @@ function MusicGenerator({
 
       {!done && (
         <>
+          <div className="py-4">
           {/* Prompt */}
-          <div className="mb-3">
+          <div className="mb-4">
             <label className="block text-xs font-medium text-gray-600 mb-1">
               Describe the music <span className="text-gray-400 font-normal">(required)</span>
             </label>
@@ -231,18 +234,22 @@ function MusicGenerator({
               </label>
             </div>
           </div>
+          </div>
 
           {/* Generation error */}
           {genError && (
-            <div className="flex items-start gap-2 mb-3 text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-              <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-              {genError}
+            <div className="py-4">
+              <div className="flex items-start gap-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                {genError}
+              </div>
             </div>
           )}
 
           {/* Result preview */}
           {result && (
-            <div className="mb-4 bg-purple-50 border border-purple-200 rounded-[16px] p-3">
+            <div className="py-4">
+            <div className="bg-purple-50 border border-purple-200 rounded-[16px] p-3">
               <div className="flex items-center gap-3 mb-3">
                 {result.imageUrl && (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -314,8 +321,10 @@ function MusicGenerator({
                 <p className="text-xs text-red-600 mt-1.5">{uploadError}</p>
               )}
             </div>
+            </div>
           )}
 
+          <div className="pt-4 pb-4 border-b border-[#e5e7eb]">
           {/* Hidden audio element */}
           <audio ref={audioRef} onEnded={() => setPlaying(false)} className="hidden" />
 
@@ -352,8 +361,10 @@ function MusicGenerator({
               {generating ? t("generating") : t("regenerate")}
             </button>
           )}
+          </div>
         </>
       )}
+      </div>
     </div>
   );
 }
@@ -423,7 +434,7 @@ export default function MusicOptionsPage() {
       />
 
       {/* Manual upload */}
-      <div className="bg-white rounded-[16px] border border-gray-200 p-5 mb-6">
+      <div className="rounded-[16px] p-5 mb-6">
         <h2 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
           <Upload className="w-4 h-4 text-gray-400" />
           Upload Audio File
@@ -451,14 +462,14 @@ export default function MusicOptionsPage() {
               className="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-[#e8f0fe] file:text-[#1a73e8] hover:file:bg-[#d2e3fc]"
             />
           </div>
-          <button
+          <Button
             type="submit"
+            variant="primary"
             disabled={!selectedFile || !uploadName || uploadMutation.isPending}
-            className="flex items-center gap-2 px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium disabled:opacity-50"
           >
             <Upload className="w-4 h-4" />
             {uploadMutation.isPending ? t("uploading") : "Upload"}
-          </button>
+          </Button>
         </form>
         {uploadMutation.isError && (
           <p className="text-sm text-red-600 mt-2">
@@ -468,10 +479,12 @@ export default function MusicOptionsPage() {
       </div>
 
       {/* Library list */}
-      <h2 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-        <Music className="w-4 h-4 text-gray-400" />
-        Library ({options.length})
-      </h2>
+      <div className="border-t border-[#e5e7eb] pt-6">
+        <h2 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+          <Music className="w-4 h-4 text-gray-400" />
+          Library ({options.length})
+        </h2>
+      </div>
       {isLoading ? (
         <div className="py-8 flex justify-center">
           <Loader variant="inline" label={t("loading")} />

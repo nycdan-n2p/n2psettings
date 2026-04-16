@@ -6,6 +6,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApp } from "@/contexts/AppContext";
 import { qk, lightKeys } from "@/lib/query-keys";
 import { Loader } from "@/components/ui/Loader";
+import { Toggle } from "@/components/settings/Toggle";
+import { getButtonClasses } from "@/components/ui/Button";
 import {
   fetchRingGroupDetail,
   fetchRingGroupFeatures,
@@ -46,23 +48,6 @@ function applyModifier(original: string, mod: CallerIdModifier): string {
   if (mod.mode === "suffix")  return `${original}${v}`;
   if (mod.mode === "replace") return v;
   return original;
-}
-
-// ── Toggle ────────────────────────────────────────────────────────────────────
-function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none ${
-        checked ? "bg-[#1a73e8]" : "bg-gray-300"
-      }`}
-    >
-      <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${checked ? "translate-x-6" : "translate-x-1"}`} />
-    </button>
-  );
 }
 
 // ── Add Member Row ────────────────────────────────────────────────────────────
@@ -535,7 +520,7 @@ export default function RingGroupEditPage() {
     return (
       <div className="py-24 text-center">
         <p className="text-gray-500 text-sm">Ring group not found.</p>
-        <button onClick={() => router.back()} className="mt-3 text-sm text-[#1a73e8] hover:underline">← Back</button>
+        <button onClick={() => router.back()} className={`mt-3 ${getButtonClasses({ variant: "secondary", size: "md" })}`}>← Back</button>
       </div>
     );
   }

@@ -1,8 +1,9 @@
 "use client";
 import { useTranslations } from "next-intl";
 
-import { Hash, ExternalLink, Hand } from "lucide-react";
+import { ExternalLink, Hand } from "lucide-react";
 import Link from "next/link";
+import { getButtonClasses } from "@/components/ui/Button";
 import { TenDlcSection } from "@/components/trust-center/TenDlcSection";
 import { SsoSection } from "@/components/trust-center/SsoSection";
 import { TwoFactorSection } from "@/components/trust-center/TwoFactorSection";
@@ -47,23 +48,18 @@ export default function TrustCenterPage() {
 
       <TrustCard title={t("localNumbersTitle")} description={t("localNumbersDesc")}>
         <div className="flex flex-wrap items-center gap-3">
-          <a href="#messaging-10dlc" className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm font-medium border border-gray-300">
+          <a href="#messaging-10dlc" className={getButtonClasses({ variant: "secondary" })}>
             {t("registerNow")}
           </a>
-          <Link href="https://support.net2phone.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 text-sm font-medium text-gray-700">
+          <Link href="https://support.net2phone.com" target="_blank" rel="noopener noreferrer" className={getButtonClasses({ variant: "secondary" })}>
             {t("learnMore")}
             <ExternalLink className="w-4 h-4" />
           </Link>
         </div>
-        <div className="mt-4 flex items-center justify-end">
-          <div className="w-12 h-12 rounded-lg bg-[#e8f0fe] flex items-center justify-center">
-            <Hash className="w-6 h-6 text-[#1a73e8]" />
-          </div>
-        </div>
       </TrustCard>
 
       <TrustCard title={t("scamTitle")} description={t("scamDesc")}>
-        <a href="https://freecallerregistry.com/fcr/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium">
+        <a href="https://freecallerregistry.com/fcr/" target="_blank" rel="noopener noreferrer" className={getButtonClasses({ variant: "primary" })}>
           {t("registerNow")}
           <ExternalLink className="w-4 h-4" />
         </a>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeftRight, Trash2, Plus, ExternalLink } from "lucide-react";
+import { Trash2, Plus, ExternalLink } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import { qk } from "@/lib/query-keys";
 import { fetchTeamMembers } from "@/lib/api/team-members";
@@ -18,14 +18,15 @@ import {
 import { Modal } from "@/components/settings/Modal";
 import { TextInput } from "@/components/settings/TextInput";
 import { Loader } from "@/components/ui/Loader";
+import { Button } from "@/components/ui/Button";
 
 const STEPS = [
-  { id: 1, label: "LIST NUMBERS" },
-  { id: 2, label: "ASSOCIATE NUMBERS" },
-  { id: 3, label: "ADDITIONAL INFO" },
-  { id: 4, label: "UPLOAD INVOICE" },
+  { id: 1, label: "List numbers" },
+  { id: 2, label: "Associate numbers" },
+  { id: 3, label: "Additional info" },
+  { id: 4, label: "Upload invoice" },
   { id: 5, label: "LOA" },
-  { id: 6, label: "FINALIZATION" },
+  { id: 6, label: "Finalization" },
 ] as const;
 
 function formatPhone(s: string): string {
@@ -136,37 +137,38 @@ export function PortingWizard({ isOpen, onClose, onSuccess }: { isOpen: boolean;
   const validNumbers = numbers.filter((n) => n.phoneNumber.replace(/\D/g, "").length >= 10);
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Request Phone Number Porting" size="2xl">
-      <div className="flex gap-6 min-h-[420px]">
-        <div className="w-48 shrink-0 border-r border-gray-200 pr-4">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-full bg-[#1a73e8] flex items-center justify-center">
-              <ArrowLeftRight className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-sm font-medium text-gray-900">Request Phone Number Porting</span>
-          </div>
-          <ol className="space-y-2">
+    <Modal isOpen={isOpen} onClose={onClose} title="Request Phone Number Porting" size="2xl" bodyClassName="overflow-hidden p-0 flex min-h-0">
+      <div className="flex flex-1 min-h-0">
+        <div className="w-64 shrink-0 border-r border-gray-200 px-6 py-4">
+          <ol className="space-y-[2px]">
             {STEPS.map((s) => (
-              <li key={s.id} className="flex items-center gap-2">
+              <li key={s.id} className="h-[38px]">
+                <div
+                  className={`h-[38px] flex items-center gap-3 rounded-[12px] px-2 ${
+                    step === s.id ? "bg-[rgba(167,167,190,0.08)]" : ""
+                  }`}
+                >
                 <span
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
-                    step === s.id ? "bg-[#1a73e8] text-white" : "bg-gray-200 text-gray-600"
+                  className={`w-6 h-6 rounded-full flex items-center justify-center text-sm leading-none font-medium ${
+                    step === s.id ? "bg-black text-white" : "bg-gray-200 text-gray-600"
                   }`}
                 >
                   {s.id}
                 </span>
-                <span className={step === s.id ? "text-[#1a73e8] font-medium" : "text-gray-500"}>
+                <span className={step === s.id ? "text-black text-sm font-medium" : "text-gray-500 text-sm"}>
                   {s.label}
                 </span>
+                </div>
               </li>
             ))}
           </ol>
         </div>
 
-        <div className="flex-1 min-w-0">
+        <div className="relative flex-1 min-w-0 flex flex-col min-h-0 overflow-hidden bg-white">
+          <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-4 pb-[88px]">
           {step === 1 && (
             <div>
-              <h3 className="text-base font-semibold text-gray-900 mb-2">LIST NUMBERS</h3>
+              <h3 className="text-base font-semibold text-gray-900 mb-2">List numbers</h3>
               <p className="text-sm text-gray-600 mb-4">
                 Please list phone numbers that you want to be ported from your current phone service provider to net2phone.
                 Make sure you have added the correct phone numbers, as once the porting request is submitted, there will be no way to modify the phone numbers.
@@ -195,19 +197,20 @@ export function PortingWizard({ isOpen, onClose, onSuccess }: { isOpen: boolean;
                   </div>
                 ))}
               </div>
-              <button
+              <Button
                 type="button"
+                size="sm"
+                variant="secondary"
                 onClick={handleAddNumber}
-                className="text-[#1a73e8] text-sm font-medium hover:underline flex items-center gap-1"
               >
                 <Plus className="w-4 h-4" /> Add a Phone Number
-              </button>
+              </Button>
             </div>
           )}
 
           {step === 2 && (
             <div>
-              <h3 className="text-base font-semibold text-gray-900 mb-2">ASSOCIATE PORT NUMBERS</h3>
+              <h3 className="text-base font-semibold text-gray-900 mb-2">Associate port numbers</h3>
               <p className="text-sm text-gray-600 mb-4">
                 Please associate the numbers you wish to port with existing account numbers. These will remain active until porting completion.
                 If needed, we&apos;ll provide temporary numbers during the process. <strong>Note:</strong> once porting completes, associated numbers will be removed from your account.
@@ -241,7 +244,7 @@ export function PortingWizard({ isOpen, onClose, onSuccess }: { isOpen: boolean;
 
           {step === 3 && (
             <div>
-              <h3 className="text-base font-semibold text-gray-900 mb-2">ADDITIONAL INFORMATION</h3>
+              <h3 className="text-base font-semibold text-gray-900 mb-2">Additional information</h3>
               <p className="text-sm text-gray-600 mb-4">
                 To port your phone numbers from your current provider to net2phone, you need to fill out a form.
                 Provide accurate information exactly as it appears on your current provider&apos;s invoice. Any discrepancies can cause the transfer to fail.
@@ -281,7 +284,7 @@ export function PortingWizard({ isOpen, onClose, onSuccess }: { isOpen: boolean;
 
           {step === 4 && (
             <div>
-              <h3 className="text-base font-semibold text-gray-900 mb-2">UPLOAD INVOICE</h3>
+              <h3 className="text-base font-semibold text-gray-900 mb-2">Upload invoice</h3>
               <p className="text-sm text-gray-600 mb-2">Please upload the latest invoice from your current phone provider.</p>
               <p className="text-xs text-gray-500 mb-4">Supported: .pdf, .png, .jpg, .jpeg | Max size: 2 MB</p>
               <div
@@ -321,25 +324,25 @@ export function PortingWizard({ isOpen, onClose, onSuccess }: { isOpen: boolean;
 
           {step === 5 && (
             <div>
-              <h3 className="text-base font-semibold text-gray-900 mb-2">LETTER OF AUTHORIZATION</h3>
+              <h3 className="text-base font-semibold text-gray-900 mb-2">Letter of authorization</h3>
               <p className="text-sm text-gray-600 mb-4">
                 Sign the agreement, ensuring the name added is the business name and that the Business Signer Name and signature belong to the same person.
               </p>
-              <button
+              <Button
                 type="button"
+                variant="primary"
                 onClick={() => signLinksMutation.mutate()}
                 disabled={signLinksMutation.isPending}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium disabled:opacity-50"
               >
                 {signLinksMutation.isPending ? <Loader variant="inline" /> : "Open LOA to Sign"}
                 <ExternalLink className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
           )}
 
           {step === 6 && (
             <div>
-              <h3 className="text-base font-semibold text-gray-900 mb-2">FINALIZATION</h3>
+              <h3 className="text-base font-semibold text-gray-900 mb-2">Finalization</h3>
               <p className="text-sm text-gray-600 mb-4">
                 Your porting request has been created. After signing the LOA, the request will be submitted for processing.
               </p>
@@ -355,77 +358,83 @@ export function PortingWizard({ isOpen, onClose, onSuccess }: { isOpen: boolean;
               )}
             </div>
           )}
+          </div>
 
-          <div className="flex justify-between mt-6 pt-4 border-t border-gray-200">
-            <button
+          <div
+            className="n2p-porting-footer absolute left-0 right-0 bottom-0 z-20 m-0 p-0 border-t border-gray-200"
+            style={{ backgroundColor: "#ffffff" }}
+          >
+            <div className="w-full flex justify-between px-6 pt-[18px] pb-[2px]">
+            <Button
               type="button"
               onClick={() => (step === 1 ? onClose() : setStep((s) => s - 1))}
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md"
+              variant="secondary"
             >
-              {step === 1 ? "CANCEL" : "BACK"}
-            </button>
+              {step === 1 ? "Cancel" : "Back"}
+            </Button>
             {step === 1 && (
-              <button
+              <Button
                 type="button"
                 onClick={() => setStep(2)}
                 disabled={validNumbers.length === 0}
-                className="px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium disabled:opacity-50"
+                variant="primary"
               >
-                NEXT
-              </button>
+                Next
+              </Button>
             )}
             {step === 2 && (
-              <button
+              <Button
                 type="button"
                 onClick={() => setStep(3)}
-                className="px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium"
+                variant="primary"
               >
-                NEXT
-              </button>
+                Next
+              </Button>
             )}
             {step === 3 && (
-              <button
+              <Button
                 type="button"
                 onClick={() => createMutation.mutate(undefined as never)}
                 disabled={createMutation.isPending || !provider.serviceProvider || !provider.accountNumber || !address.firstName || !address.lastName || !address.email || !address.contactPhoneNumber || !address.companyName || !address.zip || !address.address1 || !address.city || !address.state || !targetPortDate}
-                className="px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium disabled:opacity-50"
+                variant="primary"
               >
-                {createMutation.isPending ? <Loader variant="inline" /> : "NEXT"}
-              </button>
+                {createMutation.isPending ? <Loader variant="inline" /> : "Next"}
+              </Button>
             )}
             {step === 4 && (
-              <button
+              <Button
                 type="button"
                 onClick={() => invoiceMutation.mutate(undefined as never)}
                 disabled={invoiceMutation.isPending || !invoiceFile}
-                className="px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium disabled:opacity-50"
+                variant="primary"
               >
-                {invoiceMutation.isPending ? <Loader variant="inline" /> : "NEXT"}
-              </button>
+                {invoiceMutation.isPending ? <Loader variant="inline" /> : "Next"}
+              </Button>
             )}
             {step === 5 && (
-              <button
+              <Button
                 type="button"
                 onClick={() => signLinksMutation.mutate()}
                 disabled={signLinksMutation.isPending}
-                className="px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium disabled:opacity-50"
+                variant="primary"
               >
-                {signLinksMutation.isPending ? <Loader variant="inline" /> : "NEXT"}
-              </button>
+                {signLinksMutation.isPending ? <Loader variant="inline" /> : "Next"}
+              </Button>
             )}
             {step === 6 && (
-              <button
+              <Button
                 type="button"
                 onClick={() => {
                   queryClient.invalidateQueries({ queryKey: qk.porting.all(accountId) });
                   onSuccess?.();
                   onClose();
                 }}
-                className="px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium"
+                variant="primary"
               >
-                DONE
-              </button>
+                Done
+              </Button>
             )}
+            </div>
           </div>
         </div>
       </div>

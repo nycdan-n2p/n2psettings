@@ -9,8 +9,8 @@
     "dev": "next dev",
     "build": "npm run crawl-support || true && next build",
     "start": "next start",
-    "lint": "next lint",
-    "crawl-support": "npx ts-node scripts/crawl-support.ts"
+    "lint": "eslint . --ext .ts,.tsx",
+    "crawl-support": "node scripts/crawl-support.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
@@ -33,10 +33,11 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "eslint": "^8",
+    "eslint": "^10.2.0",
     "eslint-config-next": "^16.2.0",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   },
   "overrides": {

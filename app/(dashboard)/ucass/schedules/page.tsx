@@ -22,6 +22,7 @@ import { HOLIDAY_REGIONS, REGION_GROUPS, type HolidayRegion } from "@/data/holid
 import { Modal } from "@/components/settings/Modal";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import { Button } from "@/components/ui/Button";
+import { SegmentedTabs } from "@/components/ui/SegmentedTabs";
 import {
   Plus, Pencil, Trash2, Search, Calendar, Clock,
   ChevronDown, X, Globe, ChevronRight, ChevronLeft,
@@ -321,24 +322,17 @@ function RuleEditor({
   };
 
   return (
-    <div className="border border-[#dadce0] rounded-lg p-4 space-y-3 bg-white">
+    <div className="space-y-3">
       {/* Mode toggle */}
-      <div className="flex items-center gap-1 p-0.5 bg-[#f1f3f4] rounded-lg w-fit">
-        {(["weekdays", "calendar"] as RuleMode[]).map((m) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => onChange({ ...rule, mode: m })}
-            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
-              rule.mode === m
-                ? "bg-white text-[#1a73e8] shadow-sm"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            {m === "weekdays" ? "Weekdays" : "Calendar"}
-          </button>
-        ))}
-      </div>
+      <SegmentedTabs
+        value={rule.mode}
+        onChange={(mode) => onChange({ ...rule, mode })}
+        options={[
+          { value: "weekdays", label: "Weekdays" },
+          { value: "calendar", label: "Calendar" },
+        ]}
+        equalWidth={false}
+      />
 
       {/* Day selector */}
       {rule.mode === "weekdays" ? (
@@ -352,8 +346,8 @@ function RuleEditor({
                 onClick={() => toggleDay(d.value)}
                 className={`w-9 h-9 rounded-full text-xs font-semibold transition-all ${
                   rule.weekDays.includes(d.value)
-                    ? "bg-[#1a73e8] text-white shadow-sm"
-                    : "bg-[#f1f3f4] text-gray-600 hover:bg-[#e8eaed]"
+                    ? "bg-black text-white"
+                    : "bg-white text-gray-600 border border-[#e5e7eb] hover:bg-[#F9F9FB]"
                 }`}
               >
                 {d.label}
@@ -395,7 +389,7 @@ function RuleEditor({
             type="button"
             onClick={() => onChange({ ...rule, allDay: !rule.allDay, timeStart: "12:00 AM", timeEnd: "11:59 PM" })}
             className={`text-xs font-medium px-2 py-0.5 rounded-full transition-all ${
-              rule.allDay ? "bg-[#e8f0fe] text-[#1a73e8]" : "text-gray-500 hover:bg-[#f1f3f4]"
+              rule.allDay ? "bg-black text-white" : "text-gray-500 hover:bg-[#F9F9FB]"
             }`}
           >
             {rule.allDay ? "✓ All Day" : "All Day"}
@@ -559,23 +553,26 @@ function ScheduleModal({
               />
             ))}
           </div>
-          <button
+          <Button
             type="button"
             onClick={() => setRules((prev) => [...prev, makeEmptyRule()])}
-            className="mt-3 flex items-center gap-1.5 text-sm text-[#1a73e8] hover:underline font-medium"
+            variant="secondary"
+            size="md"
+            className="mt-3"
+            icon={<Plus className="w-3.5 h-3.5" />}
           >
-            <Plus className="w-3.5 h-3.5" /> Add Another Interval
-          </button>
+            Add Another Interval
+          </Button>
         </div>
 
-        <div className="flex justify-end gap-2 pt-2 border-t border-[#f1f3f4]">
-          <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-[#f1f3f4] rounded-md">
+        <div className="flex justify-end gap-2 pt-2">
+          <Button type="button" onClick={onClose} variant="secondary">
             Cancel
-          </button>
+          </Button>
           <button
             type="submit"
             disabled={isPending || !name.trim()}
-            className="px-4 py-2 text-sm font-medium text-white bg-[#1a73e8] hover:bg-[#1557b0] rounded-md disabled:opacity-50 flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium text-white bg-[#1a73e8] hover:bg-[#1557b0] rounded-md disabled:opacity-50 inline-flex items-center gap-2 whitespace-nowrap"
           >
             {isPending
               ? "Saving…"
@@ -714,15 +711,16 @@ function HolidayModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={stepTitles[step]} size="xl">
+    <Modal isOpen={isOpen} onClose={onClose} title={stepTitles[step]} size="xl" bodyClassName="overflow-hidden p-0 flex min-h-0">
+      <div className="relative flex h-full min-h-0 w-full flex-col pt-4 pb-0 bg-white">
       {/* Step indicator */}
-      <div className="flex items-center gap-2 mb-5">
+      <div className="flex items-center gap-2 mb-5 px-6">
         {(["region", "holidays", "confirm"] as HolidayStep[]).map((s, i) => (
           <div key={s} className="flex items-center gap-2">
             {i > 0 && <div className="w-8 h-px bg-[#dadce0]" />}
             <div className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full transition-all ${
               step === s
-                ? "bg-[#1a73e8] text-white"
+                ? "bg-black text-white"
                 : i < ["region", "holidays", "confirm"].indexOf(step)
                 ? "bg-[#e8f0fe] text-[#1a73e8]"
                 : "bg-[#f1f3f4] text-gray-400"
@@ -736,7 +734,7 @@ function HolidayModal({
 
       {/* ── Step 1: Region ── */}
       {step === "region" && (
-        <div className="space-y-5">
+        <div className="space-y-5 px-6">
           <p className="text-sm text-gray-500">
             Choose a country to automatically import its national holidays. You can set each holiday as Closed or assign custom hours.
           </p>
@@ -795,7 +793,8 @@ function HolidayModal({
 
       {/* ── Step 2: Holidays ── */}
       {step === "holidays" && (
-        <div className="space-y-4">
+        <div className="flex-1 min-h-0 w-full overflow-y-auto px-6 pb-[84px] bg-white">
+          <div className="space-y-4">
           {isFetching ? (
             <div className="py-16 flex justify-center">
               <Loader variant="inline" label="Loading holidays…" />
@@ -838,8 +837,8 @@ function HolidayModal({
                 </div>
               </div>
 
-              <div className="rounded-lg border border-[#dadce0] overflow-hidden">
-                <div className="grid grid-cols-[auto_1fr_auto] gap-3 px-4 py-2 bg-[#f8f9fa] border-b border-[#dadce0] text-xs font-semibold text-gray-400 uppercase tracking-wide">
+              <div className="rounded-lg border border-[#dadce0] overflow-hidden bg-white">
+                <div className="grid grid-cols-[auto_1fr_auto] gap-3 px-4 py-2 bg-white border-b border-[#dadce0] text-xs font-semibold text-gray-400 uppercase tracking-wide">
                   <span />
                   <span>Holiday</span>
                   <span className="text-right pr-1">Status / Hours</span>
@@ -849,7 +848,7 @@ function HolidayModal({
                     <div
                       key={d.holiday.date}
                       className={`grid grid-cols-[auto_1fr_auto] gap-3 items-start px-4 py-3 transition-colors ${
-                        d.enabled ? "bg-white" : "bg-[#fafafa] opacity-60"
+                        d.enabled ? "bg-white" : "bg-white opacity-60"
                       }`}
                     >
                       {/* Checkbox */}
@@ -875,30 +874,16 @@ function HolidayModal({
                       {/* Status controls */}
                       {d.enabled && (
                         <div className="flex flex-col items-end gap-1.5 min-w-[180px]">
-                          <div className="flex items-center gap-1 p-0.5 bg-[#f1f3f4] rounded-lg">
-                            <button
-                              type="button"
-                              onClick={() => updateDraft(i, { status: "closed" })}
-                              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
-                                d.status === "closed"
-                                  ? "bg-white text-red-600 shadow-sm"
-                                  : "text-gray-500 hover:text-gray-700"
-                              }`}
-                            >
-                              Closed
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => updateDraft(i, { status: "open_custom" })}
-                              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
-                                d.status === "open_custom"
-                                  ? "bg-white text-[#1a73e8] shadow-sm"
-                                  : "text-gray-500 hover:text-gray-700"
-                              }`}
-                            >
-                              Open
-                            </button>
-                          </div>
+                          <SegmentedTabs
+                            value={d.status}
+                            onChange={(value) => updateDraft(i, { status: value })}
+                            options={[
+                              { value: "closed", label: "Closed" },
+                              { value: "open_custom", label: "Open" },
+                            ]}
+                            equalWidth={false}
+                            className="h-[34px] min-h-[34px] max-h-[34px]"
+                          />
                           {d.status === "open_custom" && (
                             <div className="flex items-center gap-1">
                               <select
@@ -925,33 +910,17 @@ function HolidayModal({
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-2 border-t border-[#f1f3f4]">
-                <button
-                  type="button"
-                  onClick={() => setStep("region")}
-                  className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800"
-                >
-                  <ChevronLeft className="w-4 h-4" /> Back
-                </button>
-                <button
-                  type="button"
-                  disabled={enabledCount === 0}
-                  onClick={() => setStep("confirm")}
-                  className="flex items-center gap-2 px-4 py-2 bg-[#1a73e8] text-white text-sm font-medium rounded-md hover:bg-[#1557b0] disabled:opacity-40 transition-colors"
-                >
-                  Continue with {enabledCount} holiday{enabledCount !== 1 ? "s" : ""}
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
             </>
           )}
+          </div>
         </div>
       )}
 
       {/* ── Step 3: Confirm ── */}
       {step === "confirm" && (
-        <div className="space-y-4">
-          <div className="rounded-lg bg-[#f8f9fa] border border-[#dadce0] p-4 space-y-3">
+        <div className="flex-1 min-h-0 w-full overflow-y-auto px-6 pb-[84px] bg-white">
+          <div className="w-full space-y-4">
+          <div className="w-full p-4 space-y-3">
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">
                 Schedule Name <span className="text-red-500">*</span>
@@ -979,11 +948,11 @@ function HolidayModal({
             </div>
           </div>
 
-          <div>
+          <div className="w-full">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
               {enabledCount} holiday{enabledCount !== 1 ? "s" : ""} will be added
             </p>
-            <div className="rounded-lg border border-[#dadce0] overflow-hidden max-h-64 overflow-y-auto">
+            <div className="w-full rounded-lg overflow-hidden max-h-64 overflow-y-auto">
               {drafts.filter((d) => d.enabled).map((d) => (
                 <div key={d.holiday.date} className="flex items-center justify-between px-4 py-2.5 border-b border-[#f1f3f4] last:border-0">
                   <div>
@@ -1002,25 +971,44 @@ function HolidayModal({
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-2 border-t border-[#f1f3f4]">
-            <button
-              type="button"
-              onClick={() => setStep("holidays")}
-              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800"
-            >
-              <ChevronLeft className="w-4 h-4" /> Back
-            </button>
-            <button
-              type="button"
-              disabled={isPending || !scheduleName.trim()}
-              onClick={handleSubmit}
-              className="flex items-center gap-2 px-4 py-2 bg-[#1a73e8] text-white text-sm font-medium rounded-md hover:bg-[#1557b0] disabled:opacity-50 transition-colors"
-            >
-              {isPending ? "Creating…" : "Create Holiday Schedule"}
-            </button>
           </div>
         </div>
       )}
+      {(step === "holidays" || step === "confirm") && (
+        <div className="n2p-holiday-footer absolute bottom-0 left-0 right-0 z-20 m-0 p-0 border-t border-[#e5e7eb] bg-white" style={{ backgroundColor: "#ffffff" }}>
+          <div className="flex items-center justify-between px-6 py-[10px] bg-white" style={{ backgroundColor: "#ffffff" }}>
+            <Button
+              type="button"
+              onClick={() => setStep(step === "holidays" ? "region" : "holidays")}
+              variant="secondary"
+              icon={<ChevronLeft className="w-4 h-4" />}
+            >
+              Back
+            </Button>
+            {step === "holidays" ? (
+              <button
+                type="button"
+                disabled={enabledCount === 0 || isFetching || holidays.length === 0}
+                onClick={() => setStep("confirm")}
+                className="flex items-center gap-2 px-4 py-2 bg-[#1a73e8] text-white text-sm font-medium rounded-md hover:bg-[#1557b0] disabled:opacity-40 transition-colors"
+              >
+                Continue with {enabledCount} holiday{enabledCount !== 1 ? "s" : ""}
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled={isPending || !scheduleName.trim()}
+                onClick={handleSubmit}
+                className="flex items-center gap-2 px-4 py-2 bg-[#1a73e8] text-white text-sm font-medium rounded-md hover:bg-[#1557b0] disabled:opacity-50 transition-colors"
+              >
+                {isPending ? "Creating…" : "Create Holiday Schedule"}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      </div>
     </Modal>
   );
 }
@@ -1127,121 +1115,109 @@ export default function SchedulesPage() {
         </span>
       </div>
 
-      {/* Table */}
-      <div className="rounded-3xl overflow-x-auto bg-white">
-        <table className="n2p-table w-full min-w-[980px]">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Days / Time</th>
-              <th>Timezone</th>
-              <th>Added By</th>
-              <th>Used By</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              <tr>
-                <td colSpan={6}>
-                  <div className="py-16 flex justify-center">
-                    <Loader variant="inline" label="Loading schedules…" />
-                  </div>
-                </td>
-              </tr>
-            ) : filtered.length === 0 ? (
-              <tr>
-                <td colSpan={6}>
-                  <div className="py-16 flex flex-col items-center gap-3 text-gray-400">
-                    <Calendar className="w-10 h-10 text-gray-300" />
-                    <p className="text-sm font-medium text-gray-500">
-                      {search ? "No schedules match your search" : "No schedules found"}
-                    </p>
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              filtered.map((s) => {
-                const rules = s.rules ?? [];
-                const creator = s.createdBy;
-                const creatorName = creator?.name ?? "System Admin";
-                const avatarUrl = creator?.avatars?.find((a) => a.size === "120")?.url;
+      {/* Cards */}
+      <div className="space-y-3">
+        {isLoading ? (
+          <div className="py-16 flex justify-center">
+            <Loader variant="inline" label="Loading schedules…" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="py-16 flex flex-col items-center gap-3 text-gray-400">
+            <Calendar className="w-10 h-10 text-gray-300" />
+            <p className="text-sm font-medium text-gray-500">
+              {search ? "No schedules match your search" : "No schedules found"}
+            </p>
+          </div>
+        ) : (
+          filtered.map((s) => {
+            const rules = s.rules ?? [];
+            const creator = s.createdBy;
+            const creatorName = creator?.name ?? "System Admin";
+            const avatarUrl = creator?.avatars?.find((a) => a.size === "120")?.url;
 
-                return (
-                  <tr key={s.id} className="group">
-                    <td>
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-8 h-8 rounded-lg bg-[#e8f0fe] flex items-center justify-center shrink-0">
-                          <Calendar className="w-4 h-4 text-[#1a73e8]" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">{s.name}</p>
-                          <TypeBadge type={s.type} />
-                        </div>
+            return (
+              <div key={s.id} className="rounded-[16px] bg-[#F9F9FB] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-[#e8f0fe] flex items-center justify-center shrink-0">
+                      <Calendar className="w-4 h-4 text-[#1a73e8]" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{s.name}</p>
+                      <TypeBadge type={s.type} />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => { setEditing(s); setModalOpen(true); }}
+                      className="p-1.5 rounded-md text-gray-400 hover:text-[#1a73e8] hover:bg-[#e8f0fe] transition-colors"
+                      title="Edit"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setDeleteTarget(s)}
+                      className="p-1.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 mb-2">Days / Time</p>
+                    {s.type === "24/7" ? (
+                      <div className="rounded-lg bg-[#f8f9fa] px-3 py-2 border border-[#eef1f4]">
+                        <p className="text-sm font-medium text-gray-800">Every Day</p>
+                        <p className="mt-0.5 flex items-center gap-1.5 text-xs text-gray-500">
+                          <Clock className="w-3.5 h-3.5 text-gray-400" />
+                          All hours, every day
+                        </p>
                       </div>
-                    </td>
-                    <td>
-                      <div className="min-w-0">
-                        {s.type === "24/7" ? (
-                          <span className="flex items-center gap-1.5 text-sm text-gray-500">
-                            <Clock className="w-3.5 h-3.5 text-gray-400" /> All hours, every day
-                          </span>
-                        ) : rules.length === 0 ? (
-                          <span className="text-sm text-gray-400">—</span>
-                        ) : (
-                          <div className="space-y-2">
-                            {rules.slice(0, 2).map((r, i) => {
-                              const summary = formatRuleSummary(r, formatDate);
-                              return (
-                                <div key={i} className="rounded-lg bg-[#f8f9fa] px-3 py-2 border border-[#eef1f4]">
-                                  <p className="text-sm font-medium text-gray-800 truncate">{summary.label}</p>
-                                  <p className="text-xs text-gray-500 mt-0.5 truncate">{summary.detail}</p>
-                                </div>
-                              );
-                            })}
-                            {rules.length > 2 && (
-                              <p className="text-xs text-gray-400">+{rules.length - 2} more</p>
-                            )}
-                          </div>
+                    ) : rules.length === 0 ? (
+                      <span className="text-sm text-gray-400">—</span>
+                    ) : (
+                      <div className="space-y-2">
+                        {rules.slice(0, 2).map((r, i) => {
+                          const summary = formatRuleSummary(r, formatDate);
+                          return (
+                            <div key={i} className="rounded-lg bg-[#f8f9fa] px-3 py-2 border border-[#eef1f4]">
+                              <p className="text-sm font-medium text-gray-800 truncate">{summary.label}</p>
+                              <p className="text-xs text-gray-500 mt-0.5 truncate">{summary.detail}</p>
+                            </div>
+                          );
+                        })}
+                        {rules.length > 2 && (
+                          <p className="text-xs text-gray-400">+{rules.length - 2} more</p>
                         )}
                       </div>
-                    </td>
-                    <td>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 mb-2">Timezone</p>
                       <span className="text-sm text-gray-600 font-mono">{s.timezone ?? "—"}</span>
-                    </td>
-                    <td>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 mb-2">Used By</p>
+                      <UsedByBadge schedule={s} />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <p className="text-xs font-medium text-gray-500 mb-2">Added By</p>
                       <div className="flex items-center gap-2 min-w-0">
                         <CreatorAvatar name={creatorName} avatarUrl={avatarUrl} />
                         <span className="text-sm text-gray-700 truncate">{creatorName}</span>
                       </div>
-                    </td>
-                    <td>
-                      <UsedByBadge schedule={s} />
-                    </td>
-                    <td>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
-                        <button
-                          onClick={() => { setEditing(s); setModalOpen(true); }}
-                          className="p-1.5 rounded-md text-gray-400 hover:text-[#1a73e8] hover:bg-[#e8f0fe] transition-colors"
-                          title="Edit"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => setDeleteTarget(s)}
-                          className="p-1.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
 
       <ScheduleModal

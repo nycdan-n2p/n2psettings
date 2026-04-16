@@ -128,7 +128,7 @@ function coachNav(base: string): NavGroup[] {
   return [{ label: "Coach", items: [{ href: `${base}`, label: "Overview", icon: LayoutDashboard }, { href: `${base}/settings`, label: "Settings", icon: Settings }] }];
 }
 function ucontactNav(base: string): NavGroup[] {
-  return [{ label: "Ucontact", items: [{ href: `${base}`, label: "Overview", icon: LayoutDashboard }, { href: `${base}/settings`, label: "Settings", icon: Settings }] }];
+  return [{ label: "uContact", items: [{ href: `${base}`, label: "Overview", icon: LayoutDashboard }, { href: `${base}/settings`, label: "Settings", icon: Settings }] }];
 }
 
 export function getNavForProduct(productId: ProductId): NavGroup[] {

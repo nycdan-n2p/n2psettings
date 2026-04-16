@@ -8,6 +8,7 @@ import { DataTable } from "@/components/tables/DataTable";
 import { useApp } from "@/contexts/AppContext";
 import { qk } from "@/lib/query-keys";
 import { Loader } from "@/components/ui/Loader";
+import { getButtonClasses } from "@/components/ui/Button";
 import {
   fetchVirtualAssistants,
   createVirtualAssistant,
@@ -188,14 +189,14 @@ export default function VirtualAssistantPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">WELCOME MENUS</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-4">Welcome menus</h1>
       <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
         <span className="text-sm text-gray-600">Total: {menus.length}</span>
         <button
           onClick={openAddModal}
           className="px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium"
         >
-          ADD WELCOME MENU
+          Add welcome menu
         </button>
       </div>
 
@@ -234,7 +235,7 @@ export default function VirtualAssistantPage() {
             <p className="text-sm text-red-600 mb-2">{(addMutation.error as Error)?.message ?? t("failedToSave")}</p>
           )}
           <div className="flex justify-end gap-2 mt-4">
-            <button type="button" onClick={closeModal} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancel</button>
+            <button type="button" onClick={closeModal} className={getButtonClasses({ variant: "secondary", size: "md" })}>Cancel</button>
             <button type="submit" disabled={addMutation.isPending} className="px-4 py-2 text-sm font-medium text-white bg-[#1a73e8] rounded-md hover:bg-[#1557b0] disabled:opacity-50">
               {addMutation.isPending ? t("creating") : t("addButton")}
             </button>

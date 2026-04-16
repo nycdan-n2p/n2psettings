@@ -6,7 +6,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApp } from "@/contexts/AppContext";
 import { qk, lightKeys } from "@/lib/query-keys";
 import { Loader } from "@/components/ui/Loader";
+import { AudioPlayer } from "@/components/ui/AudioPlayer";
 import { TextInput } from "@/components/settings/TextInput";
+import { Button } from "@/components/ui/Button";
+import { Snack } from "@/components/ui/Snack";
 import {
   fetchWelcomeMenuDetail,
   updateWelcomeMenuDetail,
@@ -276,12 +279,14 @@ export default function WelcomeMenuEditPage() {
       </div>
 
       {saveError && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-600">{saveError}</div>
+        <Snack icon={<Info className="w-4 h-4" />} onClose={() => setSaveError(null)}>
+          {saveError}
+        </Snack>
       )}
 
-      <div className="max-w-2xl space-y-6">
+      <div className="max-w-2xl w-full divide-y divide-[#e5e7eb] pb-24">
         {/* ── Basic Info ── */}
-        <section className="p-5 border border-gray-200 rounded-lg">
+        <section className="py-6">
           <h2 className="text-base font-medium text-gray-900 mb-4">Basic Information</h2>
           <TextInput
             label="Name"
@@ -303,7 +308,7 @@ export default function WelcomeMenuEditPage() {
         </section>
 
         {/* ── Menu Settings ── */}
-        <section className="p-5 border border-gray-200 rounded-lg">
+        <section className="py-6">
           <h2 className="text-base font-medium text-gray-900 mb-4">Menu Options</h2>
           <div className="space-y-3">
             {(
@@ -330,7 +335,7 @@ export default function WelcomeMenuEditPage() {
         </section>
 
         {/* ── No Selection (Timeout) ── */}
-        <section className="p-5 border border-gray-200 rounded-lg">
+        <section className="py-6">
           <h2 className="text-base font-medium text-gray-900 mb-1">No Selection (Required)</h2>
           <p className="text-xs text-gray-500 mb-4">Where to forward callers who don&apos;t press any key</p>
           <DestinationPicker
@@ -343,16 +348,18 @@ export default function WelcomeMenuEditPage() {
         </section>
 
         {/* ── Key Options ── */}
-        <section className="p-5 border border-gray-200 rounded-lg">
+        <section className="py-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-medium text-gray-900">Key Options</h2>
-            <button
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
               onClick={addOption}
               disabled={menuOptions.length >= DTMF_KEYS.length}
-              className="flex items-center gap-1.5 text-sm text-[#1a73e8] hover:underline disabled:opacity-40"
             >
               <Plus className="w-4 h-4" /> Add Menu Option
-            </button>
+            </Button>
           </div>
 
           {menuOptions.length === 0 && (
@@ -361,7 +368,7 @@ export default function WelcomeMenuEditPage() {
 
           <div className="space-y-3">
             {menuOptions.map((opt, idx) => (
-              <div key={idx} className="flex gap-2 items-start p-3 bg-gray-50 rounded-lg border border-gray-100">
+              <div key={idx} className="flex gap-2 items-start py-1">
                 {/* Key selector */}
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">Key</label>
@@ -408,7 +415,7 @@ export default function WelcomeMenuEditPage() {
         </section>
 
         {/* ── Greeting ── */}
-        <section className="p-5 border border-gray-200 rounded-lg">
+        <section className="py-6">
           <h2 className="text-base font-medium text-gray-900 mb-4">Greeting</h2>
           {menuOptionsChanged && (
             <div className="flex items-start gap-2 mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
@@ -420,11 +427,9 @@ export default function WelcomeMenuEditPage() {
             Playing: {greetingFile || currentGreeting ? "Recorded Greeting" : "No greeting"}
           </p>
           {(greetingAudioUrl || greetingFile) && (
-            <div className="flex items-center gap-3 mb-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
+            <div className="mb-4">
               {greetingAudioUrl ? (
-                <audio controls src={greetingAudioUrl} className="flex-1 max-w-full h-9">
-                  Your browser does not support the audio element.
-                </audio>
+                <AudioPlayer src={greetingAudioUrl} className="w-full" />
               ) : (
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <Play className="w-4 h-4" />
@@ -469,13 +474,14 @@ export default function WelcomeMenuEditPage() {
                 className="w-full px-3 py-2 border border-[#dadce0] rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:border-[#1a73e8]"
               />
               <div className="flex items-center justify-between">
-                <button
+                <Button
                   type="button"
+                  size="sm"
+                  variant="secondary"
                   onClick={() => setShowPlaceholderEditor((s) => !s)}
-                  className="text-sm text-[#1a73e8] hover:underline flex items-center gap-1"
                 >
                   <Pencil className="w-3.5 h-3.5" /> Add/edit
-                </button>
+                </Button>
                 <button
                   type="button"
                   onClick={handleTtsApply}
@@ -531,8 +537,10 @@ export default function WelcomeMenuEditPage() {
           )}
         </section>
 
-        {/* Save button */}
-        <div className="flex justify-end pb-8">
+      </div>
+      {/* Save button */}
+      <div className="n2p-va-save-footer w-full sticky bottom-0 z-20 py-5">
+        <div className="max-w-2xl w-full mx-auto flex justify-end bg-white">
           <button
             onClick={handleSave}
             disabled={saveMutation.isPending}

@@ -2,91 +2,19 @@
   {
     "title": "Web Calling: User Guide",
     "url": "https://support.net2phone.com/s/article/Web-Calling-User-Guide",
-    "summary": "Complete guide to using net2phone Web Calling. Covers setup, making and receiving calls from your browser, microphone permissions, and troubleshooting.",
-    "keywords": "web calling, browser calling, softphone, make calls, receive calls"
-  },
-  {
-    "title": "Web Calling: Video Tutorial",
-    "url": "https://support.net2phone.com/s/article/Web-Calling-Video-Tutorial",
-    "summary": "Video walkthrough of net2phone Web Calling features. Step-by-step visual guide for getting started with browser-based calling.",
-    "keywords": "web calling, video, tutorial, how to"
-  },
-  {
-    "title": "Data vs. Minute Calling",
-    "url": "https://support.net2phone.com/s/article/Data-vs-Minute-Calling",
-    "summary": "Explains the difference between data-based calling (VoIP over internet) and minute-based calling plans. Helps you choose the right plan for your usage.",
-    "keywords": "data calling, minute calling, plans, VoIP"
-  },
-  {
-    "title": "Enabling and Disabling Web Calling: Getting Started",
-    "url": "https://support.net2phone.com/s/article/Enabling-and-Disabling-Web-Calling-Getting-Started",
-    "summary": "How to enable or disable Web Calling for your account or individual users. Admin settings and user preferences.",
-    "keywords": "enable, disable, web calling, settings, admin"
+    "summary": "Complete guide to using net2phone Web Calling. Covers setup, making and receiving calls from your browser.",
+    "keywords": "web calling, browser calling, softphone"
   },
   {
     "title": "How To Setup Your Call Forwarding",
     "url": "https://support.net2phone.com/s/article/How-To-Setup-Your-Call-Forwarding",
-    "summary": "Step-by-step instructions for setting up call forwarding. Configure where your calls go when you're busy or unavailable.",
-    "keywords": "call forwarding, forward calls, busy, unavailable"
+    "summary": "Step-by-step instructions for setting up call forwarding.",
+    "keywords": "call forwarding, forward calls"
   },
   {
-    "title": "Voicemail Setup and Management",
-    "url": "https://support.net2phone.com/s/article/Voicemail-Setup",
-    "summary": "Configure voicemail, set up greetings, and manage voicemail settings. Includes visual voicemail and email notifications.",
-    "keywords": "voicemail, greeting, setup, notifications"
-  },
-  {
-    "title": "Ring Groups Overview",
-    "url": "https://support.net2phone.com/s/article/Ring-Groups",
-    "summary": "Create and manage ring groups. Add users, set ring strategies (simultaneous, sequential), and configure time-based routing.",
-    "keywords": "ring group, hunt group, simultaneous ring, sequential"
-  },
-  {
-    "title": "Ring Groups and Time-Based Routing",
-    "url": "https://support.net2phone.com/s/article/Ring-Groups-Time-Based-Routing",
-    "summary": "Configure ring groups to route calls differently by time of day. Use schedules to define work hours vs after hours, and assign different destinations (ring groups or departments) to each time block.",
-    "keywords": "ring group, time-based routing, work hours, after hours, schedule"
-  },
-  {
-    "title": "Schedules and Time Blocks",
-    "url": "https://support.net2phone.com/s/article/Schedules-Time-Blocks",
-    "summary": "Create schedules to define when your business is open. Schedules use weekdays and time ranges. Time blocks in ring groups reference schedules for work-hours vs after-hours routing.",
-    "keywords": "schedule, time block, work hours, business hours, weekdays"
-  },
-  {
-    "title": "Welcome Menus and DTMF Options",
-    "url": "https://support.net2phone.com/s/article/Welcome-Menus-DTMF",
-    "summary": "Set up auto-attendant menus with DTMF options. Callers hear a greeting and can press a key to reach departments, ring groups, or extensions.",
-    "keywords": "welcome menu, auto-attendant, DTMF, IVR, press 1"
-  },
-  {
-    "title": "Overflow and Final Tier (Voicemail)",
-    "url": "https://support.net2phone.com/s/article/Ring-Group-Overflow-Voicemail",
-    "summary": "When no one answers in a ring group, calls can overflow to voicemail. The final tier defines what happens when all members fail to answer. Configure department or user voicemail as the overflow destination.",
-    "keywords": "overflow, final tier, voicemail, no answer, ring group"
-  },
-  {
-    "title": "Assigning Phone Numbers to Ring Groups and Menus",
-    "url": "https://support.net2phone.com/s/article/Assign-Phone-Number-Ring-Group",
-    "summary": "Assign a main number or DID to a ring group or welcome menu so incoming calls route correctly. Use the admin portal to set the route type and destination for each phone number.",
-    "keywords": "assign phone number, main number, DID, ring group, welcome menu, route"
-  },
-  {
-    "title": "Call Queues Setup",
-    "url": "https://support.net2phone.com/s/article/Call-Queues",
-    "summary": "Set up call queues for your team. Configure agents, wait times, overflow, and queue strategies.",
-    "keywords": "call queue, ACD, agents, wait time"
-  },
-  {
-    "title": "Adding Users and Extensions",
-    "url": "https://support.net2phone.com/s/article/Adding-Users",
-    "summary": "Add new users to your net2phone account. Assign extensions, phone numbers, and configure user settings.",
-    "keywords": "add user, create user, extension, new user"
-  },
-  {
-    "title": "Phone Number Porting",
-    "url": "https://support.net2phone.com/s/article/Number-Porting",
-    "summary": "Port your existing phone numbers to net2phone. Requirements, timeline, and what to expect during the porting process.",
-    "keywords": "port, porting, transfer number, keep number"
+    "title": "Data vs. Minute Calling",
+    "url": "https://support.net2phone.com/s/article/Data-vs-Minute-Calling",
+    "summary": "Explains the difference between data-based and minute-based calling plans.",
+    "keywords": "data calling, minute calling, plans"
   }
 ]

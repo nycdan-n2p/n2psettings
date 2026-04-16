@@ -80,7 +80,7 @@ function CountedTextarea({
         onChange={(e) => onChange(e.target.value.slice(0, max))}
         placeholder={placeholder}
         rows={3}
-        className="w-full px-3 py-2 border border-[#dadce0] rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:border-transparent resize-y"
+        className="w-full px-3 py-2 rounded-[12px] text-sm bg-[#F9F9FB] border-none focus:outline-none focus:bg-white focus:ring-0 focus:shadow-[inset_0_0_0_1.5px_#111827] resize-none"
       />
       <p className="text-right text-xs text-gray-400 mt-0.5">{value.length} / {max}</p>
     </div>

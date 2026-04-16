@@ -3,6 +3,7 @@
 import { useApp } from "@/contexts/AppContext";
 import { CollapsibleSection } from "@/components/settings/CollapsibleSection";
 import { SettingsRow } from "@/components/settings/SettingsGroup";
+import { getButtonClasses } from "@/components/ui/Button";
 import { ExternalLink } from "lucide-react";
 
 export function SecuritySection() {
@@ -24,7 +25,7 @@ export function SecuritySection() {
           href={samlUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium"
+          className={getButtonClasses({ variant: "primary" })}
         >
           Open SAML settings
           <ExternalLink className="w-4 h-4" />
@@ -36,7 +37,7 @@ export function SecuritySection() {
       >
         <a
           href="#two-factor"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium"
+          className={getButtonClasses({ variant: "primary" })}
         >
           Open 2FA settings
         </a>

@@ -30,7 +30,7 @@ export function ProductHeader({
   const displayTitle = title ?? product?.name ?? "Product";
 
   return (
-    <div className="bg-white rounded-lg border border-[#dadce0] p-4 mb-6">
+    <div className="bg-white rounded-3xl border border-[#dadce0] p-4 mb-6">
       <div className="flex items-start gap-4">
         <Image
           src={PRODUCT_ICON_SRC[productId]}

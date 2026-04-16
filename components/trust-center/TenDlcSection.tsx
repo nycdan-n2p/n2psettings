@@ -22,6 +22,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Modal } from "@/components/settings/Modal";
 import { TextInput } from "@/components/settings/TextInput";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
+import { Button } from "@/components/ui/Button";
 import { Loader } from "@/components/ui/Loader";
 import { MessageCircle, Search, Trash2, Pencil, Check, X } from "lucide-react";
 
@@ -210,22 +211,22 @@ export function TenDlcSection() {
     : brands;
 
   const brandColumns: ColumnDef<CampaignBrand>[] = [
-    { accessorKey: "id", header: "BRAND" },
-    { accessorKey: "display_name", header: "BRAND" },
-    { accessorKey: "company_name", header: "LEGAL" },
+    { accessorKey: "id", header: "Brand" },
+    { accessorKey: "display_name", header: "Brand" },
+    { accessorKey: "company_name", header: "Legal" },
     {
       id: "type",
-      header: "TYPE",
+      header: "Type",
       cell: ({ row }) => formatBrandType(row.original.type),
     },
     {
       id: "vertical",
-      header: "VERTICAL",
+      header: "Vertical",
       cell: ({ row }) => row.original.vertical?.display_name ?? "—",
     },
     {
       id: "status",
-      header: "STATUS",
+      header: "Status",
       cell: ({ row }) => (
         <span className="flex items-center gap-1.5">
           {row.original.identity_status === "verified" ? (
@@ -241,12 +242,12 @@ export function TenDlcSection() {
     },
     {
       id: "registered",
-      header: "REGISTERED",
+      header: "Registered",
       cell: ({ row }) => formatRegisteredDate(row.original.created_at_time),
     },
     {
       id: "actions",
-      header: "ACTIONS",
+      header: "Actions",
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <button
@@ -271,29 +272,29 @@ export function TenDlcSection() {
   const campaignColumns: ColumnDef<CampaignCampaign>[] = [
     {
       id: "brand",
-      header: "BRAND",
+      header: "Brand",
       cell: ({ row }) => row.original.brand?.display_name ?? row.original.brand_id ?? "—",
     },
-    { accessorKey: "id", header: "CAMPAIGN ID" },
-    { accessorKey: "description", header: "DESCRIPTION" },
+    { accessorKey: "id", header: "Campaign ID" },
+    { accessorKey: "description", header: "Description" },
     {
       id: "status",
-      header: "STATUS",
+      header: "Status",
       cell: ({ row }) => row.original.status ?? "—",
     },
   ];
 
   const optOutColumns: ColumnDef<OptOutEntry>[] = [
-    { accessorKey: "phone_number", header: "PHONE" },
+    { accessorKey: "phone_number", header: "Phone" },
     {
       id: "campaign",
-      header: "CAMPAIGN",
+      header: "Campaign",
       cell: ({ row }) => row.original.campaign?.id ?? "—",
     },
-    { accessorKey: "status", header: "STATUS" },
+    { accessorKey: "status", header: "Status" },
     {
       id: "created",
-      header: "OPTED OUT",
+      header: "Opted Out",
       cell: ({ row }) => formatRegisteredDate(row.original.created_at_time),
     },
   ];
@@ -325,12 +326,13 @@ export function TenDlcSection() {
           )}
         </div>
         {tab === "brands" && (
-          <button
+          <Button
             onClick={openAddModal}
-            className="px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium uppercase shrink-0"
+            variant="primary"
+            className="shrink-0"
           >
             Register Your Brand
-          </button>
+          </Button>
         )}
       </div>
 
@@ -579,25 +581,25 @@ export function TenDlcSection() {
           )}
           <div className="flex justify-end gap-2 mt-6">
             {step === 2 && (
-              <button
+              <Button
                 type="button"
                 onClick={() => setStep(1)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                variant="secondary"
               >
                 Back
-              </button>
+              </Button>
             )}
-            <button
+            <Button
               type="button"
               onClick={closeModal}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              variant="secondary"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
               disabled={createMutation.isPending || updateMutation.isPending}
-              className="px-4 py-2 text-sm font-medium text-white bg-[#1a73e8] rounded-md hover:bg-[#1557b0] disabled:opacity-50 uppercase"
+              variant="primary"
             >
               {step === 1
                 ? "Next"
@@ -606,7 +608,7 @@ export function TenDlcSection() {
                   : editingBrand
                     ? "Save"
                     : "Submit"}
-            </button>
+            </Button>
           </div>
         </form>
       </Modal>

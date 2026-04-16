@@ -5,7 +5,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApp } from "@/contexts/AppContext";
 import { qk } from "@/lib/query-keys";
 import { getAuthApiClient } from "@/lib/api-client";
+import { Button } from "@/components/ui/Button";
 import { Loader } from "@/components/ui/Loader";
+import { Toggle } from "@/components/settings/Toggle";
 
 /** Auth API: GET /api/2fa/details returns user MFA info; may include catalog-level required flag */
 interface MfaDetails {
@@ -75,27 +77,21 @@ export function TwoFactorSection() {
 
   return (
     <div className="max-w-lg">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center gap-3 mb-4">
+        <Toggle checked={required} onChange={setRequired} />
         <div>
-          <p className="text-sm font-medium text-gray-900">Require 2FA for all users</p>
+          <p className="text-base font-medium text-gray-900">Require 2FA for all users</p>
           <p className="text-xs text-gray-500 mt-0.5">Users will be prompted to set up 2FA on their next login</p>
         </div>
-        <button
-          type="button"
-          onClick={() => setRequired((r) => !r)}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${required ? "bg-[#1a73e8]" : "bg-gray-300"}`}
-        >
-          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${required ? "translate-x-6" : "translate-x-1"}`} />
-        </button>
       </div>
       <div className="flex items-center gap-3">
-        <button
+        <Button
           onClick={handleSave}
           disabled={mutation.isPending}
-          className="px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium disabled:opacity-50"
+          variant="primary"
         >
           {mutation.isPending ? "Saving..." : "Save"}
-        </button>
+        </Button>
         {saved && <span className="text-sm text-green-600">Saved!</span>}
         {mutation.isError && (
           <span className="text-sm text-red-600">{(mutation.error as Error)?.message ?? "Failed to save"}</span>

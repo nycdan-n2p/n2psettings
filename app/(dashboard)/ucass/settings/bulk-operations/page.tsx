@@ -66,7 +66,7 @@ export default function BulkOperationsPage() {
               <div className="px-6 py-4">
                 {hasItems ? (
                   <div className="overflow-x-auto">
-                    <table className="n2p-table min-w-full">
+                    <table className="n2p-table w-full text-sm">
                       <thead>
                         <tr>
                           <th>

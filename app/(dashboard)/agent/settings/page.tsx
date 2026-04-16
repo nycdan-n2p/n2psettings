@@ -25,7 +25,7 @@ export default function AgentSettingsPage() {
         Configure your AI assistant. Settings are managed in the Agent application.
       </p>
 
-      <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
+      <div className="n2p-keep-white bg-white !rounded-[32px] shadow-sm overflow-hidden">
         <div className="px-6 py-6">
           <Button
             variant="primary"

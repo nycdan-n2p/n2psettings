@@ -41,7 +41,7 @@ function FirstTimeSetupBanner() {
   if (!visible) return null;
 
   return (
-    <div className="flex items-center justify-between gap-2 px-4 py-2 bg-[rgba(167,167,190,0.10)] rounded-[20px] shrink-0">
+    <div className="mt-2 mb-3 flex items-center justify-between gap-2 px-4 py-2 bg-[rgba(167,167,190,0.08)] rounded-[20px] shrink-0">
       <div className="flex flex-wrap items-center gap-2 text-sm text-[#1a56b0] min-w-0">
         <Sparkles className="w-4 h-4 shrink-0 text-[#1a73e8]" aria-hidden="true" />
         <span className="truncate"><span className="hidden sm:inline">New account? </span>Get set up in minutes.</span>
@@ -89,7 +89,7 @@ export default function DashboardLayout({
 
   if (!mounted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F6F6F9]">
+      <div className="min-h-screen flex items-center justify-center bg-[#F9F9FB]">
         <Loader variant="full" label="Loading..." />
       </div>
     );
@@ -101,7 +101,7 @@ export default function DashboardLayout({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F6F6F9]">
+      <div className="min-h-screen flex items-center justify-center bg-[#F9F9FB]">
         <Loader variant="full" label="Loading..." />
       </div>
     );
@@ -109,7 +109,7 @@ export default function DashboardLayout({
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F6F6F9]">
+      <div className="min-h-screen flex items-center justify-center bg-[#F9F9FB]">
         <div className="text-center">
           <p className="text-red-600 mb-4">{error}</p>
           <button
@@ -127,21 +127,22 @@ export default function DashboardLayout({
     <ConciergeProvider>
       <AssistantProvider>
         <SidebarProvider>
-          <div className="h-screen flex flex-col overflow-hidden bg-[#F6F6F9]">
+          <div className="h-screen flex flex-col overflow-hidden bg-[#F9F9FB]">
             <TopBar />
-            <div className="flex h-[calc(100vh-56px)] overflow-hidden relative bg-[#F6F6F9]">
+            <div className="flex h-[calc(100vh-56px)] overflow-hidden relative bg-[#F9F9FB]">
               <Sidebar />
               <div className="flex-1 min-w-0 flex flex-col">
-                <div className="pt-2">
+                <div className="pr-3">
                   <FirstTimeSetupBanner />
                 </div>
-                <div className="flex flex-1 min-h-0">
+                <div className="mt-3 flex flex-1 min-h-0">
+                  <div className="w-3 shrink-0 bg-[#F9F9FB]" aria-hidden="true" />
                   <main className="flex-1 overflow-auto bg-white rounded-t-3xl">
-                    <div className="p-4 sm:p-6">
+                    <div className="px-4 pb-4 pt-3 sm:px-6 sm:pb-6 sm:pt-5">
                       <ErrorBoundary>{children}</ErrorBoundary>
                     </div>
                   </main>
-                  <div className="w-3 shrink-0 bg-[#F6F6F9]" aria-hidden="true" />
+                  <div className="w-3 shrink-0 bg-[#F9F9FB]" aria-hidden="true" />
                 </div>
               </div>
             </div>

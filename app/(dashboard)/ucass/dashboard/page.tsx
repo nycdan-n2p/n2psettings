@@ -24,7 +24,7 @@ interface StatCardProps {
 
 function StatCard({ label, value, sub, href, icon: Icon, color = "text-[#1a73e8]", compact = false }: StatCardProps) {
   const inner = (
-    <div className={`bg-[#F6F6F9] rounded-[20px] p-4 ${compact ? "h-[84px]" : "h-[104px]"} flex items-start gap-2.5 hover:shadow-sm transition-shadow`}>
+    <div className={`bg-[#F9F9FB] rounded-[20px] p-4 ${compact ? "h-[84px]" : "h-[104px]"} flex items-start gap-2.5 hover:shadow-sm transition-shadow`}>
       <div className={`mt-0.5 ${color}`}>
         <Icon className="w-4 h-4" />
       </div>
@@ -57,7 +57,7 @@ function PlanCard({
   nextBilling?: string | null;
 }) {
   return (
-    <div className="bg-[#F6F6F9] rounded-[20px] p-4 h-[104px] flex items-start gap-2">
+    <div className="bg-[#F9F9FB] rounded-[20px] p-4 h-[104px] flex items-start gap-2">
       <div className="mt-0.5 text-[#1a73e8]">
         <ListOrdered className="w-4 h-4" />
       </div>
@@ -151,7 +151,7 @@ export default function DashboardPage() {
 
       {/* Call analytics */}
       <div className="mb-8">
-        <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
+        <h2 className="text-sm font-medium text-gray-500 mb-3">
           {t("callActivity")}
         </h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -191,7 +191,7 @@ export default function DashboardPage() {
 
       {/* Account overview */}
       <div className="mb-8">
-        <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
+        <h2 className="text-sm font-medium text-gray-500 mb-3">
           {t("account")}
         </h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -228,11 +228,12 @@ export default function DashboardPage() {
       {/* License overview */}
       {licenses.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
+          <h2 className="text-sm font-medium text-gray-500 mb-3">
             Licenses
           </h2>
-          <div className="bg-white rounded-3xl overflow-x-auto">
-            <table className="n2p-table w-full text-sm min-w-[280px]">
+          <div className="rounded-lg bg-white">
+           <div className="overflow-x-auto">
+            <table className="n2p-table w-full text-sm">
               <thead>
                 <tr>
                   <th>License</th>
@@ -256,13 +257,14 @@ export default function DashboardPage() {
                 ))}
               </tbody>
             </table>
+           </div>
           </div>
         </div>
       )}
 
       {/* Quick links */}
       <div>
-        <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
+        <h2 className="text-sm font-medium text-gray-500 mb-3">
           Quick Access
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -280,7 +282,7 @@ export default function DashboardPage() {
               key={href}
               href={href}
               prefetch={false}
-              className="px-4 py-3 bg-white border border-[#dadce0] rounded-lg text-sm text-gray-700 hover:bg-[#f8f9fa] hover:border-[#1a73e8] transition-colors"
+              className="block px-4 py-3 bg-[#F9F9FB] rounded-[20px] text-sm text-gray-700 hover:scale-[1.02] transition-transform"
             >
               {label} →
             </Link>

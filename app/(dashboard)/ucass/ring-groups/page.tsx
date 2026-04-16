@@ -9,6 +9,7 @@ import { DataTable } from "@/components/tables/DataTable";
 import { useApp } from "@/contexts/AppContext";
 import { qk } from "@/lib/query-keys";
 import { Loader } from "@/components/ui/Loader";
+import { getButtonClasses } from "@/components/ui/Button";
 import {
   fetchRingGroups,
   fetchRingGroupDetail,
@@ -52,11 +53,11 @@ function CallCenterUpsellBanner() {
         <p className="text-sm font-semibold text-gray-900 mb-1">
           Ready to handle higher call volumes?
         </p>
-        <p className="text-xs text-gray-600 leading-relaxed mb-3">
+        <p className="text-sm text-gray-600 leading-relaxed mb-3">
           Ring Groups work great for simple routing — but growing teams need more.{" "}
           <span className="font-semibold text-gray-800">Call Center Essentials</span> unlocks:
         </p>
-        <ul className="text-xs text-gray-700 space-y-1 mb-3">
+        <ul className="text-sm text-gray-700 space-y-1 mb-3">
           <li className="flex items-center gap-2">
             <LayoutDashboard className="w-3.5 h-3.5 text-[#1a73e8] shrink-0" />
             <span><span className="font-medium">Call Queues</span> — priority routing, overflow handling &amp; hold music</span>
@@ -72,7 +73,7 @@ function CallCenterUpsellBanner() {
         </ul>
         <a
           href="mailto:sales@net2phone.com?subject=Call Center Essentials"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#1a73e8] text-white text-xs font-medium rounded-md hover:bg-[#1557b0] transition-colors"
+          className={getButtonClasses({ variant: "primary", size: "sm" })}
         >
           <Zap className="w-3 h-3" />
           Talk to Sales
@@ -390,7 +391,7 @@ export default function RingGroupsPage() {
             <p className="text-sm text-red-600 mb-2">{(addMutation.error as Error)?.message ?? t("failedToCreate")}</p>
           )}
           <div className="flex justify-end gap-2 mt-4">
-            <button type="button" onClick={closeModal} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancel</button>
+            <button type="button" onClick={closeModal} className={getButtonClasses({ variant: "secondary", size: "md" })}>Cancel</button>
             <button type="submit" disabled={addMutation.isPending} className="px-4 py-2 text-sm font-medium text-white bg-[#1a73e8] rounded-md hover:bg-[#1557b0] disabled:opacity-50">
               {addMutation.isPending ? t("creating") : t("addButton")}
             </button>

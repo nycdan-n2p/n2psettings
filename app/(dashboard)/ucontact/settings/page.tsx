@@ -8,7 +8,7 @@ export default function UcontactSettingsPage() {
         Contact center settings will be available here.
       </p>
 
-      <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
+      <div className="n2p-keep-white bg-white rounded-3xl shadow-sm overflow-hidden">
         <div className="px-6 py-6">
           <p className="text-sm text-gray-500">Coming soon.</p>
         </div>

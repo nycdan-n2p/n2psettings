@@ -30,7 +30,7 @@ export default function NumberPortingPage() {
   });
 
   const columns: ColumnDef<PortingOnboard>[] = [
-    { accessorKey: "id", header: "ID" },
+    { accessorKey: "id", header: "Id" },
     {
       id: "numbers",
       header: t("colNumbers"),

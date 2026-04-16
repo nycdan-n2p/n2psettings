@@ -16,7 +16,8 @@ export default function LicensesPage() {
       {licenses.length === 0 ? (
         <p className="text-sm text-gray-500">{t("noLicenses")}</p>
       ) : (
-        <div className="bg-white rounded-3xl overflow-hidden">
+        <div className="rounded-lg bg-white">
+         <div className="overflow-x-auto">
           <table className="n2p-table w-full text-sm">
             <thead>
               <tr>
@@ -39,6 +40,7 @@ export default function LicensesPage() {
               ))}
             </tbody>
           </table>
+         </div>
         </div>
       )}
       <p className="text-xs text-gray-400 mt-4">{t("contactNote")}</p>

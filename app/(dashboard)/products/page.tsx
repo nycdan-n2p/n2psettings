@@ -33,7 +33,7 @@ export default function ProductsPage() {
               key={product.id}
               href={href}
               prefetch={false}
-              className="group block p-6 bg-[#F6F6F9] rounded-[20px] shadow-sm hover:scale-[1.02] transition-transform"
+              className="group block p-6 bg-[#F9F9FB] rounded-[20px] shadow-sm hover:scale-[1.02] transition-transform"
             >
               <div className="flex items-start gap-4">
                 <Image

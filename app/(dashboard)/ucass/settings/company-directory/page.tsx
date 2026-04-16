@@ -1,13 +1,15 @@
 "use client";
 import { useTranslations } from "next-intl";
 
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApp } from "@/contexts/AppContext";
 import { qk } from "@/lib/query-keys";
 import { getApiClient, type V1Response } from "@/lib/api-client";
 import { FeatureGate } from "@/components/feature-gate/FeatureGate";
-import { Play, Pause, Upload, RotateCcw } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { Upload, RotateCcw } from "lucide-react";
+import { AudioPlayer } from "@/components/ui/AudioPlayer";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface CompDirGreeting {
@@ -23,11 +25,6 @@ interface CompDirData {
 
 // ── Audio Player ──────────────────────────────────────────────────────────────
 function GreetingPlayer({ audioContent }: { audioContent?: string }) {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [playing, setPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [currentTime, setCurrentTime] = useState(0);
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,80 +40,7 @@ function GreetingPlayer({ audioContent }: { audioContent?: string }) {
     }
   }, [audioContent]);
 
-  const handlePlayPause = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio || !blobUrl) return;
-    if (playing) {
-      audio.pause();
-      setPlaying(false);
-    } else {
-      if (!audio.src || audio.src !== blobUrl) audio.src = blobUrl;
-      audio.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
-    }
-  }, [playing, blobUrl]);
-
-  const handleTimeUpdate = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    setCurrentTime(audio.currentTime);
-    setProgress(audio.duration ? (audio.currentTime / audio.duration) * 100 : 0);
-  };
-
-  const handleLoadedMetadata = () => {
-    if (audioRef.current) setDuration(audioRef.current.duration);
-  };
-
-  const handleEnded = () => setPlaying(false);
-
-  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
-    const audio = audioRef.current;
-    if (!audio || !audio.duration) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const ratio = (e.clientX - rect.left) / rect.width;
-    audio.currentTime = ratio * audio.duration;
-  };
-
-  const fmt = (s: number) => {
-    if (!isFinite(s) || s < 0) return "00:00";
-    const m = Math.floor(s / 60);
-    const sec = Math.floor(s % 60);
-    return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
-  };
-
-  return (
-    <div className="flex items-center gap-3">
-      <button
-        type="button"
-        onClick={handlePlayPause}
-        disabled={!blobUrl}
-        className="w-9 h-9 flex items-center justify-center rounded-full bg-[#1a73e8] text-white hover:bg-[#1557b0] disabled:opacity-40 shrink-0 transition-colors"
-      >
-        {playing ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
-      </button>
-
-      <div
-        className="flex-1 h-1.5 bg-gray-200 rounded-full cursor-pointer relative"
-        onClick={handleSeek}
-      >
-        <div
-          className="absolute inset-y-0 left-0 bg-[#1a73e8] rounded-full transition-all"
-          style={{ width: `${progress}%` }}
-        />
-      </div>
-
-      <span className="text-xs text-gray-500 tabular-nums shrink-0 w-24 text-right">
-        {fmt(currentTime)} / {fmt(duration)}
-      </span>
-
-      <audio
-        ref={audioRef}
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata}
-        onEnded={handleEnded}
-        className="hidden"
-      />
-    </div>
-  );
+  return <AudioPlayer src={blobUrl} />;
 }
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
@@ -226,15 +150,11 @@ function CompanyDirectoryContent() {
       {isLoading ? (
         <div className="py-8 text-sm text-gray-400">{t("loading")}</div>
       ) : (
-        <div className="space-y-6">
+        <div className="bg-white divide-y divide-[#e5e7eb]">
 
           {/* ── Greeting ─────────────────────────────────────────────── */}
-          <div className="bg-white rounded-[16px] border border-gray-200 overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100">
-              <h2 className="text-sm font-semibold text-gray-900">{t("greetingTitle")}</h2>
-            </div>
-
-            <div className="px-5 py-4 space-y-3">
+          <section className="px-5 py-4 space-y-3">
+              <h2 className="text-base font-semibold text-gray-900">{t("greetingTitle")}</h2>
               <p className="text-xs text-gray-500">
                 {isDefault ? t("playingDefault") : t("playingCustom")}
               </p>
@@ -242,15 +162,16 @@ function CompanyDirectoryContent() {
               <GreetingPlayer audioContent={settings?.greeting?.audioContent} />
 
               <div className="flex items-center gap-4 pt-1">
-                <button
+                <Button
                   type="button"
                   onClick={() => fileRef.current?.click()}
                   disabled={isSaving}
-                  className="flex items-center gap-1.5 text-sm text-[#1a73e8] hover:underline disabled:opacity-50"
+                  variant="secondary"
+                  size="sm"
+                  icon={<Upload className="w-3.5 h-3.5" />}
                 >
-                  <Upload className="w-3.5 h-3.5" />
                   {uploading ? t("uploading") : t("changeGreeting")}
-                </button>
+                </Button>
 
                 {!isDefault && (
                   <button
@@ -276,16 +197,11 @@ function CompanyDirectoryContent() {
                 onChange={handleFileChange}
                 className="hidden"
               />
-            </div>
-          </div>
+          </section>
 
           {/* ── Team Member Lookup ───────────────────────────────────── */}
-          <div className="bg-white rounded-[16px] border border-gray-200 overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100">
-              <h2 className="text-sm font-semibold text-gray-900">{t("lookupTitle")}</h2>
-            </div>
-
-            <div className="px-5 py-4">
+          <section className="px-5 py-4">
+              <h2 className="text-base font-semibold text-gray-900 mb-4">{t("lookupTitle")}</h2>
               <p className="text-sm text-gray-600 mb-4">{t("lookupDescription")}</p>
 
               <div className="space-y-3">
@@ -321,8 +237,7 @@ function CompanyDirectoryContent() {
               {searchMutation.isPending && (
                 <p className="text-xs text-gray-400 mt-3">{t("saving")}</p>
               )}
-            </div>
-          </div>
+          </section>
 
         </div>
       )}

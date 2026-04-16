@@ -13,28 +13,25 @@ export function Loader({
 }: LoaderProps) {
   const size =
     variant === "full"
-      ? "w-16 h-16"
+      ? "w-10 h-10"
       : variant === "button"
-        ? "w-5 h-5"
-        : "w-12 h-12";
+        ? "w-4 h-4"
+        : "w-8 h-8";
 
-  const strokeWidth = variant === "button" ? 2 : 3;
+  const strokeWidth = variant === "button" ? 2 : 2.5;
 
   const isButton = variant === "button";
 
   return (
     <div
-      className={`flex flex-col items-center justify-center ${isButton ? "gap-0" : "gap-4"} ${className}`}
+      className={`flex items-center justify-center ${className}`}
       role="status"
       aria-label={label ?? "Loading"}
     >
-      <div className={`${size} relative`}>
-        {/* Subtle pulsing glow behind spinner */}
-        <div className="absolute inset-0 -m-2 rounded-full bg-[#1a73e8]/15 animate-loader-pulse" />
-        {/* Spinning ring */}
+      <div className={size}>
         <svg
-          className="relative w-full h-full animate-spin"
-          style={{ animationDuration: "0.9s" }}
+          className="w-full h-full animate-spin text-gray-400"
+          style={{ animationDuration: "0.8s" }}
           viewBox="0 0 50 50"
         >
           <circle
@@ -46,15 +43,9 @@ export function Loader({
             strokeWidth={strokeWidth}
             strokeLinecap="round"
             strokeDasharray="80 120"
-            className="text-[#1a73e8]"
           />
         </svg>
       </div>
-      {label && variant !== "button" && (
-        <span className="text-sm font-medium text-gray-500 animate-pulse">
-          {label}
-        </span>
-      )}
     </div>
   );
 }

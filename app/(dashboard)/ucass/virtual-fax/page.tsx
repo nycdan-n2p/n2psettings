@@ -33,6 +33,7 @@ function VirtualFaxContent() {
   const [formIncoming, setFormIncoming] = useState("");
   const [formOutgoing, setFormOutgoing] = useState("");
   const [formEncrypt, setFormEncrypt] = useState(false);
+  const [numberError, setNumberError] = useState<string>("");
 
   const { data: faxes = [], isLoading } = useQuery({
     queryKey: qk.virtualFax.all(accountId),
@@ -77,6 +78,7 @@ function VirtualFaxContent() {
     setFormIncoming("");
     setFormOutgoing("");
     setFormEncrypt(false);
+    setNumberError("");
     setModalOpen(true);
   };
 
@@ -86,16 +88,23 @@ function VirtualFaxContent() {
     setFormIncoming(f.incoming?.join(", ") ?? "");
     setFormOutgoing(f.outgoing?.join(", ") ?? "");
     setFormEncrypt(f.encrypt ?? false);
+    setNumberError("");
     setModalOpen(true);
   };
 
   const closeModal = () => {
     setModalOpen(false);
     setEditingFax(null);
+    setNumberError("");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!editingFax && !formNumber.trim()) {
+      setNumberError("Phone number is required");
+      return;
+    }
+
     const incoming = formIncoming
       .split(",")
       .map((s) => s.trim())
@@ -162,14 +171,16 @@ function VirtualFaxContent() {
 
   return (
     <div>
-      <h1 className="text-2xl font-medium text-gray-900 mb-6">{t("title")}</h1>
-      <p className="text-gray-600 mb-6">
-        Manage virtual fax numbers and email routing.
-      </p>
-      <div className="mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-medium text-gray-900">{t("title")}</h1>
+          <p className="text-gray-600 mt-2">
+            Manage virtual fax numbers and email routing.
+          </p>
+        </div>
         <button
           onClick={openAddModal}
-          className="px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium"
+          className="sm:ml-auto px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium"
         >
           Add fax number
         </button>
@@ -193,11 +204,14 @@ function VirtualFaxContent() {
           <TextInput
             label={t("labelPhoneNumber")}
             value={formNumber}
-            onChange={setFormNumber}
+            onChange={(v) => {
+              setFormNumber(v);
+              if (v.trim()) setNumberError("");
+            }}
             placeholder="e.g. 15167582967"
             type="tel"
-            required
             disabled={!!editingFax}
+            error={!editingFax ? numberError : undefined}
           />
           <TextInput
             label="Incoming emails (comma-separated)"

@@ -15,6 +15,7 @@ import {
   validatePortingProvider,
   validatePortingAddress,
 } from "@/lib/utils/validation";
+import { getButtonClasses } from "@/components/ui/Button";
 import { CardShell, ValidationErrors, FixItButton } from "./shared";
 
 type PortingStep =
@@ -333,7 +334,7 @@ export function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => 
           )}
           <ValidationErrors errors={validationErrors} />
           <div className="flex gap-2 pt-1">
-            <button type="button" onClick={() => { setValidationErrors([]); setStep("decide"); }} className="px-3 py-2 text-sm text-gray-500 border border-[#dadce0] rounded-lg hover:bg-[#f8f9fa]">Back</button>
+            <button type="button" onClick={() => { setValidationErrors([]); setStep("decide"); }} className={getButtonClasses({ variant: "secondary", size: "md" })}>Back</button>
             <button type="button" onClick={handleNewNumbersDone} className="flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold bg-[#1a73e8] text-white rounded-lg hover:bg-[#1557b0]">
               Continue <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </button>
@@ -369,7 +370,7 @@ export function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => 
             field("Approx. quantity (optional)", skipQty, setSkipQty, { placeholder: "e.g. 3", id: "skip-qty" })
           )}
           <div className="flex gap-2 pt-1">
-            <button type="button" onClick={() => setStep("decide")} className="px-3 py-2 text-sm text-gray-500 border border-[#dadce0] rounded-lg hover:bg-[#f8f9fa]">Back</button>
+            <button type="button" onClick={() => setStep("decide")} className={getButtonClasses({ variant: "secondary", size: "md" })}>Back</button>
             <button
               type="button"
               onClick={() =>
@@ -446,7 +447,7 @@ export function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => 
           )}
           <div className="flex gap-2 pt-1 flex-wrap">
             <button type="button" onClick={() => { setValidationErrors([]); setStep("decide"); }}
-              className="px-3 py-2 text-sm text-gray-500 border border-[#dadce0] rounded-lg hover:bg-[#f8f9fa]">
+              className={getButtonClasses({ variant: "secondary", size: "md" })}>
               Back
             </button>
             <button type="button" onClick={() => { setValidationErrors([]); setStep("skip_optional"); }}
@@ -486,7 +487,7 @@ export function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => 
           </div>
           <ValidationErrors errors={validationErrors} />
           <div className="flex gap-2 pt-1">
-            <button onClick={() => { setValidationErrors([]); setStep("numbers"); }} className="px-3 py-2 text-sm text-gray-500 border border-[#dadce0] rounded-lg hover:bg-[#f8f9fa]">Back</button>
+            <button onClick={() => { setValidationErrors([]); setStep("numbers"); }} className={getButtonClasses({ variant: "secondary", size: "md" })}>Back</button>
             <button onClick={handleProviderNext} disabled={!providerName || !accountNumber || !providerBtn || !pin}
               className="flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold bg-[#1a73e8] text-white rounded-lg hover:bg-[#1557b0] disabled:opacity-40 transition-colors">
               Next <ArrowRight className="w-4 h-4" aria-hidden="true" />
@@ -526,7 +527,7 @@ export function PortingWidget({ onMessages }: { onMessages: (msgs: string[]) => 
             </p>
           )}
           <div className="flex gap-2 pt-1">
-            <button onClick={() => { setValidationErrors([]); setStep("provider"); }} className="px-3 py-2 text-sm text-gray-500 border border-[#dadce0] rounded-lg hover:bg-[#f8f9fa]">Back</button>
+            <button onClick={() => { setValidationErrors([]); setStep("provider"); }} className={getButtonClasses({ variant: "secondary", size: "md" })}>Back</button>
             <button onClick={handleSubmit} disabled={!firstName || !lastName || !email || !address1 || !city || !stateAbbr || !zip}
               className="flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold bg-[#1a73e8] text-white rounded-lg hover:bg-[#1557b0] disabled:opacity-40 transition-colors">
               Submit Porting Request <ArrowRight className="w-4 h-4" aria-hidden="true" />

@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useApp } from "@/contexts/AppContext";
 import { Loader } from "@/components/ui/Loader";
 import { SegmentedTabs } from "@/components/ui/SegmentedTabs";
+import { Button } from "@/components/ui/Button";
 import {
   fetchDeviceTemplates,
   type DeviceTemplate,
@@ -70,13 +71,13 @@ function TemplateRow({ template, onView, onClone, onEdit, onDelete, onReboot }: 
   const isDefault = cat === "default";
 
   return (
-    <div
-      className={`flex items-center gap-4 px-4 py-3 border-b border-[#f1f3f4] transition-colors ${hovered ? "bg-[#f8f9fa]" : "bg-white"}`}
+    <tr
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
       {/* Icon + Name */}
-      <div className="flex items-center gap-3 min-w-0 flex-1">
+      <td>
+        <div className="flex items-center gap-3 min-w-0">
         <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isDefault ? "bg-[#e8eaed]" : "bg-[#e8f0fe]"}`}>
           {isDefault
             ? <Settings2 className="w-4 h-4 text-[#5f6368]" />
@@ -94,17 +95,18 @@ function TemplateRow({ template, onView, onClone, onEdit, onDelete, onReboot }: 
             <span className="text-xs text-gray-400">ID: {template.id}</span>
           )}
         </div>
-      </div>
+        </div>
+      </td>
 
       {/* Device Type */}
-      <div className="w-40 shrink-0">
+      <td className="w-[220px]">
         <span className="text-sm text-gray-700">
           {template.deviceName ?? "—"}
         </span>
-      </div>
+      </td>
 
       {/* Device Count */}
-      <div className="w-28 shrink-0 text-center">
+      <td className="w-[180px] text-center">
         {template.deviceCount != null && template.deviceCount > 0 ? (
           <button className="text-sm text-[#1a73e8] hover:underline font-medium">
             {template.deviceCount} device{template.deviceCount !== 1 ? "s" : ""}
@@ -112,10 +114,11 @@ function TemplateRow({ template, onView, onClone, onEdit, onDelete, onReboot }: 
         ) : (
           <span className="text-sm text-gray-400">—</span>
         )}
-      </div>
+      </td>
 
       {/* Reboot */}
-      <div className="w-20 shrink-0 flex justify-center">
+      <td className="w-[120px]">
+        <div className="flex justify-center">
         <button
           onClick={() => onReboot(template)}
           title={t("rebootAllTooltip")}
@@ -127,10 +130,12 @@ function TemplateRow({ template, onView, onClone, onEdit, onDelete, onReboot }: 
         >
           <RotateCcw className="w-4 h-4" />
         </button>
-      </div>
+        </div>
+      </td>
 
       {/* Actions */}
-      <div className="w-32 shrink-0 flex items-center justify-end gap-1">
+      <td className="w-[180px]">
+        <div className="flex items-center justify-end gap-1">
         <button
           onClick={() => onView(template)}
           title={t("viewTooltip")}
@@ -179,22 +184,9 @@ function TemplateRow({ template, onView, onClone, onEdit, onDelete, onReboot }: 
             </button>
           </>
         )}
-      </div>
-    </div>
-  );
-}
-
-// ── Table Header ──────────────────────────────────────────────────────────────
-function TableHeader() {
-  const t = useTranslations("deviceManagementPage");
-  return (
-    <div className="flex items-center gap-4 px-4 py-2 bg-[#f8f9fa] border-b border-[#dadce0] text-xs font-medium text-gray-500 uppercase tracking-wider rounded-t-lg">
-      <div className="flex-1">{t("colTemplateName")}</div>
-      <div className="w-40 shrink-0">{t("colDeviceType")}</div>
-      <div className="w-28 shrink-0 text-center">{t("colAssignedDevices")}</div>
-      <div className="w-20 shrink-0 text-center">{t("colReboot")}</div>
-      <div className="w-32 shrink-0 text-right">{t("colActions")}</div>
-    </div>
+        </div>
+      </td>
+    </tr>
   );
 }
 
@@ -313,13 +305,14 @@ export default function DeviceManagementPage() {
         <SegmentedTabs
           value={activeTab}
           onChange={handleTabChange}
+          className="w-full max-w-[760px]"
           options={(["company", "personal"] as const).map((tab) => {
             const count = tab === "company" ? companyTemplates.length : personalTemplates.length;
             const label = tab === "company" ? t("tabCompany") : t("tabPersonal");
             return {
               value: tab,
               label: (
-                <span className="inline-flex items-center gap-2">
+                <span className="inline-flex items-center gap-2 whitespace-nowrap">
                   {label}
                   <span className="text-xs rounded-full px-1.5 py-0.5 bg-[rgba(167,167,190,0.2)] text-gray-700">
                     {isLoading ? "…" : count}
@@ -370,20 +363,32 @@ export default function DeviceManagementPage() {
               )}
             </div>
           ) : (
-            <div className="border border-[#dadce0] rounded-lg overflow-hidden">
-              <TableHeader />
-              <div>
-                {paginated.map((template) => (
-                  <TemplateRow
-                    key={String(template.id)}
-                    template={template}
-                    onView={setViewTemplate}
-                    onClone={setCloneTarget}
-                    onEdit={setEditTemplate}
-                    onDelete={setDeleteTarget}
-                    onReboot={setRebootTarget}
-                  />
-                ))}
+            <div className="rounded-lg bg-white">
+              <div className="overflow-x-auto">
+                <table className="n2p-table w-full text-sm">
+                  <thead>
+                    <tr>
+                      <th>{t("colTemplateName")}</th>
+                      <th>{t("colDeviceType")}</th>
+                      <th className="text-center">{t("colAssignedDevices")}</th>
+                      <th className="text-center">{t("colReboot")}</th>
+                      <th className="text-right">{t("colActions")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginated.map((template) => (
+                      <TemplateRow
+                        key={String(template.id)}
+                        template={template}
+                        onView={setViewTemplate}
+                        onClone={setCloneTarget}
+                        onEdit={setEditTemplate}
+                        onDelete={setDeleteTarget}
+                        onReboot={setRebootTarget}
+                      />
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
@@ -442,31 +447,31 @@ export default function DeviceManagementPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Template Name</p>
+                <p className="text-xs font-medium text-gray-500 mb-1">Template name</p>
                 <p className="text-gray-900">{viewTemplate.name}</p>
               </div>
               <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Device Type</p>
+                <p className="text-xs font-medium text-gray-500 mb-1">Device type</p>
                 <p className="text-gray-900">{viewTemplate.deviceName ?? "—"}</p>
               </div>
               <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Device Count</p>
+                <p className="text-xs font-medium text-gray-500 mb-1">Device count</p>
                 <p className="text-gray-900">{viewTemplate.deviceCount ?? 0} device{viewTemplate.deviceCount !== 1 ? "s" : ""}</p>
               </div>
               <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Type</p>
+                <p className="text-xs font-medium text-gray-500 mb-1">Type</p>
                 <p className="text-gray-900">
                   {viewTemplate.isDefault ? t("systemDefault") : viewTemplate.isCompany ? "Company" : "Personal"}
                 </p>
               </div>
             </div>
             <div className="flex justify-end pt-2">
-              <button
+              <Button
                 onClick={() => setViewTemplate(null)}
-                className="px-4 py-2 text-sm font-medium text-[#1a73e8] hover:bg-[#e8f0fe] rounded-md transition-colors"
+                variant="secondary"
               >
                 Close
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -491,12 +496,12 @@ export default function DeviceManagementPage() {
               />
             </div>
             <div className="flex justify-end gap-3 pt-2">
-              <button
+              <Button
                 onClick={() => setEditTemplate(null)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-[#f1f3f4] rounded-md transition-colors"
+                variant="secondary"
               >
                 Cancel
-              </button>
+              </Button>
               <button
                 onClick={() => setEditTemplate(null)}
                 className="px-4 py-2 text-sm font-medium text-white bg-[#1a73e8] hover:bg-[#1557b0] rounded-md transition-colors"
@@ -538,12 +543,12 @@ export default function DeviceManagementPage() {
             </select>
           </div>
           <div className="flex justify-end gap-3 pt-2">
-            <button
+            <Button
               onClick={() => { setShowAddModal(false); setNewTemplateName(""); }}
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-[#f1f3f4] rounded-md transition-colors"
+              variant="secondary"
             >
               Cancel
-            </button>
+            </Button>
             <button
               disabled={!newTemplateName.trim()}
               onClick={() => {

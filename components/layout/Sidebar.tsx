@@ -108,7 +108,7 @@ function NavGroupSection({ group }: { group: NavGroup }) {
 
   return (
     <div className="mb-1">
-      <div className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-400 uppercase tracking-wider">
+      <div className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-400">
         {groupLabel}
       </div>
       <div className="space-y-0.5">
@@ -118,7 +118,7 @@ function NavGroupSection({ group }: { group: NavGroup }) {
               <button
                 key={item.label}
                 onClick={openAssistant}
-                className="flex items-center gap-3 px-3 py-2 rounded-[var(--control-radius)] text-sm transition-colors text-gray-700 hover:bg-[rgba(167,167,190,0.10)] w-full text-left"
+                className="flex items-center gap-3 px-3 py-2 rounded-[var(--control-radius)] text-sm transition-colors text-gray-700 hover:bg-[rgba(167,167,190,0.08)] w-full text-left"
               >
                 {itemLabel(item.label)}
               </button>
@@ -131,7 +131,7 @@ function NavGroupSection({ group }: { group: NavGroup }) {
                 href={item.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 px-3 py-2 rounded-[var(--control-radius)] text-sm transition-colors text-gray-700 hover:bg-[rgba(167,167,190,0.10)]"
+                className="flex items-center gap-3 px-3 py-2 rounded-[var(--control-radius)] text-sm transition-colors text-gray-700 hover:bg-[rgba(167,167,190,0.08)]"
               >
                 {itemLabel(item.label)}
               </a>
@@ -147,10 +147,10 @@ function NavGroupSection({ group }: { group: NavGroup }) {
               prefetch={false}
               className={`flex items-center gap-3 px-3 py-2 rounded-[var(--control-radius)] text-sm transition-colors ${
                 isActive
-                  ? "bg-[rgba(167,167,190,0.10)] text-gray-900 font-medium"
+                  ? "bg-[rgba(167,167,190,0.08)] text-gray-900 font-medium"
                   : locked
-                  ? "text-gray-400 hover:bg-[rgba(167,167,190,0.10)] hover:text-gray-600"
-                  : "text-gray-700 hover:bg-[rgba(167,167,190,0.10)]"
+                  ? "text-gray-400 hover:bg-[rgba(167,167,190,0.08)] hover:text-gray-600"
+                  : "text-gray-700 hover:bg-[rgba(167,167,190,0.08)]"
               }`}
             >
               <span className="flex-1 min-w-0 truncate">{itemLabel(item.label)}</span>
@@ -170,6 +170,7 @@ export function Sidebar() {
   const productId = getProductFromPath(pathname);
   const [uniteExpanded, setUniteExpanded] = useState(pathname.startsWith("/ucass"));
   const wasUcassRef = useRef(pathname.startsWith("/ucass"));
+  const [isCompactDesktop, setIsCompactDesktop] = useState(false);
   const t = useTranslations("nav");
   const { mobileOpen, setMobileOpen } = useSidebar();
 
@@ -190,19 +191,52 @@ export function Sidebar() {
     wasUcassRef.current = isUcass;
   }, [pathname]);
 
+  useEffect(() => {
+    const query = "(min-width: 768px) and (max-width: 1279px)";
+    const media = window.matchMedia(query);
+    const update = () => setIsCompactDesktop(media.matches);
+    update();
+    if (media.addEventListener) {
+      media.addEventListener("change", update);
+      return () => media.removeEventListener("change", update);
+    }
+    media.addListener(update);
+    return () => media.removeListener(update);
+  }, []);
+
   const navContent = (
     <nav className="p-3">
       <div className="mb-2">
         <Link
           href="/products"
           prefetch={false}
-          className={`flex items-center gap-3 px-3 py-2 rounded-[var(--control-radius)] text-sm transition-colors ${
+          title={t("items.overview")}
+          className={`flex items-center ${
+            isCompactDesktop
+              ? "justify-center w-11 h-11 mx-auto rounded-xl"
+              : "gap-3 px-3 py-2 rounded-[var(--control-radius)]"
+          } text-sm transition-colors ${
             pathname === "/products"
-              ? "bg-[rgba(167,167,190,0.10)] text-gray-900 font-medium"
-              : "text-gray-700 hover:bg-[rgba(167,167,190,0.10)]"
+              ? "bg-[rgba(167,167,190,0.08)] text-gray-900 font-medium"
+              : "text-gray-700 hover:bg-[rgba(167,167,190,0.08)]"
           }`}
         >
-          {t("items.overview")}
+          {isCompactDesktop ? (
+            <span className="flex items-center justify-center w-6 h-6">
+              <svg
+                viewBox="0 0 24 24"
+                className="w-5 h-5 text-gray-500"
+                aria-hidden="true"
+              >
+                <path
+                  fill="currentColor"
+                  d="M12 3.2 3.2 10v10.2A1.8 1.8 0 0 0 5 22h14a1.8 1.8 0 0 0 1.8-1.8V10L12 3.2Zm-2.7 16v-5.3h5.4v5.3H9.3Z"
+                />
+              </svg>
+            </span>
+          ) : (
+            t("items.overview")
+          )}
         </Link>
       </div>
 
@@ -220,6 +254,31 @@ export function Sidebar() {
               const iconSrc = PRODUCT_ICON_SRC[product.id];
 
               if (product.id === "ucass") {
+                if (isCompactDesktop) {
+                  return (
+                    <Link
+                      key={product.id}
+                      href="/ucass/dashboard"
+                      prefetch={false}
+                      title={product.shortName}
+                      className={`flex items-center justify-center w-11 h-11 mx-auto rounded-xl text-sm transition-colors ${
+                        isActive
+                          ? "bg-[rgba(167,167,190,0.08)] text-gray-900 font-medium"
+                          : "text-gray-700 hover:bg-[rgba(167,167,190,0.08)]"
+                      }`}
+                    >
+                      <Image
+                        src={iconSrc}
+                        alt=""
+                        aria-hidden="true"
+                        width={24}
+                        height={24}
+                        className="w-6 h-6 shrink-0 rounded-[6px]"
+                      />
+                    </Link>
+                  );
+                }
+
                 return (
                   <div key={product.id}>
                     <Link
@@ -233,8 +292,8 @@ export function Sidebar() {
                       }}
                       className={`flex items-center gap-3 px-3 py-2 rounded-[var(--control-radius)] text-sm transition-colors ${
                         isActive
-                          ? "bg-[rgba(167,167,190,0.10)] text-gray-900 font-medium"
-                          : "text-gray-700 hover:bg-[rgba(167,167,190,0.10)]"
+                          ? "bg-[rgba(167,167,190,0.08)] text-gray-900 font-medium"
+                          : "text-gray-700 hover:bg-[rgba(167,167,190,0.08)]"
                       }`}
                     >
                       <Image
@@ -243,7 +302,7 @@ export function Sidebar() {
                         aria-hidden="true"
                         width={20}
                         height={20}
-                        className="w-5 h-5 shrink-0 rounded-[6px]"
+                        className="w-6 h-6 shrink-0 rounded-[6px]"
                       />
                       {product.shortName}
                       {uniteExpanded ? (
@@ -253,7 +312,11 @@ export function Sidebar() {
                       )}
                     </Link>
                     {uniteExpanded && (
-                      <div className="ml-4 mt-0.5 border-l border-gray-200 pl-2">
+                      <div className="relative ml-4 mt-1 pl-3">
+                        <span
+                          aria-hidden="true"
+                          className="absolute left-0 top-2 bottom-2 w-[3px] rounded-full bg-[rgba(167,167,190,0.08)]"
+                        />
                         {ucassNavGroups.map((group) => (
                           <NavGroupSection key={group.label} group={group} />
                         ))}
@@ -268,21 +331,26 @@ export function Sidebar() {
                   key={product.id}
                   href={href}
                   prefetch={false}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-[var(--control-radius)] text-sm transition-colors ${
+                  title={product.shortName}
+                  className={`flex items-center ${
+                    isCompactDesktop
+                      ? "justify-center w-11 h-11 mx-auto rounded-xl"
+                      : "gap-3 px-3 py-2 rounded-[var(--control-radius)]"
+                  } text-sm transition-colors ${
                     isActive
-                      ? "bg-[rgba(167,167,190,0.10)] text-gray-900 font-medium"
-                      : "text-gray-700 hover:bg-[rgba(167,167,190,0.10)]"
+                      ? "bg-[rgba(167,167,190,0.08)] text-gray-900 font-medium"
+                      : "text-gray-700 hover:bg-[rgba(167,167,190,0.08)]"
                   }`}
                 >
                   <Image
                     src={iconSrc}
                     alt=""
                     aria-hidden="true"
-                    width={20}
-                    height={20}
-                    className="w-5 h-5 shrink-0 rounded-[6px]"
+                    width={24}
+                    height={24}
+                    className="w-6 h-6 shrink-0 rounded-[6px]"
                   />
-                  {product.shortName}
+                  {!isCompactDesktop && product.shortName}
                 </Link>
               );
             })}
@@ -294,7 +362,7 @@ export function Sidebar() {
   return (
     <>
       {/* Mobile overlay */}
-      {mobileOpen && (
+      {mobileOpen && !isCompactDesktop && (
         <div
           className="fixed inset-0 bg-black/40 z-40 lg:hidden"
           onClick={() => setMobileOpen(false)}
@@ -305,17 +373,23 @@ export function Sidebar() {
       {/* Sidebar: drawer on mobile, static on desktop */}
       <aside
         className={`
-          w-64 h-full shrink-0 bg-[#F6F6F9] overflow-y-auto
-          fixed lg:static inset-y-0 left-0 top-14 lg:top-0 z-50 lg:z-auto
+          n2p-sidebar ${isCompactDesktop ? "w-16" : "w-64"} h-full shrink-0 bg-[#F9F9FB] overflow-y-auto
+          ${isCompactDesktop ? "fixed md:static" : "fixed lg:static"} inset-y-0 left-0 top-14 ${isCompactDesktop ? "md:top-0" : "lg:top-0"} z-50 lg:z-auto
           transform transition-transform duration-200 ease-out
-          ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+          ${
+            isCompactDesktop
+              ? "translate-x-0"
+              : mobileOpen
+                ? "translate-x-0"
+                : "-translate-x-full lg:translate-x-0"
+          }
         `}
       >
-        <div className="flex items-center justify-between px-3 py-3 lg:hidden">
+        <div className={`items-center justify-between px-3 py-3 ${isCompactDesktop ? "hidden" : "flex lg:hidden"}`}>
           <span className="text-sm font-medium text-gray-700">Menu</span>
           <button
             onClick={() => setMobileOpen(false)}
-            className="p-2 rounded-[var(--control-radius)] hover:bg-[rgba(167,167,190,0.10)] text-gray-600"
+            className="p-2 rounded-[var(--control-radius)] hover:bg-[rgba(167,167,190,0.08)] text-gray-600"
             aria-label="Close menu"
           >
             <X className="w-5 h-5" />

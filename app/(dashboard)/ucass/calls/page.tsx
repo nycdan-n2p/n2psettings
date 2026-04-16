@@ -532,7 +532,7 @@ function RecordingsTab({
   if (recCdrs.length === 0) {
     return (
       <div className="py-20 flex flex-col items-center gap-3 text-gray-400">
-        <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center">
+        <div className="w-14 h-14 rounded-full flex items-center justify-center">
           <Mic className="w-7 h-7 text-gray-300" />
         </div>
         <p className="text-sm font-medium text-gray-500">No recordings found</p>
@@ -864,7 +864,7 @@ export default function CallsPage() {
               </div>
             ) : voicemails.length === 0 ? (
               <div className="py-20 flex flex-col items-center gap-3 text-gray-400">
-                <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center">
+                <div className="w-14 h-14 rounded-full flex items-center justify-center">
                   <Voicemail className="w-7 h-7 text-gray-300" />
                 </div>
                 <p className="text-sm font-medium text-gray-500">No voicemails</p>

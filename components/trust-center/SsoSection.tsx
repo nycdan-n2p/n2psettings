@@ -1,6 +1,7 @@
 "use client";
 
 import { useApp } from "@/contexts/AppContext";
+import { getButtonClasses } from "@/components/ui/Button";
 import { ExternalLink, Info, Settings } from "lucide-react";
 
 const ACS_ENDPOINT = "https://auth.net2phone.com/saml/login/callback";
@@ -32,7 +33,7 @@ export function SsoSection() {
           href={samlUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium"
+          className={getButtonClasses({ variant: "primary" })}
         >
           <Settings className="w-4 h-4" />
           Open SAML SSO settings

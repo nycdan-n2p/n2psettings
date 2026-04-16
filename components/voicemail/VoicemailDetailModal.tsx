@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { X, Play, Pause, Download, Trash2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, Download, Trash2 } from "lucide-react";
+import { AudioPlayer } from "@/components/ui/AudioPlayer";
 import {
   fetchVoicemailAudioUrl,
   fetchVoicemailDetail,
@@ -25,9 +26,7 @@ export function VoicemailDetailModal({
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [transcript, setTranscript] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [playing, setPlaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement>(null);
 
   const voicemailId = voicemail.voicemailId;
   const fromLabel = voicemail.from?.callerId ?? voicemail.from?.number ?? "Unknown";
@@ -59,17 +58,6 @@ export function VoicemailDetailModal({
     };
   }, [voicemailId, accountId, userId]);
 
-  const togglePlay = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    if (playing) {
-      audio.pause();
-    } else {
-      audio.play();
-    }
-    setPlaying(!playing);
-  };
-
   const handleDownload = () => {
     if (audioUrl) {
       const a = document.createElement("a");
@@ -79,27 +67,20 @@ export function VoicemailDetailModal({
     }
   };
 
-  const formatDuration = (seconds?: number) => {
-    if (seconds == null) return "00:00";
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-  };
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-4">
       <div
         className="absolute inset-0 bg-black/50"
         onClick={onClose}
         aria-hidden
       />
       <div
-        className="relative z-10 w-full max-w-lg bg-white rounded-lg shadow-xl mx-4 max-h-[90vh] overflow-hidden flex flex-col"
+        className="modal-surface relative z-10 w-full max-w-lg bg-white rounded-t-[34px] rounded-b-none shadow-xl mx-4 h-[calc(100vh-1rem)] overflow-hidden flex flex-col"
         role="dialog"
         aria-modal="true"
         aria-labelledby="vm-modal-title"
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#dadce0]">
+        <div className="modal-header flex items-center justify-between px-6 py-4">
           <h2 id="vm-modal-title" className="text-lg font-medium text-gray-900">
             Voice Mail From {fromLabel}
           </h2>
@@ -112,34 +93,14 @@ export function VoicemailDetailModal({
           </button>
         </div>
 
-        <div className="px-6 py-4 overflow-auto flex-1 space-y-4">
+        <div className="modal-body bg-white px-6 py-4 overflow-auto flex-1 space-y-4">
           {/* Playback controls - always visible */}
           <div>
             <h3 className="text-sm font-medium text-gray-700 mb-2">Play</h3>
             <div className="flex items-center gap-4">
-            <button
-              onClick={togglePlay}
-              disabled={!audioUrl || loading}
-              className="w-12 h-12 rounded-full bg-[#1a73e8] text-white flex items-center justify-center hover:bg-[#1557b0] disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
-              title={!audioUrl && !loading ? "Audio not available" : playing ? "Pause" : "Play"}
-            >
-              {playing ? (
-                <Pause className="w-6 h-6" fill="currentColor" />
-              ) : (
-                <Play className="w-6 h-6 ml-0.5" fill="currentColor" />
-              )}
-            </button>
-            <div className="flex-1">
-              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-[#1a73e8] transition-all"
-                  style={{ width: "0%" }}
-                />
+              <div className="flex-1">
+                <AudioPlayer src={audioUrl} />
               </div>
-              <p className="text-sm text-gray-500 mt-1">
-                {formatDuration(voicemail.duration)}
-              </p>
-            </div>
             <div className="flex gap-2">
               <button
                 onClick={handleDownload}
@@ -158,16 +119,6 @@ export function VoicemailDetailModal({
             </div>
             </div>
           </div>
-
-          {audioUrl && (
-            <audio
-              ref={audioRef}
-              src={audioUrl}
-              onEnded={() => setPlaying(false)}
-              onPlay={() => setPlaying(true)}
-              onPause={() => setPlaying(false)}
-            />
-          )}
 
           {loading && (
             <p className="text-sm text-gray-500">Loading audio...</p>

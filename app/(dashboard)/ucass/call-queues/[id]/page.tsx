@@ -6,6 +6,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApp } from "@/contexts/AppContext";
 import { qk, lightKeys } from "@/lib/query-keys";
 import { Loader } from "@/components/ui/Loader";
+import { Snack } from "@/components/ui/Snack";
+import { getButtonClasses } from "@/components/ui/Button";
 import {
   ArrowLeft, Save, Users, PhoneCall, Clock, Hash, Music2, BarChart2,
   CheckCircle2, AlertTriangle, Sparkles, Play, Pause, X,
@@ -903,7 +905,7 @@ export default function CallQueueEditPage() {
     return (
       <div className="py-24 text-center">
         <p className="text-red-600 text-sm">{(error as Error)?.message ?? "Queue not found"}</p>
-        <button onClick={() => router.back()} className="mt-3 text-sm text-[#1a73e8] hover:underline">
+        <button onClick={() => router.back()} className={`mt-3 ${getButtonClasses({ variant: "secondary", size: "md" })}`}>
           ← Back to Call Queues
         </button>
       </div>
@@ -931,16 +933,14 @@ export default function CallQueueEditPage() {
 
       {/* Save feedback */}
       {savedTab === activeTab && (
-        <div className="flex items-center gap-2 mb-4 px-4 py-2.5 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
-          <CheckCircle2 className="w-4 h-4 shrink-0" />
+        <Snack icon={<CheckCircle2 className="w-4 h-4" />} onClose={() => setSavedTab(null)}>
           Changes saved successfully.
-        </div>
+        </Snack>
       )}
       {saveError && (
-        <div className="flex items-center gap-2 mb-4 px-4 py-2.5 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-          <AlertTriangle className="w-4 h-4 shrink-0" />
+        <Snack icon={<AlertTriangle className="w-4 h-4" />} onClose={() => setSaveError(null)}>
           {saveError}
-        </div>
+        </Snack>
       )}
 
       {/* v1 fallback notice */}

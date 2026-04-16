@@ -318,8 +318,9 @@ export function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[
               {t("users.extensionsMissingBanner")}
             </p>
           )}
-          <div className="mb-3 rounded-[16px] overflow-hidden border border-[#e8eaed]">
-            <table className="n2p-table w-full text-xs" aria-label="Team members">
+          <div className="mb-3 rounded-lg bg-white">
+           <div className="overflow-x-auto">
+            <table className="n2p-table w-full text-sm" aria-label="Team members">
               <thead>
                 <tr>
                   <th className="w-[18%]">{t("users.firstName")}</th>
@@ -335,6 +336,7 @@ export function UserIngestionWidget({ onMessages }: { onMessages: (msgs: string[
                 ))}
               </tbody>
             </table>
+           </div>
           </div>
         </>
       )}

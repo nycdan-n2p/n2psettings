@@ -22,10 +22,10 @@ export default function HuddleSettingsPage() {
     <div>
       <h1 className="text-2xl font-medium text-gray-900 mb-6">Huddle Settings</h1>
       <p className="text-gray-600 mb-6">
-        Video conferencing settings are managed in the Huddle application.
+        Huddle settings are managed in the Huddle application.
       </p>
 
-      <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
+      <div className="n2p-keep-white bg-white rounded-3xl shadow-sm overflow-hidden">
         <div className="px-6 py-6">
           <Button
             variant="primary"

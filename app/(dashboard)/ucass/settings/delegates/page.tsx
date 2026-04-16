@@ -139,14 +139,16 @@ export default function DelegatesPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-medium text-gray-900 mb-6">{t("title")}</h1>
-      <p className="text-gray-600 mb-6">
-        Partner access and delegate management.
-      </p>
-      <div className="mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-medium text-gray-900">{t("title")}</h1>
+          <p className="text-gray-600 mt-2">
+            Partner access and delegate management.
+          </p>
+        </div>
         <button
           onClick={openAddModal}
-          className="px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium"
+          className="sm:ml-auto px-4 py-2 bg-[#1a73e8] text-white rounded-md hover:bg-[#1557b0] text-sm font-medium"
         >
           Add delegate
         </button>

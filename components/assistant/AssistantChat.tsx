@@ -516,7 +516,7 @@ export function AssistantChat({ compact = false }: { compact?: boolean }) {
 
       <div
         ref={chatContainerRef}
-        className={`flex-1 overflow-y-auto bg-[#f8f9fa] ${compact ? "rounded-t-xl" : "rounded-t-xl border border-[#dadce0] border-b-0"} px-4 py-5`}
+        className={`flex-1 overflow-y-auto bg-white ${compact ? "rounded-none" : "rounded-t-xl border border-[#dadce0] border-b-0"} px-4 py-5`}
       >
         {displayMessages.map((msg) => {
           if (msg.role === "user") return <UserBubble key={msg.id} text={msg.text} />;

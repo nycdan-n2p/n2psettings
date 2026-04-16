@@ -358,7 +358,7 @@ export function ReportsSection({
           </div>
 
           {Array.isArray(reportRows) && reportRows.length > 0 ? (
-            <div className="rounded-lg overflow-hidden bg-white">
+            <div className="rounded-lg bg-white">
               <div className="overflow-x-auto">
                 <table className="n2p-table w-full text-sm">
                   <thead>

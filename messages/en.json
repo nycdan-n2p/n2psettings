@@ -90,7 +90,7 @@
       "aiAgent": "AI Agent",
       "huddle": "Huddle",
       "coach": "Coach",
-      "ucontact": "Ucontact"
+      "ucontact": "uContact"
     },
     "items": {
       "dashboard": "Dashboard",
@@ -1354,14 +1354,14 @@
     "agentDesc": "The AI Agent is managed in a separate application. Click below to open the Agent portal.",
     "agentLink": "Open AI Agent →",
     "huddleTitle": "Huddle",
-    "huddleSubtitle": "Video conferencing and collaboration settings.",
-    "huddleDesc": "Huddle video settings are managed in the Huddle application.",
+    "huddleSubtitle": "Huddle collaboration settings.",
+    "huddleDesc": "Huddle settings are managed in the Huddle application.",
     "huddleLink": "Open Huddle →",
     "coachTitle": "Coach",
     "coachSubtitle": "AI coaching and analytics settings.",
     "coachDesc": "Coach AI settings are managed in the Coach application.",
     "coachLink": "Open Coach →",
-    "ucontactTitle": "Ucontact Settings",
+    "ucontactTitle": "uContact Settings",
     "ucontactSubtitle": "Contact center and workforce management settings.",
     "ucontactDesc": "Contact center settings will be available here. Configure queues, agents, and workforce management.",
     "comingSoon": "Coming soon.",
