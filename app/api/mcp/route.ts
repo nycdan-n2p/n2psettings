@@ -1,29 +1,19 @@
 /**
- * net2phone MCP Server — Vercel HTTP endpoint
+ * net2phone MCP — Vercel HTTP (Streamable HTTP, stateless).
  *
- * Uses the MCP Streamable HTTP transport (stateless mode).
- * Each request creates a fresh Server instance — no session state stored.
+ * Login is the same as the web app: the user’s net2phone refresh token from the browser
+ * (`n2p_refresh_token`). The server exchanges it for an access token and calls net2phone APIs.
  *
- * Authentication:
- *   Pass the net2phone Bearer token in the Authorization header:
- *     Authorization: Bearer <your-n2p-jwt-token>
+ * Typical connector URL:
+ *   /api/mcp?refreshToken=...&accountId=...
  *
- *   MCP OAuth clients (e.g. Claude connector): unauthenticated requests receive 401 with
- *   WWW-Authenticate pointing at /.well-known/oauth-protected-resource; that JSON links to
- *   /.well-known/oauth-authorization-server so the client can run the OAuth flow.
+ * Also supported: Authorization Bearer (refresh or access JWT), OAuth discovery (401 →
+ * /.well-known/*), optional X-Account-Id / X-Sip-Client-Id, env N2P_DEFAULT_*.
  *
- * Optional headers:
- *   X-Account-Id:    Override the default UCaaS account ID
- *   X-Sip-Client-Id: Override the default SIP trunk account ID
- *
- * Env vars (used as defaults when headers are not provided):
- *   N2P_DEFAULT_ACCOUNT_ID   — default account ID
- *   N2P_DEFAULT_SIP_CLIENT_ID — default SIP trunk account ID
- *
- * Claude Desktop: many builds only accept stdio — use `npx mcp-remote <this-url>` (Node 20+).
- * See /claude-mcp on the deployment for copy-paste instructions.
+ * User-facing steps: /claude-mcp
  */
 
+import { createHash } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { createN2PMCPServer } from "@/lib/mcp/server";
@@ -32,11 +22,42 @@ import { publicBaseUrlFromRequest } from "@/lib/mcp/public-base-url";
 // Allow long-running tool calls (Vercel Pro: 60s, Hobby: 10s)
 export const maxDuration = 60;
 
-// ─── Refresh token → access token ─────────────────────────────────────────────
+// ─── Refresh token → access token (cached per warm instance) ─────────────────
 
 const N2P_AUTH_URL = "https://auth.net2phone.com/connect/token";
 
-async function exchangeRefreshToken(refreshToken: string): Promise<string | null> {
+/** Reuse access tokens until near expiry; cuts OAuth traffic on burst MCP calls. */
+const CACHE_SKEW_MS = 60_000;
+const DEFAULT_ACCESS_TTL_SEC = 3600;
+
+const refreshTokenCache = new Map<
+  string,
+  { accessToken: string; expiresAtMs: number }
+>();
+
+function refreshCacheKey(refreshToken: string): string {
+  return createHash("sha256").update(refreshToken).digest("hex");
+}
+
+function jwtExpMs(accessToken: string): number | null {
+  try {
+    const part = accessToken.split(".")[1];
+    if (!part) return null;
+    const payload = JSON.parse(
+      Buffer.from(part.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString()
+    ) as { exp?: number };
+    return typeof payload.exp === "number" ? payload.exp * 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Calls net2phone OAuth token endpoint (refresh_token grant). Uncached.
+ */
+async function fetchAccessTokenWithRefreshGrant(
+  refreshToken: string
+): Promise<{ accessToken: string; expiresAtMs: number } | null> {
   try {
     const res = await fetch(N2P_AUTH_URL, {
       method: "POST",
@@ -48,11 +69,45 @@ async function exchangeRefreshToken(refreshToken: string): Promise<string | null
       }).toString(),
     });
     if (!res.ok) return null;
-    const data = await res.json() as { access_token?: string };
-    return data.access_token ?? null;
+    const data = (await res.json()) as {
+      access_token?: string;
+      expires_in?: number;
+    };
+    const accessToken = data.access_token;
+    if (!accessToken) return null;
+
+    const now = Date.now();
+    const fromOAuthSec = data.expires_in ?? DEFAULT_ACCESS_TTL_SEC;
+    let expiresAtMs = now + fromOAuthSec * 1000 - CACHE_SKEW_MS;
+    const jwtEnd = jwtExpMs(accessToken);
+    if (jwtEnd !== null) {
+      expiresAtMs = Math.min(expiresAtMs, jwtEnd - CACHE_SKEW_MS);
+    }
+    if (expiresAtMs <= now) {
+      expiresAtMs = now + 30_000;
+    }
+    return { accessToken, expiresAtMs };
   } catch {
     return null;
   }
+}
+
+async function exchangeRefreshToken(refreshToken: string): Promise<string | null> {
+  const key = refreshCacheKey(refreshToken);
+  const now = Date.now();
+  const hit = refreshTokenCache.get(key);
+  if (hit && hit.expiresAtMs > now) {
+    return hit.accessToken;
+  }
+
+  const fresh = await fetchAccessTokenWithRefreshGrant(refreshToken);
+  if (!fresh) return null;
+
+  refreshTokenCache.set(key, {
+    accessToken: fresh.accessToken,
+    expiresAtMs: fresh.expiresAtMs,
+  });
+  return fresh.accessToken;
 }
 
 // ─── CORS headers (required for Claude connector UI) ──────────────────────────
