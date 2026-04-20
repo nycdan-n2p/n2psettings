@@ -294,6 +294,16 @@ All proxy routes validate path segments before forwarding (blocks `../` traversa
 
 `lib/mcp/server.ts` exposes 60+ net2phone API operations as MCP tools. The `lib/n2p-tools/adapter.ts` maps Anthropic tool calls to the correct MCP tool + argument shape.
 
+**End users — connect Claude:** open **`/claude-mcp`** on your deployment (e.g. production `https://n2psettings.vercel.app/claude-mcp`) for step-by-step instructions and the exact MCP base URL for this environment.
+
+**HTTP endpoint:** `GET/POST /api/mcp` (Streamable HTTP, stateless). Unauthenticated calls return **401** with `WWW-Authenticate` pointing at **`/.well-known/oauth-protected-resource`**, which lists **`/.well-known/oauth-authorization-server`** so MCP clients can run the paste-token OAuth flow (`/api/oauth/authorize` → `/api/oauth/token`).
+
+**Auth shortcuts (same handler):**
+
+- `Authorization: Bearer …` — access JWT (`eyJ…`) or opaque refresh token (exchanged automatically).
+- Query: `?token=eyJ…` (access JWT), `?refreshToken=…` (opaque refresh; if someone pastes a JWT here by mistake, it is used as the access token instead of calling the refresh grant).
+- Query or headers: `accountId` / `X-Account-Id` (recommended if the JWT lacks `aid`).
+
 Available tool categories:
 - Team members — create, search, update, assign phone
 - Departments — create, list, assign members
@@ -306,7 +316,7 @@ Available tool categories:
 - Devices — list, assign
 - Licenses — check eligibility
 
-The MCP server is also compatible with Claude Desktop. See `n2p-mcp/README.md` for setup.
+**Claude Desktop** often requires a stdio bridge (`npx mcp-remote …`) with **Node.js 20+**; see **`/claude-mcp`** and `n2p-mcp/README.md` for copy-paste config. Local stdio (`n2p-mcp/dist`) is optional for developers.
 
 ---
 

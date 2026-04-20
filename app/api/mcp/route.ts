@@ -20,23 +20,14 @@
  *   N2P_DEFAULT_ACCOUNT_ID   — default account ID
  *   N2P_DEFAULT_SIP_CLIENT_ID — default SIP trunk account ID
  *
- * Claude Desktop config for remote HTTP:
- * {
- *   "mcpServers": {
- *     "net2phone": {
- *       "url": "https://your-app.vercel.app/api/mcp",
- *       "headers": {
- *         "Authorization": "Bearer <token>",
- *         "X-Account-Id": "1017456"
- *       }
- *     }
- *   }
- * }
+ * Claude Desktop: many builds only accept stdio — use `npx mcp-remote <this-url>` (Node 20+).
+ * See /claude-mcp on the deployment for copy-paste instructions.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { createN2PMCPServer } from "@/lib/mcp/server";
+import { publicBaseUrlFromRequest } from "@/lib/mcp/public-base-url";
 
 // Allow long-running tool calls (Vercel Pro: 60s, Hobby: 10s)
 export const maxDuration = 60;
@@ -65,17 +56,18 @@ async function exchangeRefreshToken(refreshToken: string): Promise<string | null
 }
 
 // ─── CORS headers (required for Claude connector UI) ──────────────────────────
-const BASE_URL = "https://n2psettings.vercel.app";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
   "Access-Control-Allow-Headers":
-    "Content-Type, Authorization, X-Account-Id, X-Sip-Client-Id, Mcp-Session-Id",
+    "Content-Type, Authorization, Accept, X-Account-Id, X-Sip-Client-Id, Mcp-Session-Id",
 };
 
-// WWW-Authenticate header tells OAuth clients where to find auth server metadata
-const WWW_AUTH = `Bearer realm="${BASE_URL}", resource_metadata="${BASE_URL}/.well-known/oauth-protected-resource"`;
+function wwwAuthenticateHeader(request: NextRequest): string {
+  const base = publicBaseUrlFromRequest(request);
+  return `Bearer realm="${base}", resource_metadata="${base}/.well-known/oauth-protected-resource"`;
+}
 
 export async function OPTIONS() {
   return new Response(null, { status: 204, headers: CORS_HEADERS });
@@ -90,22 +82,29 @@ async function handleMCP(request: NextRequest): Promise<Response> {
     ? authHeader.slice(7).trim()
     : authHeader.trim();
 
-  // ?refreshToken= → exchange for a fresh access token every request (long-lived)
-  // ?token=        → use directly as access token (expires in ~1hr)
-  // Bearer header  → if it doesn't look like a JWT (no "eyJ" prefix), treat as refresh token
+  // ?refreshToken= → opaque token: exchange each request. JWT in this param is treated as access token (connector UX).
+  // ?token=        → use directly as access JWT (~1hr)
+  // Bearer        → JWT or opaque refresh (exchanged if opaque)
   const refreshParam = url.searchParams.get("refreshToken");
   let token = tokenFromHeader || url.searchParams.get("token") || "";
 
-  // Auto-detect refresh tokens: JWTs start with "eyJ", anything else is a refresh token
-  const isRefreshToken = (t: string) => t.length > 0 && !t.startsWith("eyJ");
-
-  const rawRefresh = refreshParam || (isRefreshToken(token) ? token : null);
-  if (rawRefresh) {
-    const exchanged = await exchangeRefreshToken(rawRefresh);
+  if (refreshParam?.startsWith("eyJ")) {
+    if (!token) token = refreshParam;
+  } else if (refreshParam) {
+    const exchanged = await exchangeRefreshToken(refreshParam);
     if (!exchanged) {
       return NextResponse.json(
         { error: "Failed to exchange refresh token. It may be expired or revoked." },
-        { status: 401, headers: { ...CORS_HEADERS, "WWW-Authenticate": WWW_AUTH } }
+        { status: 401, headers: { ...CORS_HEADERS, "WWW-Authenticate": wwwAuthenticateHeader(request) } }
+      );
+    }
+    token = exchanged;
+  } else if (token && !token.startsWith("eyJ")) {
+    const exchanged = await exchangeRefreshToken(token);
+    if (!exchanged) {
+      return NextResponse.json(
+        { error: "Failed to exchange refresh token. It may be expired or revoked." },
+        { status: 401, headers: { ...CORS_HEADERS, "WWW-Authenticate": wwwAuthenticateHeader(request) } }
       );
     }
     token = exchanged;
@@ -114,7 +113,7 @@ async function handleMCP(request: NextRequest): Promise<Response> {
   if (!token) {
     return NextResponse.json(
       { error: "Unauthorized" },
-      { status: 401, headers: { ...CORS_HEADERS, "WWW-Authenticate": WWW_AUTH } }
+      { status: 401, headers: { ...CORS_HEADERS, "WWW-Authenticate": wwwAuthenticateHeader(request) } }
     );
   }
 
